@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<project name="LinTim-stop-location-evaluation" default="build-stop-location-evaluation" basedir=".">
+	<property name="enable_debug" value="true"/>
+	<property name="enable_optimize" value="true"/>
+	<target depends="build-config,build-slhelper,build-stop-location-evaluation,build-statistic,build-shortest-paths" name="build-all"/>
+	<target name="build-slhelper" depends="build-shortest-paths">
+		<javac srcdir="../../essentials/sl-helper/PTNTools"
+		       destdir="../../essentials/sl-helper/PTNTools"
+			   classpath="../../essentials/shortest-paths/src"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-config">
+		<javac srcdir="../../essentials/config"
+		       destdir="../../essentials/config"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-statistic">
+		<javac srcdir="../../essentials/statistic"
+		       destdir="../../essentials/statistic"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-shortest-paths">
+			<javac srcdir="../../essentials/shortest-paths/src"
+			       destdir="../../essentials/shortest-paths/src"
+			       debug="${enable_debug}"
+			       optimize="${enable_optimize}"
+			       includeAntRuntime="true" />
+	</target>
+	<target name="build-stop-location-evaluation" depends="build-config,build-slhelper,build-statistic,build-shortest-paths">
+		<javac srcdir="."
+		       destdir="."
+		       classpath="../../essentials/config:../../essentials/sl-helper/PTNTools:../../essentials/statistic:../../essentials/shortest-paths/src:../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true"/>
+	</target>
+</project>

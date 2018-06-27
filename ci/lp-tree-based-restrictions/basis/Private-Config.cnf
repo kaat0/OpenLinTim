@@ -1,0 +1,2 @@
+lpool_model; "restricted_line_duration"
+lc_solver; GUROBI

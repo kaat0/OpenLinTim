@@ -1,0 +1,213 @@
+model "vehicle_flow.mos"
+	uses "mmxprs"
+
+	parameters
+	DATAFILE='../../src/vehicle-scheduling/canal-model/data_vehicle_flow'
+	default_vehicle_flow_file="vehicle-scheduling/Vehicle_Flow.vs"
+	verbose=false
+	end-parameters
+
+	include '../../src/vehicle-scheduling/canal-model/print_status.mos'
+
+	! Declare the Variables:
+	declarations
+	NumberOfTrips: integer
+	NumberOfTransfers: integer
+	NumberOfCanalEvents: integer
+	NumberOfCanals: integer
+	NumberOfLineTransfers: integer
+	!Only for the output:
+	NumberOfEvents: integer
+	end-declarations
+
+	! Import the values of the datafile
+	initializations from DATAFILE
+		NumberOfTrips
+		NumberOfTransfers
+		NumberOfCanalEvents
+		NumberOfCanals
+		NumberOfLineTransfers
+		!Only for the output:
+		NumberOfEvents
+	end-initializations
+
+	! Declare the Variables:
+	declarations
+	Indizes=1..NumberOfTransfers
+	CanalEventIndizes=1..NumberOfCanalEvents
+	EventIndizes=1..NumberOfEvents
+	CanalIndizes=1..NumberOfCanals
+	LineTransferIndizes=1..NumberOfLineTransfers
+	AllTransferEventIndizes=1..(NumberOfTransfers+NumberOfTransfers)
+	! Costs of the program:
+	C: array(Indizes) of real ! costs of the transfers
+	cv: real ! costs of a single vehicle
+	EventType: array(CanalEventIndizes) of integer
+	CanalEventJavaIndizes: array(CanalEventIndizes) of integer
+	PreviousEvent: array(CanalEventIndizes) of integer
+	AssociatedTransfer: array(CanalEventIndizes) of integer
+	Jump: array(CanalIndizes) of integer
+	CanalExists: array(CanalIndizes) of boolean
+	TransfersWithTimeCycleJump: array(Indizes) of boolean
+	TransferStartEvent: array(Indizes) of integer
+	TransferEndEvent: array(Indizes) of integer
+	TransferType: array(Indizes) of string
+	TimeOfEvents: array(EventIndizes) of integer
+	! Decision Variables: 
+	x: array(Indizes) of mpvar
+	N: array(CanalEventIndizes) of mpvar
+	end-declarations
+
+	! read the rest of the datafile
+	initializations from DATAFILE
+		C
+		cv
+		EventType
+		CanalEventJavaIndizes
+		PreviousEvent
+		AssociatedTransfer
+		Jump
+		CanalExists
+		TransfersWithTimeCycleJump
+		TransferStartEvent
+		TransferEndEvent
+		TransferType
+		TimeOfEvents
+	end-initializations
+
+	! Objective Function (describes the costs, which arise from the execution of the transfers), which should be minimized:
+	costs:= ((sum(i in Indizes) C(i) * x(i)) + (sum(j in CanalIndizes | CanalExists(j)) cv * N(Jump(j))));
+
+	! Define the constraints:
+	forall (i in LineTransferIndizes) do 
+		x(i) = 1;
+	end-do
+
+	! Why do he need this condition to set x(i) = 1 for NumberOfTrips < i <= 2* NumberOfTrips ?
+	sum(i in LineTransferIndizes | i > NumberOfTrips) x(i) = NumberOfTrips;
+
+	forall(i in Indizes) do
+		x(i) is_binary;
+	end-do
+
+	forall(i in CanalEventIndizes) do
+		N(i) >= 0;
+		N(i) is_integer;
+		if (EventType(i) = 0) then
+			N(i) = N(PreviousEvent(i)) + x(AssociatedTransfer(i));
+		else
+			N(i) = N(PreviousEvent(i)) - x(AssociatedTransfer(i));
+		end-if
+	end-do
+
+	!Minimization of the costs:
+	minimize(costs);
+
+	! Problem solved?
+!	print_status
+
+	! Print the Costs:
+!	forall(i in Indizes) writeln(" C(", i, ") = ", C(i))
+	
+	! Print the results:
+!	forall(i in Indizes) writeln(" x(", i, ") = ", getsol(x(i)))
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
+
+	! Print the results:
+!	forall(i in Indizes, j in Indizes | i = j and getsol(x(i,j))=1) writeln(i)
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
+
+	! Final output:
+	fopen(default_vehicle_flow_file, F_OUTPUT)
+	writeln("# Used model : Canal Model")
+	writeln("# Value of objective function (costs of the vehicle scheduling): ", getobjval / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+	writeln("# Number of used vehicles: ", getsol(sum(j in CanalIndizes | CanalExists(j)) N(Jump(j)) + sum(i in Indizes | TransfersWithTimeCycleJump(i)) x(i)))
+	write("# ")
+	print_status
+	
+	writeln("# Canals of the model with the events contained in the calculated vehicle flow, format:")
+	writeln("# first line: 'Canal; canal-id', following lines: line i has the format 'id of the ith event of the canal (format 'ID ; time; type')'")
+	k := 1
+	forall(i in CanalIndizes) do
+		if(CanalExists(i)) then
+			writeln("Canal; ", i)
+			if (i = 1) then
+				forall(j in CanalEventIndizes | j <= Jump(i)) do
+					if (getsol(x(AssociatedTransfer(j))) = 1) then
+						write(CanalEventJavaIndizes(j), "; ")
+						write(TimeOfEvents(CanalEventJavaIndizes(j)), "; ")
+						if(EventType(j) = 0) then
+							writeln("START", "; ")
+						else
+							writeln("END", "; ")
+						end-if
+						!writeln(AssociatedTransfer(j))
+					end-if
+				end-do
+			else	
+				forall(j in CanalEventIndizes) do
+					if(getsol(x(AssociatedTransfer(j))) = 1) then
+						if(j > Jump(k) and j <= Jump(i)) then ! FIXME: An dieser Stelle sollte k den Index des vorherigen existierenden
+										      !	 Kanals angeben...
+							write(CanalEventJavaIndizes(j), "; ")
+							write(TimeOfEvents(CanalEventJavaIndizes(j)), "; ")
+							if(EventType(j) = 0) then
+								writeln("START", "; ")
+							else
+								writeln("END", "; ")
+							end-if
+							!writeln(AssociatedTransfer(j))
+						end-if
+					end-if
+				end-do
+			end-if
+			k := i;
+		end-if
+	end-do 
+
+!	writeln("# transfers (id ; costs) seperated by ';' (only the transfers, which occur in the calculated vehicle flow)")
+!	forall(i in Indizes) do
+!			if (getsol(x(i)) = 1) then 
+!				!write(i, "; ")
+!				write(i, "; ", C(i), "; ")
+!			end-if
+!	end-do
+!	writeln("")
+
+	writeln("#Transfers: (format = ID; startEvent (with format 'ID ; time; type'); endEvent (with format 'ID ; time; type'); costs; timeCycleJump; type)")	
+	forall(i in Indizes) do
+		if (getsol(x(i)) = 1) then
+			write(i, "; ", TransferStartEvent(i), "; ")
+			write(TimeOfEvents(TransferStartEvent(i)), "; ")			
+			write("END", "; ")
+			write(TransferEndEvent(i), "; ") 
+			write(TimeOfEvents(TransferEndEvent(i)), "; ")
+			write("START", "; ")			
+			write(C(i), "; ", TransfersWithTimeCycleJump(i), "; ", TransferType(i))
+			writeln("")	
+			!write(i, "; ", TransferStartEvent(i), EventType(TransferStartEvent(i)), TransferEndEvent(i), EventType(TransferEndEvent(i)), C(i), TransfersWithTimeCycleJump(i)) 	
+		end-if
+	end-do
+
+!	forall(i in Indizes) writeln(" x(", i, ") = ", getsol(x(i)))
+	!writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval / 1000) ! The costs have been multiplicated with 1000 by calculating the mosel-input
+!	forall(i in CanalEventIndizes) writeln("N(", i, ") = ", getsol(N(i))) 
+!	forall(j in CanalIndizes | CanalExists(j)) writeln(j)
+
+!	forall(j in CanalIndizes | CanalExists(j)) do
+!		writeln(getsol(N(Jump(j))))
+!	end-do
+
+!	writeln("Number of transfers with time cycle jump: ", getsol(sum(i in Indizes | TransfersWithTimeCycleJump(i)) x(i)))
+
+!	forall(i in Indizes | TransfersWithTimeCycleJump(i)) do
+!		if(x(i) = 1) then
+!			writeln("Transfer ", i " has a time cycle jump.")
+!		end-if
+!	end-do
+
+!	writeln("# Number of used vehicles: ", getsol(sum(j in CanalIndizes | CanalExists(j)) N(Jump(j)) + sum(i in Indizes | TransfersWithTimeCycleJump(i)) x(i)))
+	!fclose(F_OUTPUT)	
+
+end-model

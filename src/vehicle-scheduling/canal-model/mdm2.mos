@@ -1,0 +1,79 @@
+model "mdm2.mos"
+	uses "mmxprs"
+
+	parameters
+	DATAFILE='../../src/vehicle-scheduling/canal-model/data_mdm2'
+	default_vehicle_schedules_file="vehicle-scheduling/Transfers.vs"
+	verbose=false
+	end-parameters
+
+	include '../../src/vehicle-scheduling/canal-model/print_status.mos'
+
+	! Declare the Variables:
+	declarations
+	NumberOfTrips: integer
+	end-declarations
+
+	! Import the NumberOfTrips
+	initializations from DATAFILE
+		NumberOfTrips
+	end-initializations
+
+	! Declare the variables:
+	declarations
+	Indizes=1..NumberOfTrips
+	! Costs of the program:
+	C: array(Indizes, Indizes) of real
+	! Decision Variables: Could one have matrices as decision variables?
+	x: array(Indizes, Indizes) of mpvar
+	end-declarations
+
+	! Import the Cost-Matrix
+	initializations from DATAFILE
+		C
+	end-initializations
+
+	! Objective Function (describes the number of not used vehicles), which is to be maximized:
+	NumberOfUnusedVehicles:= sum(i in Indizes, j in Indizes) C(i,j) * x(i,j);
+
+	! Define the constraints:
+	forall (i in Indizes) do
+		sum(j in Indizes) x(i,j) <= 1;
+	end-do
+
+	forall (j in Indizes) do
+		sum(i in Indizes) x(i,j) <= 1;
+	end-do
+
+	forall(i in Indizes, j in Indizes) do
+		x(i,j) is_binary;
+	end-do
+
+	! Maximization:
+	maximize(NumberOfUnusedVehicles);
+
+	! Problem solved?
+!	print_status
+
+	! Write the results:
+!	forall(i in Indizes, j in Indizes) writeln(" x(", i, ",", j, ") = ", getsol(x(i,j)))
+!	writeln("Value of the objective function (number of not used vehicles) = ", getobjval)
+
+	!Final output:
+	fopen(default_vehicle_schedules_file, F_OUTPUT)
+	writeln("# Used model : MDM2 (Minimal decomposition model 2)")
+	writeln("# Value of objective function (not needed vehicles): ", getobjval)
+	writeln("# Number of needed vehicles (= number of trips - value of objective function): ", (NumberOfTrips - getobjval))
+	write("# ")
+	print_status
+	writeln("# transfers: first-trip (id) ; second-trip (id)")
+	forall(i in Indizes) do
+		forall(j in Indizes | getsol(x(i,j)) = 1) do
+			if (i <> j and i <> 0 and j<>0) then writeln(i, " ; ", j)
+			elif (i <> j) then writeln(i," ; ", j)
+			end-if
+		end-do
+	end-do
+	fclose(F_OUTPUT)
+
+end-model

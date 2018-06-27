@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<project name="config" default="build" basedir=".">
+  <target name="build">
+   <javac srcdir="src"
+   	   classpath="../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
+           debug="true"
+           optimize="true" />
+  </target>
+</project>

@@ -1,0 +1,9 @@
+before_script:
+    - source /opt/xpressmp/bin/xpvars.sh
+
+run_tests:
+    only:
+        - web
+        - schedules
+    script:
+        - bash ci/run_tests.sh

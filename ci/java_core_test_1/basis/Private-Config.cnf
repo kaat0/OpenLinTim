@@ -1,0 +1,6 @@
+lc_model; cost
+tim_model; MATCH
+vs_model; CANAL_MODEL
+lpool_model; "tree_based"
+rollout_whole_trips; true
+lc_solver; GUROBI

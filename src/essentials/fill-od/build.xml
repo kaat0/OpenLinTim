@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<project name="LinTim-fill-od" default="build-fill-od" basedir=".">
+	<property name="enable_debug" value="true"/>
+	<property name="enable_optimize" value="true"/>
+	<target depends="build-config,build-fill-od" name="build-all"/>
+	<target name="build-config">
+		<javac srcdir="../config"
+		       destdir="../config"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-fill-od" depends="build-config">
+		<javac srcdir="."
+		       destdir="."
+			   classpath="../config:"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true">
+		</javac>
+	</target>
+</project>

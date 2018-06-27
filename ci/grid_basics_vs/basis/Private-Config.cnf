@@ -1,0 +1,2 @@
+rollout_whole_trips; true
+lc_solver; GUROBI

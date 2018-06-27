@@ -1,0 +1,25 @@
+#######################################################
+aperiodic_ean.py:       AperiodicActivity, AperiodicEvent,
+                        AperiodicHeadway
+
+periodic_ean.py:        PeriodicActivity, PeriodicEvent, PeriodicTimetable,
+                        PeriodicHeadway
+
+ptn.py: Link, Stop
+
+graph.py:       Node, Edge, Graph
+
+lines.py:       LineDirection, Line, LinePool
+
+od.py:  OD, ODPair
+
+vehicle_scheduling.py:  Circulation, Trip, TripType, VehicleTour, 
+                        VehicleSchedule
+#######################################################
+SOLO FILES:
+
+activityType.py
+demandPoint.py
+eventType.py
+path.py
+timetable.py

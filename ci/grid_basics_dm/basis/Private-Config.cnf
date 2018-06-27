@@ -1,0 +1,2 @@
+delays_seed; 1
+lc_solver; GUROBI

@@ -1,0 +1,129 @@
+**********************************************
+Programme für die Linienplanung
+**********************************************
+
+**********************************************
+H6.cc
+
+Implementiert Heuristik 6 aus dem Skript
+Muss im basisordner gestartet werden
+
+Benötigt
+- basis/Load.giv
+- basis/Pool.giv
+- basis/Pool-Cost.giv
+
+Gibt aus
+line-planning/Line-Concept.lin
+**********************************************
+
+
+
+**********************************************
+H7.cc
+
+Implementiert Heuristik 7 aus dem Skript
+Muss im basisordner gestartet werden
+
+Benötigt
+- basis/Load.giv
+- basis/Pool.giv
+- basis/Pool-Cost.giv
+
+Gibt aus
+line-planning/Line-Concept.lin
+**********************************************
+
+
+
+**********************************************
+xpress.sh automatisiert die Schritte, um eine
+exakte Loesung fuer die Linienplanung mittels Xpress
+zu gewinnen.
+
+Benoetigt:
+- basis/Load.giv
+- basis/Pool.giv
+- basis/Pool-Cost.giv
+
+Gibt aus:
+line-planning/Line-Concept.lin
+
+MS 2008-01-27
+**********************************************
+
+Die folgenden drei Schritte deckt xpress.sh ab:
+
+**********************************************
+Convert.cc
+
+Hilfsprogramm
+Muss im basisordner gestartet werden
+
+Bereitet die Daten auf für Lösung durch xpress
+
+Benötigt
+- basis/Load.giv
+- basis/Pool.giv
+- basis/Pool-Cost.giv
+
+Gibt aus
+../line-planning/line-planning/Moseldaten
+**********************************************
+
+
+
+**********************************************
+line-planning.mos
+
+Xpress-Programm
+Berechnet exakte Lösung
+Das Ergebnis muss noch einmal mittels SolConv
+nachbearbeitet werden
+Muss im Linienordner gestartet werden
+
+Benötigt
+- line-planning/Moseldaten
+
+Gibt aus
+- line-planning/xpresssol
+**********************************************
+
+
+
+**********************************************
+line-planning_1.mos
+
+Xpress-Programm
+Berechnet exakte Lösung, allerdings mit 
+Frequenz mindestens 1.
+Das Ergebnis muss noch einmal mittels SolConv
+nachbearbeitet werden
+Muss im Linienordner gestartet werden
+
+Benötigt
+- line-planning/Moseldaten
+
+Gibt aus
+- line-planning/xpresssol
+**********************************************
+
+
+
+**********************************************
+SolConv.cc
+
+Hilfsprogramm
+
+Nimmt die Lösung von xpress und bringt sie in
+Standardform
+Muss im Linienordner gestartet werden
+
+Benötigt
+- line-planning/xpresssol
+- basis/Load.giv
+- basis/Pool.giv
+
+Gibt aus
+- line-planning/Line-Concept.lin
+**********************************************
