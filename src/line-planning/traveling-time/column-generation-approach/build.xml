@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<project name="LinTim" default="build-traveling-time" basedir=".">
+	<property name="enable_debug" value="false"/>
+	<property name="enable_optimize" value="true"/>
+	<target name="build-config">
+		<javac srcdir="../../../essentials/config"
+		       destdir="../../../essentials/config"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-traveling-time" depends="build-config">
+		<javac srcdir="."
+		       destdir="."
+		       classpath="../../../essentials/config:../../../essentials/statistic:../../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+</project>

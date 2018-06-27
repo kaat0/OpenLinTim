@@ -1,0 +1,104 @@
+model "am.mos"
+	uses "mmxprs"
+
+	parameters
+	DATAFILE='../../src/vehicle-scheduling/canal-model/data_am'
+	default_vehicle_schedules_file="vehicle-scheduling/Transfers.vs"
+	verbose=false
+	end-parameters
+
+	include '../../src/vehicle-scheduling/canal-model/print_status.mos'
+
+	! Declare the Variables:
+	declarations
+	NumberOfTrips: integer
+	end-declarations
+
+	! Import the NumberOfTrips
+	initializations from DATAFILE
+		NumberOfTrips
+	end-initializations
+
+	! Declare the Variables:
+	declarations
+	Indizes=1..NumberOfTrips
+	! Compatibility-Matrix (A(i,j) = 1 <=> i \bar{\alpha} j; 0 else)
+	A : array(Indizes, Indizes) of real
+	! Costs of the program:
+	cv : real ! costs of a single vehicle
+	U: array(Indizes, Indizes) of real ! pure transfer costs
+	C: array(Indizes, Indizes) of real ! overall costs (Edges between incompatible trips get additionally the costs of a single vehicle)
+	! Decision Variables: 
+	x: array(Indizes, Indizes) of mpvar
+	end-declarations
+
+	! read the rest of the data
+	initializations from DATAFILE
+		A
+		U
+		cv
+	end-initializations
+
+	! Generate the Cost-Matrix
+	forall (i in Indizes, j in Indizes) do
+		C(i,j) := U(i,j) + A(i,j) * cv;
+	end-do
+
+	! Objective Function (describes the costs, which arise from the execution of the transfers), which should be minimized:
+	costs:= sum(i in Indizes, j in Indizes) C(i,j) * x(i,j);
+
+	! Define the constraints:
+	forall (i in Indizes) do
+		sum(j in Indizes) x(i,j) = 1;
+	end-do
+
+	forall (j in Indizes) do
+		sum(i in Indizes) x(i,j) = 1;
+	end-do
+
+
+	forall(i in Indizes, j in Indizes) do
+		x(i,j) is_binary;
+	end-do
+	
+	!Minimization of the costs:
+	minimize(costs);
+
+	! Problem solved?
+!	print_status
+
+	! Print the Cost-Matrix:
+!	forall(i in Indizes, j in Indizes) writeln(" C(", i, ",", j, ") = ", C(i,j))
+	
+	! Print the results:
+!	forall(i in Indizes, j in Indizes) writeln(" x(", i, ",", j, ") = ", getsol(x(i,j)))
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
+
+	! Print the results:
+!	forall(i in Indizes, j in Indizes | i = j and getsol(x(i,j))=1) writeln(i)
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
+
+	! Final output:
+	fopen(default_vehicle_schedules_file, F_OUTPUT)
+	writeln("# Used model : AM (Assignment Model)")
+	writeln("# Value of objective function (costs of the vehicle scheduling): ", getobjval / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+	write("# ")
+	print_status
+	writeln("# transfers: first-trip (id) ; second-trip (id) ; costs of the transfer ; transfer with time cycle jump (true or false)")
+	writeln("# remark: a time cycle jump occurs, when a vehicle pauses between to trips untill the next time cycle, e.g. over night")
+	forall(i in Indizes) do
+		forall(j in Indizes | getsol(x(i,j)) = 1) do
+			if (i <> j) then 
+				write(i, " ; ", j, " ; ", C(i,j) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+				if (A(i,j) = 0) then writeln(" ; false")
+					else writeln(" ; true")
+				end-if
+			else 
+				write(i, " ; ", j, " ; ", C(i,j) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+				writeln(" ; true")
+			end-if
+		end-do
+	end-do
+	fclose(F_OUTPUT)	
+
+end-model

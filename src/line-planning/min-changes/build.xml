@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<project name="LinTim" default="build-min-changes" basedir=".">
+	<property name="enable_debug" value="false"/>
+	<property name="enable_optimize" value="true"/>
+	<target name="build-config">
+		<javac srcdir="../../essentials/config"
+		       destdir="../../essentials/config"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-ptntools">
+		<javac srcdir="../../essentials/sl-helper/PTNTools"
+		       destdir="../../essentials/sl-helper/PTNTools"
+		       classpath="../../essentials/shortest-paths/src"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-shortestpaths">
+		<javac srcdir="../../essentials/shortest-paths/src"
+		       destdir="../../essentials/shortest-paths/src"
+		       classpath="../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-kshortestpaths">
+	<javac srcdir="../../../libs/k-shortest-paths"
+		       destdir="../../../libs/k-shortest-paths"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+	<target name="build-min-changes" depends="build-config,build-shortestpaths,build-kshortestpaths,build-ptntools">
+		<javac srcdir="."
+		       destdir="."
+		       classpath="../../essentials/config/:../../../libs/jgrapht/jgrapht-core-1.1.0.jar:../../essentials/k-shortest-paths:../../essentials/shortest-paths/src:../direct-travellers/:../../essentials/statistic:../../essentials/sl-helper/PTNTools"
+		       debug="${enable_debug}"
+		       optimize="${enable_optimize}"
+		       includeAntRuntime="true" />
+	</target>
+</project>

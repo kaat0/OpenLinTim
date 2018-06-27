@@ -1,0 +1,54 @@
+# Athens PTN
+# 16.12.2009
+# stop-id; short-name; long-name; x-coord; y-coord
+1;KIF;Kifissia, line 1 northernmost terminus;746342.364374703;4217461.48210728
+2;KAT;KAT, near the KAT Hospital;745980.899214483;4216793.65070531
+3;MAR;Maroussi;746133.211289904;4215747.25459923
+4;NER;Nerantziotissa, passenger interchange with the Proastiakos suburban services;745091.757005695;4214505.47728401
+5;EIR;Eirini, near the Athens Olympic Stadium, signalling and control center for the Line 1;744197.226472271;4214320.00316103
+6;HRA;Heraklion, with a train reversing siding;742715.369353584;4214560.12126633
+7;ION;Nea Ionia, with a train reversing siding;742000.819677391;4213768.23517431
+8;PEF;Pefkakia;741347.710984673;4213489.34723115
+9;PER;Perissos;740903.966989597;4212995.35808966
+10;APAT;Ano Patisia, with a train reversing siding;740138.980232973;4211965.63925448
+11;AGEL;Agios Eleftherios;739824.324852697;4211618.703083
+12;KPAT;Kato Patisia;739574.542835852;4210617.54404018
+13;AGNI;Agios Nikolaos;739480.213722913;4210076.37857712
+14;ATT;Attiki, passenger interchange, line 1/2 interchange;739020.559531868;4209232.60037013
+15;VIK;Victoria;739735.147819826;4208565.64045709
+16;OMO;Omonia, underneath Omonia Square, line 1/2 interchange;739653.725965975;4207574.54418743
+17;MON;Monastiraki, line 1/3 interchange;739428.524605722;4206688.64996878
+18;THI;Thission, train depot and permanent way maintenance department;738969.986071323;4206721.43681147
+19;PET;Petralona;737953.209284364;4205713.52117735
+20;TAV;Tavros, with a train reversing siding;737511.446975001;4205107.5316602
+21;KAL;Kallithea;736965.780693445;4204855.66529547
+22;MOS;Moschato;735436.157906854;4204216.24036804
+23;NFA;Faliro, close to a terminal of Athens Tram, a rolling stock depot;734200.554920684;4203062.60705169
+24;PEI;Piraeus, next to the port, line 1 southernmost terminus;732716.001524977;4202911.04262139
+25;AAN;Agios Antonios;736659.994331476;4210667.36041189
+26;SEP;Sepolia;738254.65038135;4209584.10173884
+27;LAR;Larissis, Athens central railway station (OSE, Proastiakos);738955.384625581;4208419.93757711
+28;MET;Metaxourgio, north-east of Omonia Square;738972.752088242;4207730.09936746
+29;PAN;Panepistimio, near the University of Athens;740040.001687277;4207153.5669917
+30;SYN;Syntagma, Syntagma Square, line 2/3 interchange;740297.152957913;4206589.07059003
+31;AKR;Akropoli, stop for the Acropolis;739768.419027811;4205861.64305794
+32;FIX;Syngrou-Fix Metro, near Andreas Syngrou Avenue;739534.815098296;4205386.15831182
+33;NKO;Neos Kosmos;739722.436346882;4204634.6635074
+34;AIO;Aghios Ioannis, next to Vouliagmenis Avenue;740253.057766454;4204528.82711997
+35;DAF;Daphni, in the heart of Daphni;740508.629512157;4203715.58201206
+36;ADM;Aghios Dimitrios, near Agios Dimitrios, Ilioupoli and Vouliagmenis Avenue;740838.320173653;4202677.92358962
+37;EGA;Egaleo;735527.755872912;4208275.83742227
+38;ELA;Eleonas;736529.319052137;4207884.91649017
+39;KER;Kerameikos;738159.94422876;4206905.39146231
+40;EVA;Evangelismos, close to Hilton Athens and the National Gallery (Athens);741300.579070354;4206735.26958144
+41;NMO;Megaro Mousikis, next to the Athens Concert Hall (music hall);741795.832056211;4207093.25681364
+42;AMP;Ambelokipi, near Ambelokipi;742132.009796995;4207990.63502578
+43;PAN;Panormou;742673.888481659;4208660.31765987
+44;KAT;Katehaki;743785.443711067;4208691.42204039
+45;EAM;Ethniki Amyna;744604.847096686;4209472.06830972
+46;HAL;Holargos;745783.318597056;4209320.54045752
+47;DPL;Doukissis Plakentias, passenger connection with the suburban railway;748720.42264439;4212260.96649225
+48;PAL;Pallini, station shared with the suburban railway;751969.915966332;4210296.48509526
+49;PAIK;Kantza, station shared with the suburban railway;752059.068780838;4207857.66375168
+50;KOR;Koropi, station shared with the suburban railway;752666.230709626;4198587.84062883
+51;AER;Athens International Airport, station shared with the suburban railway;758804.812746901;4202909.38916172

@@ -1,0 +1,134 @@
+model "tm.mos"
+	uses "mmxprs"
+
+	parameters
+	DATAFILE='../../src/vehicle-scheduling/canal-model/data_tm'
+	default_vehicle_schedules_file="vehicle-scheduling/Transfers.vs"
+	verbose=false
+	end-parameters
+
+	include '../../src/vehicle-scheduling/canal-model/print_status.mos'
+
+	! Declare the variables:
+	declarations
+	NumberOfTrips: integer
+	end-declarations
+
+	! Import the NumberOfTrips
+	initializations from DATAFILE
+		NumberOfTrips
+	end-initializations
+
+	! Declare the variables:
+	declarations
+	LinIndizes=1..NumberOfTrips
+	Indizes=1..NumberOfTrips+1
+	! Compatibility-Matrix (A(i,j) = 1 <=> i \bar{\alpha} j; 0 else)
+	A : array(LinIndizes, LinIndizes) of real
+	! costs of program:
+	cv : real ! costs of a single vehicle
+	s : array(LinIndizes) of real ! penalty costs for not serving a trip
+	U: array(LinIndizes, LinIndizes) of real ! pure transfer costs
+	C: array(Indizes, Indizes) of real ! overall costs:
+					     ! C(i,j) = U(i,j)                   if i \neq j, i, j \in \{1, \ldots, NumberOfTrips\}
+					     ! C(i,j) = +\infty (here: +1000000) if i \neq j, i, j \in \{1, \ldots, NumberOfTrips\}
+					     ! C(i,j) = s_i                      if i = j \in \{1, \ldots, NumberOfTrips\}
+					     ! C(i,j) = cv/2                     if i = NumberOfTrips+1 oder j = NumberOfTrips+1
+					     ! C(i,j) = 0                        sonst
+	! Decision variables: 
+	x: array(Indizes, Indizes) of mpvar
+	end-declarations
+
+	! read the rest of the data
+	initializations from DATAFILE
+		A
+		cv
+		s
+		U
+	end-initializations
+
+	! Generate the Cost-Matrix
+	forall (i in Indizes, j in Indizes) do
+		if (i <> j and i<=NumberOfTrips and j<=NumberOfTrips and A(i,j) = 0) then ! It holds i \alpha j
+			C(i,j) := U(i,j);
+		end-if
+		if (i <> j and i<=NumberOfTrips and j<=NumberOfTrips and A(i,j) = 1) then ! It holds i \bar{\alpha} j
+			C(i,j) := +10000000; ! instead of +\infty, which should be the right value
+		end-if
+		if (i = j and i<=NumberOfTrips and j<=NumberOfTrips) then
+			C(i,j) := s(i);
+		end-if
+		if (i <> j and i = NumberOfTrips+1) or 
+		   (i <> j and j = NumberOfTrips+1) then
+			C(i,j) := cv / 2; ! If you choose U(i,j) + cv / 2 for this place, you will get the same value of the objective function as with the model am.
+		end-if
+		if (i = j and i = NumberOfTrips+1) then
+			C(i,j) := 0;
+		end-if
+	end-do
+
+	! Objective Function (describes the costs, which arise from the execution of the transfers), which should be minimized:
+	costs:= sum(i in Indizes, j in Indizes) C(i,j) * x(i,j);
+								! costs for the transfer from or to the depot are not considered -> there could be a worse value of the objective function by considering it.
+
+	! Define the constraints:
+	forall (i in Indizes | i <= NumberOfTrips) do
+		sum(j in Indizes) x(i,j) = 1;
+	end-do
+
+	forall (j in Indizes | j <= NumberOfTrips) do
+		sum(i in Indizes) x(i,j) = 1;
+	end-do
+
+	forall (i in LinIndizes, j in LinIndizes) do
+		if(A(i,j) > 0) then
+			x(i,j) = 0;
+		end-if
+	end-do
+
+	sum(i in Indizes) x(i, (NumberOfTrips + 1)) = NumberOfTrips; ! NumberOfTrips is in this places also the number of available vehicles
+	sum(j in Indizes) x((NumberOfTrips + 1), j) = NumberOfTrips; ! NumberOfTrips is in this places also the number of available vehicles
+
+	forall(i in Indizes, j in Indizes) do
+		x(i,j) is_integer;
+		x(i,j) >= 0;
+	end-do
+	
+	!Minimization of the costs:
+	minimize(costs);
+
+	! Problem solved?
+!	print_status
+	
+	! Print the Cost-Matrix:
+!	forall(i in Indizes, j in Indizes) writeln(" C(", i, ",", j, ") = ", C(i,j))
+
+	! Print the Cost-Matrix:
+!	forall(i in Indizes, j in Indizes | i = j) writeln(" C(", i, ",", j, ") = ", C(i,j))
+
+	! Print the transfer costs:
+!	forall(i in LinIndizes, j in LinIndizes) writeln(" U(", i, ",", j, ") = ", U(i,j))
+
+	! Print the Results:
+!	forall(i in Indizes, j in Indizes) writeln(" x(", i, ",", j, ") = ", getsol(x(i,j)))
+!	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
+
+	! Final output:
+	fopen(default_vehicle_schedules_file, F_OUTPUT)
+	writeln("# Used model : TM (Transportation Model)")
+	writeln("# Value of objective function (costs of the vehicle scheduling): ", getobjval / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+	!writeln("# Value of objective function (costs of the vehicle scheduling): ", getobjval)
+	write("# ")
+	print_status
+	writeln("# transfers: first-trip (id) ; second-trip (id) ; costs of the transfer -------- id = ", (NumberOfTrips + 1), " stands for the depot")
+	writeln("# remark: costs for the transfer from and to the depot are half the costs of one single vehicle")
+	forall(i in Indizes) do
+		forall(j in Indizes | getsol(x(i,j)) = 1) do
+			if (i <> j) then writeln(i, " ; ", j, " ; ", C(i,j) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+			elif (i=j and i<=NumberOfTrips) then writeln(i, " ; ", j, " ; ", s(i) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
+			end-if
+		end-do
+	end-do
+	fclose(F_OUTPUT)	
+
+end-model
