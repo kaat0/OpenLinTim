@@ -34,7 +34,7 @@ public class CsvWriter {
 	private static DecimalFormat decimalFormat = provideDecimalFormat();
 
 	private static DecimalFormat provideDecimalFormat() {
-	    DecimalFormat result = new DecimalFormat(".##");
+	    DecimalFormat result = new DecimalFormat("0.##");
 	    result.setRoundingMode(RoundingMode.HALF_UP);
 	    return result;
     }

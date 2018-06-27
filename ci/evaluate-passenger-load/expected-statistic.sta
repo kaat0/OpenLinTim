@@ -10,11 +10,11 @@ ean_prop_activities_od_change; 589
 ean_prop_activities_od_drive; 656
 ean_prop_activities_od_wait; 549
 ean_prop_activities_wait; 592
-ean_prop_change_od_max; 1220.0
-ean_prop_change_od_min; 172.38095238095238
+ean_prop_change_od_max; 1220
+ean_prop_change_od_min; 172.38
 ean_prop_events; 1388
 ean_prop_events_arrival; 694
 ean_prop_events_departure; 694
 ean_prop_headways_dep; true
 ean_prop_headways_interstation; false
-ean_time_average; 36.41232944009028
+ean_time_average; 36.41

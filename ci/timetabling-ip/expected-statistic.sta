@@ -1,6 +1,6 @@
 tim_feasible; true
 tim_obj_ptt1; 19154
 tim_obj_slack_average; 22
-tim_perceived_time_average; 9.543860
-tim_pesp_gap; 0.0
-tim_time_average; 6.370709
+tim_perceived_time_average; 9.54
+tim_pesp_gap; 0
+tim_time_average; 6.37

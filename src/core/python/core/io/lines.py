@@ -108,7 +108,7 @@ class LineReader:
             raise DataIndexNotFoundException("Line", line_id)
         line.setLength(length)
         line.setCost(cost)
-        self.read_lines.append(line)
+        self.read_lines.add(line)
 
     @staticmethod
     def read(ptn: Graph[Stop, Link], read_lines: bool = True, read_costs: bool = True, read_frequencies: bool = True,

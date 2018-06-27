@@ -23,9 +23,15 @@ import org.junit.runners.Suite;
 public class TestRunner {
     public static void main(String[] args) {
         Result result = JUnitCore.runClasses(TestRunner.class);
+        if (result.getFailures().size() > 0) {
+            System.out.println("Failures:");
+        }
         for (Failure failure : result.getFailures()) {
             System.out.println(failure);
         }
         System.out.println("Successfull: " + result.wasSuccessful() + ", ran " + result.getRunCount() + " tests.");
+        if (!result.wasSuccessful()) {
+            System.exit(1);
+        }
     }
 }
