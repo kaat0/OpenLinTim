@@ -1,0 +1,10 @@
+tim_average_traveling_time; 18385
+tim_average_traveling_time_no_rerouting; 20680
+tim_feasible; true
+tim_obj_ptt1; 18385
+tim_obj_slack_average; 22
+tim_perceived_time_average; 9.93
+tim_pesp_gap; 0
+tim_time_average; 6.87
+tim_weighted_slack_time; 171
+tim_weighted_slack_time_no_rerouting; 2476
