@@ -15,6 +15,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Collection;
+
 /**
  */
 public class DijkstraTest {
@@ -127,5 +129,59 @@ public class DijkstraTest {
         Assert.assertEquals(1, path.getEdges().size());
         path = dijkstra.getPath(stop3);
         Assert.assertEquals(1, path.getEdges().size());
+    }
+
+    @Test
+    public void canComputeShortestPathWithMultipleShortestSubpaths() {
+        Graph<Stop, Link> graph = new ArrayListGraph<>();
+        Stop stop1 = new Stop(1, "1", "1", 1, 1);
+        Stop stop2 = new Stop(2, "2", "2", 2, 2);
+        Stop stop3 = new Stop(3, "3", "3", 3, 3);
+        Stop stop4 = new Stop(4, "4", "4", 4, 4);
+        graph.addNode(stop1);
+        graph.addNode(stop2);
+        graph.addNode(stop3);
+        graph.addNode(stop4);
+        Link link1 = new Link(1, stop1, stop2, 10, 10, 10, true);
+        Link link2 = new Link(1, stop1, stop3, 10, 10, 10, true);
+        Link link3 = new Link(1, stop2, stop4, 10, 10, 10, true);
+        Link link4 = new Link(1, stop3, stop4, 10, 10, 10, true);
+        graph.addEdge(link1);
+        graph.addEdge(link2);
+        graph.addEdge(link3);
+        graph.addEdge(link4);
+        Dijkstra<Stop, Link, Graph<Stop, Link>> dijkstra = new Dijkstra<>(graph, stop1, Link::getLength);
+        dijkstra.computeShortestPaths();
+        Path<Stop, Link> path = dijkstra.getPath(stop4);
+        Assert.assertEquals(2, path.getEdges().size());
+    }
+
+    @Test
+    public void canComputeMultipleShortestPaths() {
+        Graph<Stop, Link> graph = new ArrayListGraph<>();
+        Stop stop1 = new Stop(1, "1", "1", 1, 1);
+        Stop stop2 = new Stop(2, "2", "2", 2, 2);
+        Stop stop3 = new Stop(3, "3", "3", 3, 3);
+        Stop stop4 = new Stop(4, "4", "4", 4, 4);
+        graph.addNode(stop1);
+        graph.addNode(stop2);
+        graph.addNode(stop3);
+        graph.addNode(stop4);
+        Link link1 = new Link(1, stop1, stop2, 10, 10, 10, true);
+        Link link2 = new Link(1, stop1, stop3, 10, 10, 10, true);
+        Link link3 = new Link(1, stop2, stop4, 10, 10, 10, true);
+        Link link4 = new Link(1, stop3, stop4, 10, 10, 10, true);
+        graph.addEdge(link1);
+        graph.addEdge(link2);
+        graph.addEdge(link3);
+        graph.addEdge(link4);
+        Dijkstra<Stop, Link, Graph<Stop, Link>> dijkstra = new Dijkstra<>(graph, stop1, Link::getLength);
+        dijkstra.computeShortestPaths();
+        Collection<Path<Stop, Link>> paths = dijkstra.getPaths(stop4);
+        Assert.assertEquals(2, paths.size());
+        for (Path<Stop, Link> path: paths) {
+            Assert.assertEquals(2, path.getEdges().size());
+        }
+        Assert.assertEquals(20, dijkstra.getDistance(stop4), DELTA);
     }
 }

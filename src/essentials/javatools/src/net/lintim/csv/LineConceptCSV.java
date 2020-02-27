@@ -134,6 +134,7 @@ public class LineConceptCSV {
 
         PublicTransportationNetwork ptn = lc.getPublicTransportationNetwork();
 
+        lcFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(lcFile);
 
         fw.write("# line_index; link_order; link_index; frequency\n");

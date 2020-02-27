@@ -4,7 +4,7 @@ PROGRAMPATH=`dirname $0`
 
 source ${PROGRAMPATH}/../../base.sh
 
-load_model=`${CONFIGCMD} -s load_generator_model -u`
+load_model=`"${CONFIGCMD[@]}" -s load_generator_model -u`
 
 if [[ ${load_model} == LOAD_FROM_PTN ]]; then
     ant -q -f ${PROGRAMPATH}/build.xml build

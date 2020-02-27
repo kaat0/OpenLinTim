@@ -61,6 +61,8 @@ class PeriodicEANReader:
             result = EventType.ARRIVAL
         elif input_type.lower() == "departure" or input_type.lower() == "\"departure\"":
             result = EventType.DEPARTURE
+        elif input_type.lower() == "fix" or input_type.lower() == "\"fix\"":
+            result = EventType.FIX
         else:
             raise DataIllegalEventTypeException(eventId, input_type)
         return result

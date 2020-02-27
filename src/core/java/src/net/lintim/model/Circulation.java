@@ -1,9 +1,8 @@
 package net.lintim.model;
 
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -11,7 +10,7 @@ import java.util.stream.Collectors;
  * documentation and the documentation of the canal vs model.
  */
 public class Circulation implements Iterable<VehicleTour> {
-	private static Logger logger = Logger.getLogger("net.lintim.model.Circulation");
+	private static Logger logger = new Logger(Circulation.class);
 	private int circulationId;
 	private HashMap<Integer, VehicleTour> vehicleTours;
 
@@ -47,7 +46,7 @@ public class Circulation implements Iterable<VehicleTour> {
      */
 	public void addVehicle(VehicleTour vehicleTour){
 		if(vehicleTours.containsKey(vehicleTour.getVehicleId())){
-			logger.log(LogLevel.WARN, "Replacing existing vehicle tour in circulation!");
+			logger.warn("Replacing existing vehicle tour in circulation!");
 		}
 		vehicleTours.put(vehicleTour.getVehicleId(), vehicleTour);
 	}

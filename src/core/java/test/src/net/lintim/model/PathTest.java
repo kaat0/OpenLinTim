@@ -3,14 +3,11 @@ package net.lintim.model;
 import net.lintim.model.impl.TestEdge;
 import net.lintim.model.impl.TestNode;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  */
@@ -246,7 +243,6 @@ public abstract class PathTest {
         assertEquals(3, undirectedPath.getNodes().size());
     }
 
-    @Ignore("Not ready yet, wait for implementation of #248")
     @Test
     public void canResetUnfittingPath() {
         TestNode node1 = new TestNode(1);

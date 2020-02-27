@@ -56,18 +56,18 @@ class ListPath(Path[N, E]):
         if len(self.edge_list) == 0 and len(self.node_list) == 1:
             self.node_list.clear()
 
-    def remove(self, edge: List[E]) -> bool:
+    def remove(self, edges: List[E]) -> bool:
         # Figure out, whether we need to delete the edges from the beginning or from the start, i.e., in which way to
         # iterate the list
-        list_to_delete = list(edge)
+        list_to_delete = list(edges)
         if list_to_delete[0] == self.edge_list[0] or list_to_delete[0] == self.edge_list[-1]:
             pass
         elif list_to_delete[-1] == self.edge_list[0] or list_to_delete[-1] == self.edge_list[-1]:
             list_to_delete.reverse()
         else:
             raise NotImplementedError("Removing of interior edge sequences from a path is not yet implemented")
-        for edge in list_to_delete:
-            self.removeEdge(edge)
+        for edges in list_to_delete:
+            self.removeEdge(edges)
         return True
 
     def isDirected(self) -> bool:
@@ -117,6 +117,7 @@ class ListPath(Path[N, E]):
             succeeded = succeeded and self.addLastEdge(edge)
             if not succeeded:
                 failed_element = edge
+                break
         if not succeeded:
             self.reset_path(edges, failed_element)
         return succeeded
@@ -173,6 +174,7 @@ class ListPath(Path[N, E]):
             succeeded = succeeded and self.addFirstEdge(edge)
             if not succeeded:
                 failed_element = edge
+                break
         if not succeeded:
             self.reset_path(insert_list, failed_element)
         return succeeded
@@ -186,7 +188,6 @@ class ListPath(Path[N, E]):
         target_index = insert_list.index(failed_element)
         list_to_remove = insert_list[:target_index]
         list_to_remove.reverse()
-        for edge in list_to_remove:
-            self.removeEdge(edge)
+        self.remove(list_to_remove)
 
 

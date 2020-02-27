@@ -38,14 +38,15 @@ public class CostSolverAgnostic extends LinePlanningCostSolver{
 
     @Override
     public boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, int timeLimit, Level logLevel) {
-        Model costModel = new Model();
+        Solver solver = Solver.createSolver(solverType);
+
+        Model model = solver.createModel();
 
         // Add variables
         logger.log(LogLevel.DEBUG, "Add variables");
         HashMap<Integer, Variable> frequencies = new HashMap<>();
         for (Line line : linePool.getLines()) {
-            Variable frequency = costModel.addVariable("f_" + line.getId(), Variable.VariableType.INTEGER, 0,
-                Double.POSITIVE_INFINITY, line.getCost());
+            Variable frequency = model.addVariable(0, Double.POSITIVE_INFINITY, Variable.VariableType.INTEGER, line.getCost(), "f_" + line.getId());
             frequencies.put(line.getId(), frequency);
         }
 
@@ -53,53 +54,52 @@ public class CostSolverAgnostic extends LinePlanningCostSolver{
         logger.log(LogLevel.DEBUG, "Add frequency constraints");
         LinearExpression sumFreqPerLine;
         for (Link link : ptn.getEdges()) {
-            sumFreqPerLine = new LinearExpression();
+            sumFreqPerLine = model.createExpression();
             for (Line line : linePool.getLines()) {
                 if (line.getLinePath().getEdges().contains(link)) {
                     sumFreqPerLine.addTerm(1, frequencies.get(line.getId()));
                 }
             }
-            costModel.addConstraint(sumFreqPerLine, Constraint.ConstraintSense.GREATER_EQUAL,
+            model.addConstraint(sumFreqPerLine, Constraint.ConstraintSense.GREATER_EQUAL,
                 link.getLowerFrequencyBound(), "lowerBound_" + link.getId());
-            costModel.addConstraint(sumFreqPerLine, Constraint.ConstraintSense.LESS_EQUAL,
+            model.addConstraint(sumFreqPerLine, Constraint.ConstraintSense.LESS_EQUAL,
                 link.getUpperFrequencyBound(), "upperBound" + link.getId());
         }
 
         // Transform model
         logger.log(LogLevel.DEBUG, "Transforming model to solver " + solverType.toString());
-        Solver solver = Solver.getSolver(costModel, solverType);
-        solver.setIntParam(Solver.IntParam.TIMELIMIT, timeLimit);
-        solver.setIntParam(Solver.IntParam.OUTPUT_LEVEL, logLevel.intValue());
-        solver.transformModel();
+        model.setIntParam(Model.IntParam.TIMELIMIT, timeLimit);
+        model.setIntParam(Model.IntParam.OUTPUT_LEVEL, logLevel.intValue());
+        model.setSense(Model.OptimizationSense.MINIMIZE);
         if (logLevel.equals(LogLevel.DEBUG)) {
             logger.log(LogLevel.DEBUG, "Writing lp file");
-            solver.writeSolverSpecificLpFile("costModel");
+            model.write("costModel.lp");
             logger.log(LogLevel.DEBUG, "Done");
         }
 
         logger.log(LogLevel.DEBUG, "Start optimization");
-        solver.optimize();
+        model.solve();
         logger.log(LogLevel.DEBUG, "End optimization");
 
         // Read back solution
-        int status = solver.getIntAttribute(Solver.IntAttribute.STATUS);
-        if (status == Solver.OPTIMAL || status == Solver.FEASIBLE) {
-            if (status == Solver.OPTIMAL) {
+        Model.Status status = model.getStatus();
+        if (status == Model.Status.OPTIMAL || status == Model.Status.FEASIBLE) {
+            if (status == Model.Status.OPTIMAL) {
                 logger.log(LogLevel.DEBUG, "Optimal solution found");
             }
             else {
                 logger.log(LogLevel.DEBUG, "Feasible solution found");
             }
             for (Line line : linePool.getLines()) {
-                line.setFrequency((int) Math.round(solver.getValue(frequencies.get(line.getId()))));
+                line.setFrequency((int) Math.round(model.getValue(frequencies.get(line.getId()))));
             }
             return true;
         }
         logger.log(LogLevel.DEBUG, "No optimal solution found");
-        if (status == Solver.INFEASIBLE) {
+        if (status == Model.Status.INFEASIBLE) {
             logger.log(LogLevel.DEBUG, "The problem is infeasible!");
             if (logLevel == LogLevel.DEBUG) {
-                solver.computeIIS("cost-model");
+                model.computeIIS("cost-model.ilp");
             }
         }
         return false;

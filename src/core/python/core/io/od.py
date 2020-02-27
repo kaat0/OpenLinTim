@@ -1,7 +1,5 @@
 from core.exceptions.input_exceptions import (InputFormatException,
                                               InputTypeInconsistencyException)
-# TODO: Implement this class
-# from core.model.impl.fullOD import FullOD
 from core.model.graph import Graph
 from core.model.impl.fullOD import FullOD
 from core.model.od import OD, ODPair

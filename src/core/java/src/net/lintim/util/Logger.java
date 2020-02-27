@@ -16,6 +16,14 @@ public class Logger {
     }
 
     /**
+     * Create a new logger for the given class
+     * @param name the name of the logging class
+     */
+    public Logger(Class name) {
+        this(name.getCanonicalName());
+    }
+
+    /**
      * Log the given message for debug purposes
      * @param message the message to log
      */
@@ -45,5 +53,13 @@ public class Logger {
      */
     public void error(String message) {
         logger.log(LogLevel.ERROR, message);
+    }
+
+    /**
+     * Log the given message for fatal purposes
+     * @param message the message to log
+     */
+    public void fatal(String message) {
+        logger.log(LogLevel.FATAL, message);
     }
 }

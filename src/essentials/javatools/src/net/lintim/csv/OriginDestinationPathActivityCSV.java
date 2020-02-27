@@ -129,6 +129,7 @@ public class OriginDestinationPathActivityCSV {
             OriginDestinationMatrix od, File odPathsFile) throws IOException,
             DataInconsistentException {
 
+        odPathsFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(odPathsFile);
 
         Boolean odGiven = (od != null);

@@ -37,19 +37,25 @@ public class IOTest {
             BufferedReader reader2 = new BufferedReader(new FileReader(found.toFile()));
             String line1 = reader1.readLine();
             String line2 = reader2.readLine();
-            while (line1 != null || line2 != null) {
-                // First check if both lines are present
-                if (line1 == null || line2 == null) {
-                    return false;
+            try {
+                while (line1 != null || line2 != null) {
+                    // First check if both lines are present
+                    if (line1 == null || line2 == null) {
+                        return false;
+                    }
+                    if (!line1.equalsIgnoreCase(line2)) {
+                        System.out.println("Found inequal lines for " + expected + " and " + found + ":");
+                        System.out.println("Expected: " + line1);
+                        System.out.println("Found:    " + line2);
+                        return false;
+                    }
+                    line1 = reader1.readLine();
+                    line2 = reader2.readLine();
                 }
-                if (!line1.equalsIgnoreCase(line2)) {
-                    System.out.println("Found inequal lines for " + expected + " and " + found + ":");
-                    System.out.println("Expected: " + line1);
-                    System.out.println("Found:    " + line2);
-                    return false;
-                }
-                line1 = reader1.readLine();
-                line2 = reader2.readLine();
+            }
+            finally {
+                reader1.close();
+                reader2.close();
             }
         } catch (IOException e) {
             // If there was some IO exception the files are not equal!

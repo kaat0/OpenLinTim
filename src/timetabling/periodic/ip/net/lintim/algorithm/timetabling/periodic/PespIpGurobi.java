@@ -4,12 +4,12 @@ import gurobi.*;
 import net.lintim.exception.SolverGurobiException;
 import net.lintim.model.*;
 import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 import net.lintim.util.Statistic;
 
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 /**
  * Pesp solver implementation using Gurobi.
@@ -19,10 +19,10 @@ public class PespIpGurobi extends PespSolver {
 	public boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean,
 	                                         PeriodicTimetable<PeriodicEvent> timetable, double changePenalty, int
 	                                         timeLimit, double mipGap) {
-		Logger logger = Logger.getLogger("net.lintim.algorithm.timetabling.periodic.PespIpGurobi");
+		Logger logger = new Logger(PespIpGurobi.class.getCanonicalName());
 		Level logLevel = LogManager.getLogManager().getLogger("").getLevel();
 		try {
-			logger.log(LogLevel.DEBUG, "Setting up the solver");
+			logger.debug("Setting up the solver");
 			GRBEnv env = new GRBEnv();
 			GRBModel model = new GRBModel(env);
 			model.set(GRB.IntAttr.ModelSense, GRB.MINIMIZE);
@@ -32,21 +32,21 @@ public class PespIpGurobi extends PespSolver {
 			} else {
 				model.set(GRB.IntParam.OutputFlag, 0);
 			}
-			if(timeLimit > 0){
+			if(timeLimit != 0){
 				model.set(GRB.DoubleParam.TimeLimit, timeLimit);
 			}
 			if(mipGap != 0){
 				model.set(GRB.DoubleParam.MIPGap, mipGap);
 			}
 
-			logger.log(LogLevel.DEBUG, "Add event variables");
+			logger.debug("Add event variables");
 			HashMap<Integer, GRBVar> eventIdToVarMap = new HashMap<>();
 			for(PeriodicEvent event : ean.getNodes()){
 				GRBVar eventVar = model.addVar(0, timetable.getPeriod()-1, 0, GRB.INTEGER, "pi_" + event.getId());
 				eventIdToVarMap.put(event.getId(), eventVar);
 
 			}
-			logger.log(LogLevel.DEBUG, "Add variables and constraints for the activities");
+			logger.debug("Add variables and constraints for the activities");
 			GRBLinExpr objective = new GRBLinExpr();
 			GRBLinExpr activityTerm;
 			for(PeriodicActivity activity : ean.getEdges()){
@@ -73,19 +73,19 @@ public class PespIpGurobi extends PespSolver {
 			model.setObjective(objective);
 
 			if(logLevel.equals(LogLevel.DEBUG)){
-				logger.log(LogLevel.DEBUG, "Writing lp file");
+				logger.debug("Writing lp file");
 				model.write("PeriodicTimetablingPespIp.lp");
 			}
-			logger.log(LogLevel.DEBUG, "Start optimization");
+			logger.debug("Start optimization");
 			model.optimize();
-			logger.log(LogLevel.DEBUG, "End optimization");
+			logger.debug("End optimization");
 
 			int status = model.get(GRB.IntAttr.Status);
 			if(status==GRB.TIME_LIMIT || (status==GRB.OPTIMAL && model.get(GRB.DoubleAttr.MIPGap) > 0.0001)) {
-				logger.log(LogLevel.DEBUG, "Feasible solution found");
+				logger.debug("Feasible solution found");
 			}
 			else if(status==GRB.OPTIMAL){
-				logger.log(LogLevel.DEBUG, "Optimal solution found");
+				logger.debug("Optimal solution found");
 			}
 			else {
 				Statistic.putStatic("tim_pesp_gap", -1);

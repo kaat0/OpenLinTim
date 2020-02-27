@@ -3,11 +3,10 @@ package net.lintim.io;
 import net.lintim.exception.*;
 import net.lintim.model.*;
 import net.lintim.util.Config;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Class to read files of a line pool or line concept.
@@ -15,7 +14,7 @@ import java.util.logging.Logger;
  * Use {@link Builder#build()} on a {@link Builder} object to create the reader and use {@link #read()} afterwards.
  */
 public class LineReader {
-    private static final Logger logger = Logger.getLogger(LineReader.class.getCanonicalName());
+    private static final Logger logger = new Logger(LineReader.class);
 
     private final boolean readLines;
     private final boolean readLineCosts;
@@ -29,7 +28,7 @@ public class LineReader {
 
     private LineReader(Builder builder) {
         if (!builder.readLines && builder.readFrequencies) {
-            logger.log(LogLevel.WARN, "Cannot read frequencies but no lines, will read lines as well!");
+            logger.warn("Cannot read frequencies but no lines, will read lines as well!");
             this.readLines = true;
         }
         else {

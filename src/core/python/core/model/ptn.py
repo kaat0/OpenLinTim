@@ -165,13 +165,13 @@ class Link(Edge[Stop]):
         self.lower_frequency_bound = 0
         self.upper_frequency_bound = 0
 
-    def getLeftNode(self) -> Node:
+    def getLeftNode(self) -> Stop:
         return self.left_stop
 
     def setId(self, new_id: int) -> None:
         self.link_id = id
 
-    def getRightNode(self) -> Node:
+    def getRightNode(self) -> Stop:
         return self.right_stop
 
     def getId(self) -> int:

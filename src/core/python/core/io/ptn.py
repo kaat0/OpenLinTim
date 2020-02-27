@@ -84,7 +84,7 @@ class PTNReader:
         except ValueError:
             raise InputTypeInconsistencyException(self.link_file_name, 3, line_number, "int", args[2])
         try:
-            length = float(args[3])
+            length = float(args[3]) * self.conversion_factor_length
         except ValueError:
             raise InputTypeInconsistencyException(self.link_file_name, 4, line_number, "float", args[3])
         try:

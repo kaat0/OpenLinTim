@@ -1,7 +1,21 @@
 import com.dashoptimization.*;
+import net.lintim.exception.ConfigNoFileNameGivenException;
+import net.lintim.exception.InputFileException;
+import net.lintim.io.ConfigReader;
+import net.lintim.io.StatisticReader;
+import net.lintim.io.StatisticWriter;
+import net.lintim.util.Config;
+import net.lintim.util.Logger;
+import net.lintim.util.Statistic;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.Vector;
 
 //import java.util.TreeMap;
 
@@ -10,26 +24,31 @@ import java.util.*;
  */
 public class CostDirect {
 
+	private static Logger logger = new Logger(CostDirect.class.getCanonicalName());
+
 	public static String newline = "\n";
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		// read values from Config file(s)
-
-		Config config = new Config(new File("basis/Config.cnf"));
-		String edgeFile = config.getStringValue("default_edges_file"); // "basis/Edge.giv";
-		String demandFile = config.getStringValue("default_od_file"); // "basis/OD.giv";
-		String lineFile = config.getStringValue("default_pool_file"); // "basis/Pool.giv";
-		String loadFile = config.getStringValue("default_loads_file"); // "basis/Load.giv";
-		String outputFile = config.getStringValue("default_lines_file"); // "line-planning/Line-Concept.lin";
-		String linecostFile = config.getStringValue("default_pool_cost_file"); // "line-planning/Pool-Cost.giv";
-		String lcHeader = config.getStringValue("lines_header");
-		boolean undirected = config.getBooleanValue("ptn_is_undirected");
-		boolean capRestricted = config.getBooleanValue("lc_mult_cap_restrict");
-		double multicritRelation = config.getDoubleValue("lc_mult_relation");
-		double tolerance = config.getDoubleValue("lc_mult_tolerance");
-		int capacity = config.getIntegerValue("gen_passengers_per_vehicle");
-		int commonFrequencyDivisor = config.getIntegerValue("lc_common_frequency_divisor");
-		String optimizationModel = config.getStringValue("lc_model");
+		if (args.length < 1) {
+			throw new ConfigNoFileNameGivenException();
+		}
+		new ConfigReader.Builder(args[0]).build().read();
+		String edgeFile = Config.getStringValueStatic("default_edges_file"); // "basis/Edge.giv";
+		String demandFile = Config.getStringValueStatic("default_od_file"); // "basis/OD.giv";
+		String lineFile = Config.getStringValueStatic("default_pool_file"); // "basis/Pool.giv";
+		String loadFile = Config.getStringValueStatic("default_loads_file"); // "basis/Load.giv";
+		String outputFile = Config.getStringValueStatic("default_lines_file"); // "line-planning/Line-Concept.lin";
+		String linecostFile = Config.getStringValueStatic("default_pool_cost_file"); // "line-planning/Pool-Cost.giv";
+		String lcHeader = Config.getStringValueStatic("lines_header");
+		boolean undirected = Config.getBooleanValueStatic("ptn_is_undirected");
+		boolean capRestricted = Config.getBooleanValueStatic("lc_mult_cap_restrict");
+		double multicritRelation = Config.getDoubleValueStatic("lc_mult_relation");
+		double tolerance = Config.getDoubleValueStatic("lc_mult_tolerance");
+		int capacity = Config.getIntegerValueStatic("gen_passengers_per_vehicle");
+		int commonFrequencyDivisor = Config.getIntegerValueStatic("lc_common_frequency_divisor");
+		String optimizationModel = Config.getStringValueStatic("lc_model");
+		int timeLimit = Config.getIntegerValueStatic("lc_timelimit");
 		// parse edges
 		// first time: count edges and find highest vertex index
 		int n_vertices = findHighestNodeIndex(edgeFile);
@@ -52,31 +71,33 @@ public class CostDirect {
 		input.readLineCosts(linecostFile);
 
 		for (int l = 0; l < input.linePool.length; l++)
-			System.out.println(input.linePool[l]);
+			logger.debug(input.linePool[l]);
 
-		System.out.println(n_vertices + " Knoten eingelesen");
-		System.out.println(x + " kuerzeste Wege bestimmt");
-		System.out.println(input.linePool.length + " moegliche Linien eingelesen");
+		logger.info(n_vertices + " Knoten eingelesen");
+		logger.info(x + " kuerzeste Wege bestimmt");
+		logger.info(input.linePool.length + " moegliche Linien eingelesen");
 
 		// now set up the problem and solve it
 		if(optimizationModel.equals("mult-cost-direct")){
 			List<Integer> possibleSystemFrequencies = determinePossibleCommonDivisors(commonFrequencyDivisor);
 			boolean optimalSolutionFound = false;
 			double bestObjective = Double.NEGATIVE_INFINITY;
-			Pair<int[], Double> solution;
+			Solution solution;
 			int[] bestSolution = null;
+			double bestMipGap = 0;
 			for(int commonFrequency : possibleSystemFrequencies) {
 				try {
 					solution = solve(input.linePool, input.lineVertices, allPaths, input.cost, input.names, input.demand,
 							input.lowerFrequency, input.upperFrequency, capacity, multicritRelation, input.linecost,
-							capRestricted, tolerance, commonFrequency);
+							capRestricted, tolerance, commonFrequency, timeLimit);
 					optimalSolutionFound = true;
-					if (bestObjective < solution.getSecondElement()) {
+					if (bestObjective < solution.getObjective()) {
 						// Found a better solution
-						System.out.println("New best objective is " + solution.getSecondElement() + ", before was " +
+						logger.debug("New best objective is " + solution.getObjective() + ", before was " +
 								bestObjective);
-						bestObjective = solution.getSecondElement();
-						bestSolution = Arrays.copyOf(solution.getFirstElement(), solution.getFirstElement().length);
+						bestObjective = solution.getObjective();
+						bestSolution = solution.getFrequencies();
+						bestMipGap = solution.getMipGap();
 					}
 				}
 				catch (IllegalStateException e) {
@@ -88,10 +109,18 @@ public class CostDirect {
 				}
 			}
 			if (!optimalSolutionFound) {
-				System.out.println("Could not find a feasible solution for the problem!");
+				logger.warn("Could not find a feasible solution for the problem!");
 				System.exit(1);
 			}
-			System.out.println("Best found solution has objective value " + bestObjective);
+			logger.info("Best found solution has objective value " + bestObjective);
+            try {
+                new StatisticReader.Builder().build().read();
+            }
+            catch (InputFileException exc){
+                logger.debug("Could not read statistic file, maybe it does not exist");
+            }
+			Statistic.putStatic("lc_mip_gap", String.format("%.2f", bestMipGap));
+			new StatisticWriter.Builder().build().write();
 			// print the solution as line concept
             PrintStream ps = new PrintStream(outputFile);
             ps.print("# " + lcHeader + newline);
@@ -111,11 +140,13 @@ public class CostDirect {
 		}
 	}
 
-	public static Pair<int[], Double> solve(String[] linePool, TreeSet<Integer>[] lineVertices, String[][][] allPaths,
-	                                        double[][] edges, int[][] names, double[][] demand, double[][] lowerFrequency,
-	                                        double[][] upperFrequency, double vehicleCapacity, double multicritRelation, double[] linecost, boolean
-			                          capRestricted, double tolerance, int commonFrequency) throws
-			InterruptedException {
+	public static Solution solve(String[] linePool, TreeSet<Integer>[] lineVertices,
+	                                                      String[][][] allPaths, double[][] edges, int[][] names,
+	                                                      double[][] demand, double[][] lowerFrequency, double[][]
+			                                              upperFrequency, double vehicleCapacity, double
+			                                              multicritRelation, double[] linecost, boolean
+			                                              capRestricted, double tolerance, int commonFrequency,
+	                                                      int timelimit) throws InterruptedException {
 
 		int n_vertices = edges.length;
 
@@ -133,9 +164,10 @@ public class CostDirect {
 		XPRBctr objective = p.newCtr("objective");
 		objective.setType(XPRB.N);
 
-		System.out.println("Weight is set to : " + multicritRelation * 100 + "% cost-model and " + (1 - multicritRelation) * 100 + "% direct-travellers.");
+		logger.info("Weight is set to : " + multicritRelation * 100 + "% cost-model and " + (1 - multicritRelation) * 100 +
+				"% direct-travellers.");
 
-		System.out.println("f-Variablen anlegen");
+		logger.debug("f-Variablen anlegen");
 		for (int l = 0; l < linePool.length; l++){
 			f[l] = p.newVar("f_" + l, XPRB.UI, 0.0, Double.POSITIVE_INFINITY);
 			XPRBvar systemFrequencyMultiplier = p.newVar("g_" + l, XPRB.UI, 0, XPRB.INFINITY);
@@ -143,7 +175,7 @@ public class CostDirect {
 					(commonFrequency)));
 		}
 
-		System.out.println("d-Variablen anlegen und Bedarfsnebenbedingungen erzeugen");
+		logger.debug("d-Variablen anlegen und Bedarfsnebenbedingungen erzeugen");
 		for (int i = 0; i < n_vertices; i++) {
 			if (Math.floor(100 * i / n_vertices) % 10 == 0)
 				System.out.print(".");
@@ -166,12 +198,12 @@ public class CostDirect {
 					}
 			}
 		}
-		System.out.print("\nLinienkosten: ");
+		logger.debug("Linienkosten: ");
 		for (int l = 0; l < linePool.length; l++) {
 			objective.addTerm(f[l], (((double) Math.round(-multicritRelation * linecost[l] * 1000000)) / 1000000)); // add
 		}
 
-		System.out.println("\nweitere Nebenbedingungen sichern");
+		logger.debug("weitere Nebenbedingungen sichern");
 		for (int i = 0; i < n_vertices; i++)
 			for (int j = i + 1; j < n_vertices; j++)
 				if (edges[i][j] != Double.POSITIVE_INFINITY) {
@@ -209,23 +241,28 @@ public class CostDirect {
 		p.getXPRSprob().setDblControl(XPRS.FEASTOL,tolerance);
 		p.getXPRSprob().setDblControl(XPRS.MIPTOL,tolerance);
 		p.getXPRSprob().setDblControl(XPRS.OPTIMALITYTOL,tolerance);
+		if (timelimit > 0) {
+			p.getXPRSprob().setIntControl(XPRS.MAXTIME, timelimit);
+		}
 		try {
 			p.exportProb(XPRB.LP, "direct.lp");
 		} catch (Exception e) {
 		}
 		p.maxim("g");
-		Thread.sleep(3000);
 		int[] f_sol = new int[linePool.length];
 		if (p.getMIPStat() == XPRB.MIP_INFEAS) {
-			System.out.println("MIP UNZULAESSIG!");
+			logger.warn("MIP UNZULAESSIG!");
 			throw new IllegalStateException("MIP unzulaessig");
 		}
+		double bestObjective = p.getXPRSprob().getDblAttrib(XPRS.MIPBESTOBJVAL);
+		double bestBound = p.getXPRSprob().getDblAttrib(XPRS.BESTBOUND);
+		double mipGap =  Math.abs((bestObjective - bestBound)/bestObjective);
 		double travellers = 0;
 		double cost = 0;
 		double[][] travellersOnEdge = new double[n_vertices][n_vertices];
 		double[][][] ctrCapacityOnEdge = new double[n_vertices][n_vertices][linePool.length];
 		for (int l = 0; l < linePool.length; l++) {
-			System.out.println("Line " + (l+1) + " with frequency " + f[l].getSol());
+			logger.debug("Line " + (l+1) + " with frequency " + f[l].getSol());
 			f_sol[l] = (int) Math.round(f[l].getSol());
 			cost += f_sol[l] * linecost[l];
 			for (int i : lineVertices[l])
@@ -242,9 +279,9 @@ public class CostDirect {
 					travellers += travellersOnEdge[i][j];
 				}
 
-		System.out.println("Optimalwert: " + p.getObjVal() + ", Travellers: " + travellers + ", Cost: " + cost);
+		logger.info("Optimalwert: " + p.getObjVal() + ", Travellers: " + travellers + ", Cost: " + cost);
 
-		return new Pair<>(f_sol, p.getObjVal());
+		return new Solution(f_sol, p.getObjVal(), mipGap);
 
 	}
 
@@ -266,11 +303,11 @@ public class CostDirect {
 		XPRBctr objective = p.newCtr("objective");
 		objective.setType(XPRB.N);
 
-		System.out.println("f-Variablen anlegen");
+		logger.debug("f-Variablen anlegen");
 		for (int l = 0; l < linePool.length; l++)
 			f[l] = p.newVar("f_" + l, XPRB.UI, 0.0, Double.POSITIVE_INFINITY);
 
-		System.out.println("d-Variablen anlegen und Bedarfsnebenbedingungen erzeugen");
+		logger.debug("d-Variablen anlegen und Bedarfsnebenbedingungen erzeugen");
 		for (int i = 0; i < n_vertices; i++) {
 			if (Math.floor(100 * i / n_vertices) % 10 == 0)
 				System.out.print(".");
@@ -294,7 +331,7 @@ public class CostDirect {
 																		// function
 		}
 
-		System.out.println("\nweitere Nebenbedingungen sichern");
+		logger.debug("weitere Nebenbedingungen sichern");
 		for (int i = 0; i < n_vertices; i++)
 			for (int j = i + 1; j < n_vertices; j++) {
 				if (edges[i][j] != Double.POSITIVE_INFINITY) {
@@ -349,11 +386,11 @@ public class CostDirect {
 		double cost = 0;
 		int[] f_sol = new int[linePool.length];
 		if (p.getMIPStat() == XPRB.MIP_INFEAS) {
-			System.out.println("MIP UNZULAESSIG!");
+			logger.warn("MIP UNZULAESSIG!");
 			System.exit(1);
 		}
 		for (int l = 0; l < linePool.length; l++) {
-			System.out.println("Linie " + (l + 1) + ": " + f[l].getSol());
+			logger.debug("Linie " + (l + 1) + ": " + f[l].getSol());
 			f_sol[l] = (int) Math.round(f[l].getSol());
 			cost += f_sol[l] * linecost[l];
 		}
@@ -363,7 +400,7 @@ public class CostDirect {
 					travellers += d[i][j].getSol();
 				}
 
-		System.out.println("Optimalwert: " + p.getObjVal() + ", Direct Travelers: " + travellers + " Costs: " + cost);
+		logger.info("Optimalwert: " + p.getObjVal() + ", Direct Travelers: " + travellers + " Costs: " + cost);
 
 		return f_sol;
 
@@ -626,6 +663,30 @@ public class CostDirect {
 			possibleSystemFrequencies.add(configCommonDivisor);
 		}
 		return possibleSystemFrequencies;
+	}
+
+	private static class Solution {
+		private final int[] frequencies;
+		private final double objective;
+		private final double mipGap;
+
+		public Solution(int[] frequencies, double objective, double mipGap) {
+			this.frequencies = frequencies;
+			this.objective = objective;
+			this.mipGap = mipGap;
+		}
+
+		public int[] getFrequencies() {
+			return frequencies;
+		}
+
+		public double getObjective() {
+			return objective;
+		}
+
+		public double getMipGap() {
+			return mipGap;
+		}
 	}
 
 }

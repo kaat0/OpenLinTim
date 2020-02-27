@@ -1,5 +1,6 @@
 package net.lintim.util.tools;
 
+import net.lintim.exception.LinTimException;
 import net.lintim.model.ActivityType;
 import net.lintim.model.Graph;
 import net.lintim.model.PeriodicActivity;
@@ -25,9 +26,11 @@ public class PeriodicEanHelper {
 		return ean.getNodes().stream()
 				.filter(periodicEvent -> periodicEvent.getLineId() == eventOfLine.getLineId())
 				.filter(periodicEvent -> periodicEvent.getDirection() == eventOfLine.getDirection())
-				.filter(periodicEvent -> ean.getIncomingEdges(periodicEvent).stream().filter(periodicActivity ->
+				.filter(periodicEvent -> periodicEvent.getLineFrequencyRepetition() == eventOfLine.getLineFrequencyRepetition())
+				.filter(periodicEvent -> ean.getIncomingEdges(periodicEvent).stream().noneMatch(periodicActivity ->
 						periodicActivity.getType() == ActivityType.DRIVE || periodicActivity.getType() ==
-								ActivityType.WAIT).count() == 0)
-				.findAny().orElseGet(null);
+								ActivityType.WAIT))
+				.findAny().orElseThrow(() -> new LinTimException("Could not find the start of the line for event " +
+						eventOfLine));
 	}
 }

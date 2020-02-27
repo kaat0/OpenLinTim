@@ -92,6 +92,7 @@ public class ConfigurationCSV {
             String headerAnnotation)
     throws IOException, DataInconsistentException, FileNotFoundException {
 
+        configFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(configFile);
 
         BufferedReader annotationReader = new BufferedReader(

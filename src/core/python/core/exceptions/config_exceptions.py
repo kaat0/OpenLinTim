@@ -1,6 +1,16 @@
 from core.exceptions.exceptions import LinTimException
 
 
+class ConfigNoFileNameGivenException(LinTimException):
+    """Exception to throw if no config file name to read is given to a program but one is needed"""
+
+    def __init__(self):
+        """
+        Initialise a new exception
+        """
+        super().__init__("Error C4: No config file name given.")
+
+
 class ConfigKeyNotFoundException(LinTimException):
     """Exception to throw if a config key cannot be found"""
 

@@ -62,8 +62,7 @@ class DemandReader:
                                                   line_number, "int", args[5])
         demandPoint = DemandPoint(stopId, shortName, longName, xCoordinate,
                                   yCoordinate, demandAtDemandPoint)
-        # TODO: extend or append?
-        self.demand.extend(demandPoint)
+        self.demand.append(demandPoint)
 
     @staticmethod
     def read(demand: List[DemandPoint] = None, demand_file_name: str = "", config: Config=Config.getDefaultConfig()) -> List[DemandPoint]:

@@ -1,16 +1,15 @@
 package net.lintim.model;
 
-import net.lintim.model.impl.ArrayListGraph;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * The template for a graph structure. There are default implementations of this interface, namely
- * {@link ArrayListGraph}. More implementations may follow. Choose the appropriate implementation based on
- * your graph structure or implement your own.
+ * {@link net.lintim.model.impl.SimpleMapGraph} and {@link net.lintim.model.impl.SimpleMapGraph}. More implementations may follow.
+ * Choose the appropriate implementation based on your graph structure or implement your own.
  */
 public interface Graph<N extends Node, E extends Edge<N>> extends Iterable<N>{
 
@@ -48,7 +47,6 @@ public interface Graph<N extends Node, E extends Edge<N>> extends Iterable<N>{
      * @param <O> type of function image and value
      * @return one of the edges on which the provided function yields the provided value, or null if none exists
      */
-
     <O> E getEdge(Function<E, O> map, O value);
 
     /**
@@ -175,5 +173,18 @@ public interface Graph<N extends Node, E extends Edge<N>> extends Iterable<N>{
      */
     default Iterator<E> edgeIterator() {
         return getEdges().iterator();
+    }
+
+    /**
+     * Get edge by its nodes. The optional will be empty, when the edge does not exist. For directed edges, the nodes
+     * must be provided in the correct order.
+     * @param leftNode the left node, i.e., the start, of the edge
+     * @param rightNode the right node, i.e., the end, of the edge
+     * @return the corresponding edge, when it exists
+     */
+    default Optional<E> getEdge(N leftNode, N rightNode) {
+        return this.getOutgoingEdges(leftNode).stream()
+            .filter(a -> a.getRightNode().equals(rightNode) || (!a.isDirected()&& a.getLeftNode().equals(rightNode)))
+            .findAny();
     }
 }

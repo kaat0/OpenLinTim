@@ -45,7 +45,7 @@ public class Rollout
 	private static boolean VERBOSE;
 	private static HashMap<String, Integer> edgeHeadways;
 	private static int[] eventHeadways;
-	private static NonPeriodicEANetwork Net; 
+	private static NonPeriodicEANetwork Net;
 
 
 	// ArrayLists for the periodic network as we easily can compute the needed
@@ -86,12 +86,12 @@ public class Rollout
 		if (VERBOSE)
 			System.out.println("Rollout: writing output files...");
 		writeOutputFiles(events, activities);
-		
+
 		// call path-distribution of passengers
 		// (a little bit unlucky: as it needs a NonPeriodicEANetwork object,
 		// we have to read in the files we've just written out,
 		// and will write them out anew in the end because of new weights)
-		
+
 		if (rolloutPassengerPaths)
 		{
 			if (VERBOSE)
@@ -99,8 +99,8 @@ public class Rollout
 			rolloutPassengerPaths();
 			writeOutputFiles(Net.getEvents(), Net.getActivities());
 		}
-		
-		
+
+
 	}
 
 
@@ -189,7 +189,7 @@ public class Rollout
 			activityOutputFile = config.getStringValue("default_activities_for_nonperiodic_timetabling_file");
 		}
 		else
-		{			
+		{
 			eventOutputFile = config.getStringValue("default_events_expanded_file");
 			activityOutputFile = config.getStringValue("default_activities_expanded_file");
 		}
@@ -372,7 +372,7 @@ public class Rollout
 			// properties of this event that will be overwritten later on
 			boolean isStart = true;
 			boolean isEnd = true;
-            
+
 			int frequency = frequencies[lineID-1];
 
 			PeriodicEvent newEvent =
@@ -433,7 +433,7 @@ public class Rollout
 			String type = tokens[1].trim();
 			// remove " chars at beginning and end of the string
 			type = type.substring(1, type.length()-1);
-			
+
 			double weight = Double.parseDouble(tokens[6].trim());
 			if (   type.equals("sync")
 			    || (discardUnusedChangingActivities && weight == 0 && type.equals("change")))
@@ -467,10 +467,14 @@ public class Rollout
 				pTarget.setStartofTrip(false);
 				pSource.setEndOfTrip(false);
 			}
-
-			if (type.equals("drive"))
-				eventHeadways[sID-1] = edgeHeadways.get(pSource.getStation()+";"+pTarget.getStation());
-
+			if (type.equals("drive")) {
+			    Integer headway = edgeHeadways.get(pSource.getStation() + ";" + pTarget.getStation());
+			    if (headway == null) {
+			        throw new IllegalStateException("Cannot find headway from station " + pSource.getStation() + " to "
+                        + pTarget.getStation() + ", invalid headway state!");
+                }
+			    eventHeadways[sID - 1] = headway;
+            }
 			PeriodicActivity newActivity =
 				new PeriodicActivity(ID, pSource, pTarget, lowerBound, upperBound, weight, type);
 			pActivities.add(newActivity);
@@ -556,12 +560,12 @@ public class Rollout
 					lowerBound += period;
 				while (upperBound < 0)
 					upperBound += period;
-				
+
 				while (lowerBound >= period)
 					lowerBound -= period;
 				while (upperBound >= period)
 					upperBound -= period;
-	
+
 				for (NonPeriodicEvent source: pSource.getRolledOutEvents())
 				{
 					for (NonPeriodicEvent e: pTarget.getRolledOutEvents())
@@ -622,7 +626,7 @@ public class Rollout
 
 			// We start with the first type of events.
 			LinkedList<NonPeriodicEvent> marked = new LinkedList<NonPeriodicEvent>();
-			
+
 			for (NonPeriodicEvent e: events)
 			{
 				boolean first = true;
@@ -731,7 +735,7 @@ public class Rollout
 				if (e.getIncomingActivities().isEmpty() && e.getOutgoingActivities().isEmpty())
 					eventsToDelete.add(e);
 		}
-		
+
 		if (DEBUG)
 			System.out.println("Rollout: activities to be removed:\n" + activitiesToDelete);
 		activities.removeAll(activitiesToDelete);
@@ -820,7 +824,7 @@ public class Rollout
 
 // ------------------------------------------------
 // Path Distribution
-	
+
 	public static void rolloutPassengerPaths() throws Exception
 	{
 		// output (human-readable) timestamps for performance evaluation
@@ -847,7 +851,7 @@ public class Rollout
 		System.out.println("Calling Warshall to apply transitive closure...");
 		Warshall.applyTransitiveClosure(m);
 		System.out.println(new Date());
-		
+
 		// save (and re-use) references to events by station ID
 		Hashtable<Integer, NonPeriodicEvent[]> departuresFromOrigin =
 				new Hashtable<Integer, NonPeriodicEvent[]>();
@@ -857,7 +861,7 @@ public class Rollout
 				new Hashtable<Integer, CollapsedEvent[]>();
 		Hashtable<Integer, CollapsedEvent[]> connectionsToArrival =
 				new Hashtable<Integer, CollapsedEvent[]>();
-		
+
 
 		Config config = new Config(new File("basis/Config.cnf"));
 		int beginOfDay = config.getIntegerValue("DM_earliest_time");
@@ -896,7 +900,7 @@ public class Rollout
 		System.out.println(new Date());
 		reader.close();
 	}
-	
+
 	private static void writeOdPaths(BufferedWriter writer, BufferedWriter odWriter,
 			CollapsedEANetwork cean, NonPeriodicEANetwork Net, long[][] m,
 			int origin, int destination, double weight, int beginOfDay,
@@ -904,7 +908,7 @@ public class Rollout
 			Hashtable<Integer, NonPeriodicEvent[]> arrivalsAtDestination,
 			Hashtable<Integer, CollapsedEvent[]> connectionsFromDeparture,
 			Hashtable<Integer, CollapsedEvent[]> connectionsToArrival
-			
+
 			) throws IOException
 	{
 		NonPeriodicEvent[] departures, arrivals;
@@ -933,7 +937,7 @@ public class Rollout
 		// find all shortest paths
 		// traversing departures in descending order allows to judge
 		// immediately whether the earliest arrival time for the current
-		// departure is possibly later than or equal to the earliest 
+		// departure is possibly later than or equal to the earliest
 		// arrival time for a later departure (as all later departures
 		// have already been considered)
 		int earliestArrivalTime = Integer.MAX_VALUE;
@@ -999,7 +1003,7 @@ public class Rollout
 								{
 									reachable = true;
 									LinkedList<LinkedList<NonPeriodicActivity>>
-											newPaths =  
+											newPaths =
 											depthFirstRecursionAddAllPaths(m,
 													departureConnection,
 													arrivalConnection, 1, hops);
@@ -1037,19 +1041,19 @@ public class Rollout
 			//		+ origin + " and " + destination + "!");
 			return;
 		}
-		
-		
+
+
 		// finish off the current OD pair by calculating weights
 		// for individual paths and writing them out
 		// PASSENGER DISTRIBUTION HERE
-		
+
 		// scaling for uniform distribution between last possible departure
 		// and begin of day
 		int latestDeparture = odSp.getLast().getFirst().getFirst().getSource().getTime();
 		//System.err.println("Latest Departure from "+origin+" to "+destination+": "+latestDeparture);
 		double weightPerSecond = 1.0 * weight / (latestDeparture - beginOfDay);
 		int weightAlreadyDistributed = 0;
-		
+
 		for (LinkedList<LinkedList<NonPeriodicActivity>> shortestPaths : odSp)
 		{
 			// "path group" = paths with same departure time
@@ -1096,7 +1100,7 @@ public class Rollout
 		}
 		if (weightAlreadyDistributed != (int) weight)
 			System.out.println("WARNING: distribution wrong at " + origin + "-" +
-					destination + ": " + weight + " vs. " + weightAlreadyDistributed);		
+					destination + ": " + weight + " vs. " + weightAlreadyDistributed);
 	}
 
 	private static LinkedList<LinkedList<NonPeriodicActivity>>
@@ -1126,12 +1130,12 @@ public class Rollout
 				// and add the current hop in front of all paths
 				for (LinkedList<NonPeriodicActivity> subpath : subpaths)
 					subpath.addAll(0,
-							Arrays.asList(a.getOriginalActivities())); 
+							Arrays.asList(a.getOriginalActivities()));
 				pathCollection.addAll(subpaths);
 			}
 		}
 		return pathCollection;
 	}
-	
+
 
 }

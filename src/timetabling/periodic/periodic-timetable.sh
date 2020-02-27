@@ -1,13 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 PROGRAMPATH=`dirname $0`
 
 source ${PROGRAMPATH}/../../base.sh
 
-TIM_MODEL=`${CONFIGCMD} -s tim_model -u`
+TIM_MODEL=`"${CONFIGCMD[@]}" -s tim_model -u`
+RESPECT_FIXED_TIMES=`"${CONFIGCMD[@]}" -s tim_respect_fixed_times -u`
+
+if [[ ${RESPECT_FIXED_TIMES} == "true" ]];then
+    echo "Preprocessing for fixed times"
+    bash ${PROGRAMPATH}/fixed_times/preprocessing.sh $1
+fi
+
 
 if [[ ${TIM_MODEL} == "javatools" ]]; then
-  sh ${PROGRAMPATH}/../../essentials/javatools/runner.sh PeriodicTimetable basis/Config.cnf || exit 1
+  bash ${PROGRAMPATH}/../../essentials/javatools/runner.sh PeriodicTimetable basis/Config.cnf || exit 1
 
 elif [[ ${TIM_MODEL} == "network_simplex" ]]; then
 	make -C ${PROGRAMPATH}/modulo-simplex/Release || exit 1
@@ -37,24 +46,24 @@ elif [[ ${TIM_MODEL} == "csp" ]]; then
 	make -C ${PROGRAMPATH}/csp/ean2csp ean2csp || exit 1
 	make -C ${PROGRAMPATH}/csp/abscon/tools/saucy-1.1 saucy || exit 1
 	echo "Finding a feasible timetable by using a csp solver."
-	PERIOD=`${CONFIGCMD} -s period_length -u`
-	ACTIVITYFILE=`${CONFIGCMD} -s default_activities_periodic_file -u`
+	PERIOD=`"${CONFIGCMD[@]}" -s period_length -u`
+	ACTIVITYFILE=`"${CONFIGCMD[@]}" -s default_activities_periodic_file -u`
 	${PROGRAMPATH}/csp/ean2csp/build/ean2csp ${PERIOD} ${ACTIVITYFILE} ${PROGRAMPATH}/csp/temp.xml
 	java -cp ${PROGRAMPATH}/csp/abscon/abscon112V4.jar abscon.Resolution ${PROGRAMPATH}/csp/abscon/mac.xml 1 XSax ${PROGRAMPATH}/csp/temp.xml | tee ${PROGRAMPATH}/csp/solution.txt
-	echo "#Feasible timetable found with csp." > `${CONFIGCMD} -s default_timetable_periodic_file -u`
-	grep '^v' ${PROGRAMPATH}/csp/solution.txt | sed 's/v //g' | sed 's/\ /\n/g' | grep -v '^$' | sed = | sed 'N;s/\n/; /' | sed '$d' >> `${CONFIGCMD} -s default_timetable_periodic_file -u`
+	echo "#Feasible timetable found with csp." > `"${CONFIGCMD[@]}" -s default_timetable_periodic_file -u`
+	grep '^v' ${PROGRAMPATH}/csp/solution.txt | sed 's/v //g' | sed 's/\ /\n/g' | grep -v '^$' | sed = | sed 'N;s/\n/; /' | sed '$d' >> `"${CONFIGCMD[@]}" -s default_timetable_periodic_file -u`
 
 elif [[ ${TIM_MODEL} == "csp_ns" ]]; then
 	make -C ${PROGRAMPATH}/modulo-simplex/Release || exit 1
 	make -C ${PROGRAMPATH}/csp/ean2csp ean2csp || exit 1
 	make -C ${PROGRAMPATH}/csp/abscon/tools/saucy-1.1 saucy || exit 1
 	echo "Using csp solver + network simplex."
-	PERIOD=`${CONFIGCMD} -s period_length -u`
-	ACTIVITYFILE=`${CONFIGCMD} -s default_activities_periodic_file -u`
+	PERIOD=`"${CONFIGCMD[@]}" -s period_length -u`
+	ACTIVITYFILE=`"${CONFIGCMD[@]}" -s default_activities_periodic_file -u`
 	${PROGRAMPATH}/csp/ean2csp/build/ean2csp ${PERIOD} ${ACTIVITYFILE} ${PROGRAMPATH}/csp/temp.xml
 	java -cp ${PROGRAMPATH}/csp/abscon/abscon112V4.jar abscon.Resolution ${PROGRAMPATH}/csp/abscon/mac.xml 1 XSax ${PROGRAMPATH}/csp/temp.xml | tee ${PROGRAMPATH}/csp/solution.txt
-	echo "#Feasible timetable found with csp." > `${CONFIGCMD} -s default_timetable_periodic_file -u`
-	grep '^v' ${PROGRAMPATH}/csp/solution.txt | sed 's/v //g' | sed 's/\ /\n/g' | grep -v '^$' | sed = | sed 'N;s/\n/; /' | sed '$d' >> `${CONFIGCMD} -s default_timetable_periodic_file -u`
+	echo "#Feasible timetable found with csp." > `"${CONFIGCMD[@]}" -s default_timetable_periodic_file -u`
+	grep '^v' ${PROGRAMPATH}/csp/solution.txt | sed 's/v //g' | sed 's/\ /\n/g' | grep -v '^$' | sed = | sed 'N;s/\n/; /' | sed '$d' >> `"${CONFIGCMD[@]}" -s default_timetable_periodic_file -u`
 	if [[ $? == 0 ]]; then
 	   ${PROGRAMPATH}/modulo-simplex/Release/networksimplex
 	fi
@@ -89,6 +98,11 @@ elif [[ ${TIM_MODEL} == "ip" ]]; then
 else
 	echo "Error: Requested TIM_MODEL \"${TIM_MODEL}\" not available!"
 	exit 1
+fi
+
+if [[ ${RESPECT_FIXED_TIMES} == "true" ]];then
+    echo "Postprocessing for fixed times"
+    bash ${PROGRAMPATH}/fixed_times/postprocessing.sh $1
 fi
 
 EXITSTATUS=$?

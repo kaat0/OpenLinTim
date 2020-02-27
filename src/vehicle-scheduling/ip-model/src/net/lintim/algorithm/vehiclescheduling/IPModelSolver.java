@@ -125,7 +125,7 @@ public abstract class IPModelSolver {
 					continue;
 				}
 				double timeDistanceBetweenTrips = (destination.getTrip().getStartTime() - origin.getTrip().getEndTime
-						()) / SECONDS_PER_MINUTE;
+						()) / (SECONDS_PER_MINUTE * 1.0);
 				double timeToDrive = originDistanceTimeMap.get(destination.getTrip().getStartStopId()).getSecondElement();
 				if(timeDistanceBetweenTrips >= timeToDrive + turnoverTime) {
 					double distanceBetweenTrips = originDistanceTimeMap.get(destination.getTrip().getStartStopId())

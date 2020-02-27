@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
  * ignored. Other lines will be split by ";" and processed by a given Builder class.
  */
 public class CsvReader {
-    private static final Logger logger = new Logger(CsvReader.class.getCanonicalName());
+    private static final Logger logger = new Logger(CsvReader.class);
 
     /**
      * Read the file with the given name line by line and process each line with the given processor. The lines are

@@ -15,6 +15,7 @@ import org.junit.runners.Suite;
     net.lintim.model.impl.ArrayListGraphTest.class,
     net.lintim.model.impl.FullODTest.class,
     net.lintim.model.impl.LinkedListPathTest.class,
+    net.lintim.model.impl.SimpleMapGraphTest.class,
     net.lintim.model.impl.SparseODTest.class,
     net.lintim.util.ConfigTest.class,
     net.lintim.util.LinePlanningHelperTest.class,

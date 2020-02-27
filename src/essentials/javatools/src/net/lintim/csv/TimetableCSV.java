@@ -97,6 +97,7 @@ public class TimetableCSV {
     public static void toFile(EventActivityNetwork ean, File timetableFile)
     throws IOException, DataInconsistentException{
 
+        timetableFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(timetableFile);
 
         // TODO make proper annotation framework for all CSV writers

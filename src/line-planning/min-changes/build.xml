@@ -25,17 +25,24 @@
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
-	<target name="build-kshortestpaths">
-	<javac srcdir="../../../libs/k-shortest-paths"
-		       destdir="../../../libs/k-shortest-paths"
+	<target name="init-k-shortest-paths">
+		<mkdir dir="../../../libs/k-shortest-paths/build"/>
+	</target>
+	<target name="build-kshortestpaths" depends="init-k-shortest-paths">
+	<javac srcdir="../../../libs/k-shortest-paths/src/main/java"
+		       destdir="../../../libs/k-shortest-paths/build"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
-	<target name="build-min-changes" depends="build-config,build-shortestpaths,build-kshortestpaths,build-ptntools">
-		<javac srcdir="."
-		       destdir="."
-		       classpath="../../essentials/config/:../../../libs/jgrapht/jgrapht-core-1.1.0.jar:../../essentials/k-shortest-paths:../../essentials/shortest-paths/src:../direct-travellers/:../../essentials/statistic:../../essentials/sl-helper/PTNTools"
+	<target name="init">
+		<mkdir dir="build"/>
+	</target>
+
+	<target name="build-min-changes" depends="build-config,build-shortestpaths,build-kshortestpaths,build-ptntools, init">
+		<javac srcdir="src"
+		       destdir="build"
+		       classpath="../../essentials/config/:../../../libs/jgrapht/jgrapht-core-1.1.0.jar:../../../libs/k-shortest-paths/build:../../essentials/shortest-paths/src:../direct-travellers/:../../essentials/statistic:../../essentials/sl-helper/PTNTools"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />

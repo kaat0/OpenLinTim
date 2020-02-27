@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### BATCH-EVALUATION of delay-management, e.g. to test the robustness of a timetable
 ### heavily based on ../delay-simulation/simulation.sh
@@ -166,7 +166,7 @@ for n in $(seq 1 ${simulations}); do
 	fi
 
 	# apply delay management
-	java ${JFLAGS} -classpath "${CLASSPATH}":"${SRC_DIR}"/delay-management/ip-based/Solve:"${SRC_DIR}"/essentials/config:"${SRC_DIR}"/essentials/dm-helper/Tools:"${SRC_DIR}"/essentials/dm-helper/EAN:"${SRC_DIR}"/essentials/statistic SolveDM
+	java "${JFLAGS[@]}" -classpath "${CLASSPATH}":"${SRC_DIR}"/delay-management/ip-based/Solve:"${SRC_DIR}"/essentials/config:"${SRC_DIR}"/essentials/dm-helper/Tools:"${SRC_DIR}"/essentials/dm-helper/EAN:"${SRC_DIR}"/essentials/statistic SolveDM
 	make dm-disposition-timetable-evaluate
 
 	# add results to batch-results file

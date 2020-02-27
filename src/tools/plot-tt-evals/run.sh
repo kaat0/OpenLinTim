@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ./evskript.sh
 
 for m in $(seq 4); do

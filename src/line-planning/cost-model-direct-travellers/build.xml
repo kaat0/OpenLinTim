@@ -1,20 +1,24 @@
 <?xml version="1.0"?>
-<project name="LinTim" default="build-all" basedir=".">
+<project name="LinTim" default="build-cost-model-direct-travellers" basedir=".">
 	<property name="enable_debug" value="false"/>
 	<property name="enable_optimize" value="true"/>
-	<target name="build-config">
-		<javac srcdir="../../essentials/config"
-		       destdir="../../essentials/config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+	<property name="core-folder" value="../../core/java" />
+	<path id="lintim-lineplanning-cost-direct.classpath">
+		<pathelement location="."/>
+		<pathelement location="${core-folder}/lintim-core.jar"/>
+	</path>
+	<target name="build-core">
+		<ant target="build" inheritall="false" dir="${core-folder}"/>
 	</target>
-	<target name="build-cost-model-direct-travellers" depends="build-config">
+	<target name="build-cost-model-direct-travellers" depends="build-dependencies">
 		<javac srcdir="."
 		       destdir="."
-		       classpath="../../essentials/config:../../essentials/statistic"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+		       includeAntRuntime="true">
+			<classpath refid="lintim-lineplanning-cost-direct.classpath"/>
+		</javac>
+	</target>
+	<target name="build-dependencies" depends="build-core">
 	</target>
 </project>

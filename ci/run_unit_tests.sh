@@ -2,7 +2,7 @@
 set -e
 echo "Running python core unit tests"
 cd ../src/core/python
-nix-shell -p python3 python3Packages.numpy --run "python3 -m unittest"
+python3 -m unittest
 echo "Running java core unit tests"
 cd ../java
 ant -q build-tests

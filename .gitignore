@@ -25,7 +25,6 @@ ConvertTTF
 ConvertTTFSP
 saucy
 plot-PTN
-statistic
 solution.txt
 temp.xml
 Release
@@ -65,7 +64,7 @@ Vehicle_Flow.vs
 Vehicle_Schedules.vs
 Vehicles.vs
 data_vehicle_flow
-statistic
+statistic.sta
 Evaluation.txt
 Line-Concept.lin
 Delays-Events.giv

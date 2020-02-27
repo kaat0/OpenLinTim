@@ -100,6 +100,7 @@ public class InitialDurationAssumptionCSV {
 
         LinkedHashSet<Activity> activities = ean.getActivities();
 
+        initialDurationAssumptionPeriodicFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(initialDurationAssumptionPeriodicFile);
 
         fw.write("# activity_index; initial_duration_assumption\n");

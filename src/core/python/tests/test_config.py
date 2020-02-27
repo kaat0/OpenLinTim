@@ -1,8 +1,8 @@
 import logging
 import unittest
 
+from core.solver.generic_solver_interface import SolverType
 from core.util.config import Config
-from core.util.solver_type import SolverType
 
 
 class ConfigTest(unittest.TestCase):

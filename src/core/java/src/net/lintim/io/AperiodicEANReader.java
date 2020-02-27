@@ -2,7 +2,7 @@ package net.lintim.io;
 
 import net.lintim.exception.*;
 import net.lintim.model.*;
-import net.lintim.model.impl.ArrayListGraph;
+import net.lintim.model.impl.SimpleMapGraph;
 import net.lintim.util.Config;
 import net.lintim.util.Pair;
 
@@ -23,7 +23,7 @@ public class AperiodicEANReader {
     private final Timetable<AperiodicEvent> timetable;
 
     private AperiodicEANReader(Builder builder) {
-        aperiodicEAN = builder.ean == null ? new ArrayListGraph<>() : builder.ean;
+        aperiodicEAN = builder.ean == null ? new SimpleMapGraph<>() : builder.ean;
         int timeUnitsPerMinute = builder.timeUnitsPerMinute == 0 ? builder.config.getIntegerValue
             ("time_units_per_minute") : builder.timeUnitsPerMinute;
         timetable = builder.timetable == null ? new Timetable<>(timeUnitsPerMinute) : builder.timetable;
@@ -367,7 +367,7 @@ public class AperiodicEANReader {
          *         disposition timetable
          *     </li>
          *     <li>
-         *         ean (Empty {@link ArrayListGraph}) - the ean to store the read objects in.
+         *         ean (Empty {@link SimpleMapGraph}) - the ean to store the read objects in.
          *     </li>
          *     <li>
          *         timetable (Empty {@link Timetable}) - the timetable to store the times in. The time units per minute

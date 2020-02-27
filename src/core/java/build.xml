@@ -73,6 +73,10 @@
             <classpath refid="lintim-core.classpath"/>
             <src path="${src-dir}"/>
             <include name="net/lintim/solver/impl/CplexSolver.java"/>
+            <include name="net/lintim/solver/impl/CplexConstraint.java"/>
+            <include name="net/lintim/solver/impl/CplexModel.java"/>
+            <include name="net/lintim/solver/impl/CplexLinearExpression.java"/>
+            <include name="net/lintim/solver/impl/CplexVariable.java"/>
         </javac>
     </target>
     <target name="build-gurobi" if="${gurobi.installed}" depends="init">
@@ -81,6 +85,10 @@
             <classpath refid="lintim-core.classpath"/>
             <src path="${src-dir}"/>
             <include name="net/lintim/solver/impl/GurobiSolver.java"/>
+            <include name="net/lintim/solver/impl/GurobiConstraint.java"/>
+            <include name="net/lintim/solver/impl/GurobiModel.java"/>
+            <include name="net/lintim/solver/impl/GurobiLinearExpression.java"/>
+            <include name="net/lintim/solver/impl/GurobiVariable.java"/>
         </javac>
     </target>
     <target name="build-jar" depends="build-project">

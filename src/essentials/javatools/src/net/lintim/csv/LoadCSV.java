@@ -140,6 +140,7 @@ public class LoadCSV {
     public static void toFile(PublicTransportationNetwork ptn, File loadsFile,
             Boolean undirected)	throws IOException, DataInconsistentException{
 
+        loadsFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(loadsFile);
 
         fw.write("# link_index; load; minimal_frequency; maximal_frequency\n");

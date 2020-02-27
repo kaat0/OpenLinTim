@@ -5,9 +5,9 @@ import net.lintim.model.impl.TestNode;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.Comparator;
+
+import static org.junit.Assert.*;
 
 /**
  * Test cases for the graph interface. Not complete! Needs to be implemented for any Graph implementation, since each
@@ -118,5 +118,65 @@ public abstract class GraphTest {
         assertTrue(graph.removeEdge(edge2));
         assertEquals(1, graph.getEdges().size());
         assertEquals(5, graph.getNodes().size());
+    }
+
+    @Test
+    public void canFindEdge() {
+        TestNode node1 = new TestNode(1);
+        TestNode node2 = new TestNode(2);
+        TestNode node3 = new TestNode(3);
+        TestEdge edge1 = new TestEdge(1, node1, node2);
+        TestEdge edge2 = new TestEdge(2, node1, node3);
+        graph.addNode(node1);
+        graph.addNode(node2);
+        graph.addNode(node3);
+        graph.addEdge(edge1);
+        graph.addEdge(edge2);
+        assertEquals(graph.getEdge(node1, node2).get(), edge1);
+        assertEquals(graph.getEdge(node1, node3).get(), edge2);
+    }
+
+    @Test
+    public void cannotFindNonexistingEdge() {
+        TestNode node1 = new TestNode(1);
+        TestNode node2 = new TestNode(2);
+        TestNode node3 = new TestNode(3);
+        TestEdge edge1 = new TestEdge(1, node1, node2);
+        TestEdge edge2 = new TestEdge(2, node1, node3);
+        graph.addNode(node1);
+        graph.addNode(node2);
+        graph.addNode(node3);
+        graph.addEdge(edge1);
+        graph.addEdge(edge2);
+        assertFalse(graph.getEdge(node2, node3).isPresent());
+    }
+
+    @Test
+    public void canFindLoop() {
+        TestNode node1 = new TestNode(1);
+        TestNode node2 = new TestNode(2);
+        TestEdge edge1 = new TestEdge(1, node1, node2);
+        TestEdge edge2 = new TestEdge(2, node1, node1);
+        graph.addNode(node1);
+        graph.addNode(node2);
+        graph.addEdge(edge1);
+        graph.addEdge(edge2);
+        assertEquals(graph.getEdge(node1, node1).get(), edge2);
+    }
+
+    @Test
+    public void canReorderSimilarNodes() {
+        TestNode node1 = new TestNode(1);
+        TestNode node2 = new TestNode(2);
+        TestEdge edge1 = new TestEdge(1, node1, node2);
+        TestEdge edge2 = new TestEdge(2, node2, node1);
+        graph.addNode(node1);
+        graph.addNode(node2);
+        graph.addEdge(edge1);
+        graph.addEdge(edge2);
+        graph.orderNodes(Comparator.comparingInt(TestNode::getId).reversed());
+        assertEquals(graph.getIncidentEdges(node1).size(), 2);
+        assertEquals(graph.getIncidentEdges(node2).size(), 2);
+        assertEquals(graph.getIncomingEdges(node1).stream().findAny().get(), edge2);
     }
 }

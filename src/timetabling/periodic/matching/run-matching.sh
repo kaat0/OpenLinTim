@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 PROGRAMPATH=`dirname $0`
 PWD=`pwd`

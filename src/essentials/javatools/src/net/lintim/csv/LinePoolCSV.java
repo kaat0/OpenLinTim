@@ -133,6 +133,7 @@ public class LinePoolCSV {
 
         PublicTransportationNetwork ptn = lpool.getPublicTransportationNetwork();
 
+        lpoolFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(lpoolFile);
 
         fw.write("# line_index; link_order; link_index\n");

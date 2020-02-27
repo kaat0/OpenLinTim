@@ -4,7 +4,7 @@ import net.lintim.exception.*;
 import net.lintim.model.Graph;
 import net.lintim.model.Link;
 import net.lintim.model.Stop;
-import net.lintim.model.impl.ArrayListGraph;
+import net.lintim.model.impl.SimpleMapGraph;
 import net.lintim.util.Config;
 
 /**
@@ -27,7 +27,7 @@ public class PTNReader {
     private final boolean directed;
 
     private PTNReader(Builder builder) {
-        ptn = builder.ptn == null ? new ArrayListGraph<>() : builder.ptn;
+        ptn = builder.ptn == null ? new SimpleMapGraph<>() : builder.ptn;
         readStops = builder.readStops;
         if (readStops) {
             stopFileName = !"".equals(builder.stopFileName) ? builder.stopFileName : builder.config.getStringValue
@@ -350,7 +350,7 @@ public class PTNReader {
          *         headway file name (dependent on config) - the file name to read the headways from
          *     </li>
          *     <li>
-         *         ptn (Empty {@link ArrayListGraph}) - the ptn to store the read objects in.
+         *         ptn (Empty {@link SimpleMapGraph}) - the ptn to store the read objects in.
          *     </li>
          *     <li>
          *         ptn is directed (dependent on config) - whether the ptn is directed. This will control whether read

@@ -2,10 +2,9 @@ package net.lintim.model;
 
 import net.lintim.io.CsvWriter;
 import net.lintim.model.impl.LinkedListPath;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * A class for representing a line as path of Stop and Link .
@@ -17,7 +16,7 @@ public class Line {
     protected int frequency;
     protected Path<Stop, Link> linePath;
 
-    private static Logger logger = Logger.getLogger("net.lintim.model.Line");
+    private static Logger logger = new Logger(Line.class);
 
     /**
      * Constructor for a new, empty line.
@@ -75,7 +74,7 @@ public class Line {
      */
     private boolean addLink(Link link, boolean computeCost, double factorCostLength, double factorCostLink) {
         if (linePath.getNodes().contains(link.getLeftNode()) && linePath.getNodes().contains(link.getRightNode())) {
-            logger.log(LogLevel.WARN, "Line " + getId() + " now contains a loop, closed by link " + link.getId() + ". " +
+            logger.warn("Line " + getId() + " now contains a loop, closed by link " + link.getId() + ". " +
                 "This may " +
                 "create problems in the LinTim algorithms!");
         }

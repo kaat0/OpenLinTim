@@ -3,7 +3,6 @@ package net.lintim.model;
 import net.lintim.exception.DataInconsistentException;
 import net.lintim.util.Pair;
 
-import javax.xml.bind.PropertyException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Iterator;
@@ -395,7 +394,7 @@ public class Line {
     }
 
     public void addPropertyChangeListener(String propertyName,
-            PropertyChangeListener listener) throws PropertyException{
+            PropertyChangeListener listener) throws DataInconsistentException {
 
         if(propertyName == PROPERTY_ADD_STATION
                 || propertyName == PROPERTY_REMOVE_STATION
@@ -404,7 +403,7 @@ public class Line {
             changes.addPropertyChangeListener(propertyName, listener);
         }
         else{
-            throw new PropertyException("propertyName " + propertyName
+            throw new DataInconsistentException("propertyName " + propertyName
                     + " not available");
         }
 

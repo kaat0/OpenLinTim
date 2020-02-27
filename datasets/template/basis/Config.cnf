@@ -18,6 +18,8 @@ gen_vehicle_speed; 120
 gen_conversion_length; 1
 # conversion factor to convert the distance between two stations from coordinates to meters
 gen_conversion_coordinates; 1
+# Additional penalty for each transfer
+ean_change_penalty; 5
 #lower bound on wait activities in the ean
 ean_default_minimal_waiting_time; 1
 # upper bound on wait acitivies in the ean
@@ -26,8 +28,6 @@ ean_default_maximal_waiting_time; 3
 ean_default_minimal_change_time; 3
 # upper bound on change activities in the ean
 ean_default_maximal_change_time; 62
-# the penalty for each change in the ean
-ean_change_penalty; 15
 # maximale number of passengers per vehicle
 gen_passengers_per_vehicle; 70
 # ===========================================================================

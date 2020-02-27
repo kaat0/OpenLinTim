@@ -160,6 +160,7 @@ public class PublicTransportationNetworkCSV {
     public static void toFile(PublicTransportationNetwork ptn, File stationsFile,
             File linksFile, Boolean undirected)	throws IOException, DataInconsistentException{
 
+        stationsFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(stationsFile);
 
         fw.write("# stop_index; short_name; long_name\n");
@@ -173,6 +174,7 @@ public class PublicTransportationNetworkCSV {
 
         fw.close();
 
+        linksFile.getParentFile().mkdirs();
         fw = new FileWriter(linksFile);
 
         if(undirected){

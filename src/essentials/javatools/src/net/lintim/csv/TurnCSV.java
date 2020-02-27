@@ -79,6 +79,7 @@ public class TurnCSV {
     public static void toFile(PublicTransportationNetwork ptn, File turnFile)
     throws IOException, DataInconsistentException{
 
+        turnFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(turnFile);
 
         fw.write("# stop_index; vehicle_can_turn\n");

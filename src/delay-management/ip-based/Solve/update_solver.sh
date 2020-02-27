@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # directory with source code, relative to from where this script is called
 SRC_DIR=../../src

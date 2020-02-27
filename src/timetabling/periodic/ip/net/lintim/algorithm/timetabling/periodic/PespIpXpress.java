@@ -3,6 +3,7 @@ package net.lintim.algorithm.timetabling.periodic;
 import com.dashoptimization.*;
 import net.lintim.model.*;
 import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 import net.lintim.util.Statistic;
 
 import java.io.IOException;
@@ -11,7 +12,6 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 /**
  * Pesp solver implementation using Xpress.
@@ -22,14 +22,14 @@ public class PespIpXpress extends PespSolver{
 	                                         PeriodicTimetable<PeriodicEvent> timetable, double changePenalty, int
 			                                             timeLimit, double mipGap) {
 
-		Logger logger = Logger.getLogger("net.lintim.algorithm.timetabling.periodic.PespIpXpress");
+		Logger logger = new Logger(PespIpXpress.class.getCanonicalName());
 		Level logLevel = LogManager.getLogManager().getLogger("").getLevel();
 
-		logger.log(LogLevel.DEBUG, "Setting up the solver");
+		logger.debug("Setting up the solver");
 		XPRB bcl = new XPRB();
 		XPRBprob model = bcl.newProb("pesp ip periodic timetabling");
 		model.setSense(XPRB.MINIM);
-		if(timeLimit > 0){
+		if(timeLimit != 0){
 			//Set timetlimit to -timelimit, otherwise Xpress will search until a solution is found, see docs for MAXTIME
 			model.getXPRSprob().setIntControl(XPRS.MAXTIME, -1*timeLimit);
 		}
@@ -51,13 +51,13 @@ public class PespIpXpress extends PespSolver{
 		}
 
 		HashMap<Integer, XPRBvar> eventIdToVarMap = new HashMap<>();
-		logger.log(LogLevel.DEBUG, "Add event variables");
+		logger.debug("Add event variables");
 		for(PeriodicEvent event : ean.getNodes()){
 			XPRBvar eventVar = model.newVar("pi_" + event.getId(), XPRB.UI, 0, timetable.getPeriod()-1);
 			eventIdToVarMap.put(event.getId(), eventVar);
 		}
 
-		logger.log(LogLevel.DEBUG, "Add variables and constraints for the activities");
+		logger.debug("Add variables and constraints for the activities");
 		XPRBexpr activityTerm;
 		XPRBexpr objective = new XPRBexpr();
 		for (PeriodicActivity activity : ean.getEdges()) {
@@ -82,22 +82,22 @@ public class PespIpXpress extends PespSolver{
 
 		model.setObj(objective);
 		if(logLevel.equals(LogLevel.DEBUG)){
-			logger.log(LogLevel.DEBUG, "Writing lp file");
+			logger.debug("Writing lp file");
 			try {
 				model.exportProb("PeriodicTimetablingPespIp.lp");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		logger.log(LogLevel.DEBUG, "Start optimization");
+		logger.debug("Start optimization");
 		model.mipOptimise();
-		logger.log(LogLevel.DEBUG, "End optimization");
+		logger.debug("End optimization");
 
 		if(model.getMIPStat()==XPRB.MIP_SOLUTION) {
-			logger.log(LogLevel.DEBUG, "Feasible solution found");
+			logger.debug("Feasible solution found");
 		}
 		else if(model.getMIPStat()==XPRB.MIP_OPTIMAL){
-			logger.log(LogLevel.DEBUG, "Optimal solution found");
+			logger.debug("Optimal solution found");
 		}
 		else {
 			Statistic.putStatic("tim_pesp_gap", -1);

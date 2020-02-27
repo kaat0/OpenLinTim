@@ -71,7 +71,6 @@ class AlgorithmDijkstraNegativeEdgeLengthException(LinTimException):
         Raise if there is an edge with negative length in a graph used for
         alrgorithm and this edge is found during execution of the algortithm.
         """
-        # TODO: why not set edge as unsigned?
         super().__init__("Error A6: Edge {} has negative length\
                          {}.".format(edge, length))
 

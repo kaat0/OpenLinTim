@@ -5,22 +5,18 @@ import net.lintim.algorithm.Dijkstra;
 import net.lintim.exception.ConfigTypeMismatchException;
 import net.lintim.exception.SolverGurobiException;
 import net.lintim.model.*;
-import net.lintim.util.Config;
-import net.lintim.util.DirectSolutionDescriptor;
-import net.lintim.util.LogLevel;
-import net.lintim.util.Pair;
+import net.lintim.util.*;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 /**
  */
 public class DirectGurobi {
 
-	private static Logger logger = Logger.getLogger("net.lintim.algorithm.lineplanning.DirectGurobi");
+	private static Logger logger = new Logger(DirectGurobi.class.getCanonicalName());
 
 	public static DirectSolutionDescriptor solveLinePlanningDirect(Graph<Stop, Link> ptn, OD od, LinePool linePool, Config config,
 	                                                               int commonFrequencyDivisor) {
@@ -51,10 +47,10 @@ public class DirectGurobi {
 			} else {
 				directModel.set(GRB.IntParam.OutputFlag, 0);
 			}
-			logger.log(LogLevel.DEBUG, "Precomputation, see which lines can be used directly by which passengers");
-			HashMap<Pair<Integer, Integer>, HashSet<Integer>> acceptableLineIds = computeAcceptableLineIds(linePool,
+			logger.debug("Precomputation, see which lines can be used directly by which passengers");
+			Map<Pair<Integer, Integer>, Map<Integer, Path<Stop, Link>>> acceptableLineIds = computeAcceptableLineIds(linePool,
 					preferablePaths, ptn);
-			logger.log(LogLevel.DEBUG, "Add variables");
+			logger.debug("Add variables");
 			//Notation is used from the public transportation script of Prof. Schöbel. When you need explanation on
 			// the meaning of the variables/constraints, please see the script. We will try to use the same names as
 			// mentioned there.
@@ -68,7 +64,7 @@ public class DirectGurobi {
 					if(od.getValue(origin.getId(), destination.getId()) == 0){
 						continue;
 					}
-					for (int lineId : acceptableLineIds.get(new Pair<>(origin.getId(), destination.getId()))) {
+					for (int lineId : acceptableLineIds.get(new Pair<>(origin.getId(), destination.getId())).keySet()) {
 						d.get(origin.getId()).get(destination.getId()).put(lineId, directModel.addVar(0, od.getValue
 								(origin.getId(), destination.getId()), 1, GRB.INTEGER, "d_" + origin.getId() + "_" +
 								destination.getId() + "_" + lineId));
@@ -91,36 +87,44 @@ public class DirectGurobi {
                 rhs.addTerm(commonFrequencyDivisor, systemFrequencyDivisor);
                 directModel.addConstr(frequency, GRB.EQUAL, rhs, "systemFrequency_" + line.getId());
 			}
-			logger.log(LogLevel.DEBUG, "Add capacity constraints");
+			logger.debug("Add capacity constraints");
 			//Constraint 3.7 -> Ensure that the capacity of each line is not exceeded
 			int capacity = config.getIntegerValue("gen_passengers_per_vehicle");
 			for (Link link : ptn.getEdges()) {
 				HashMap<Integer, GRBLinExpr> directTravellersOnLineAndEdge = new HashMap<>();
-				for (Stop origin : ptn.getNodes()) {
-					for (Stop destination : ptn.getNodes()) {
-						if(od.getValue(origin.getId(), destination.getId()) == 0){
-							continue;
-						}
-						for (int lineId : acceptableLineIds.get(new Pair<>(origin.getId(), destination.getId()))) {
-							directTravellersOnLineAndEdge.computeIfAbsent(lineId, k -> new GRBLinExpr());
-							directTravellersOnLineAndEdge.get(lineId).addTerm(1, d.get(origin.getId()).get
-									(destination.getId()).get(lineId));
+				for (Line line : linePool.getLines()) {
+					if (!line.getLinePath().contains(link)) {
+						continue;
+					}
+					for (Stop origin : ptn.getNodes()) {
+						for (Stop destination : ptn.getNodes()) {
+							if (od.getValue(origin.getId(), destination.getId()) == 0) {
+								continue;
+							}
+							Pair<Integer, Integer> odPair = new Pair<>(origin.getId(), destination.getId());
+							if (!acceptableLineIds.get(odPair).containsKey(line.getId())) {
+								continue;
+							}
+							if (!acceptableLineIds.get(odPair).get(line.getId()).contains(link)) {
+								continue;
+							}
+							directTravellersOnLineAndEdge.computeIfAbsent(line.getId(), k -> new GRBLinExpr());
+							directTravellersOnLineAndEdge.get(line.getId()).addTerm(1, d.get(origin.getId()).get
+									(destination.getId()).get(line.getId()));
 						}
 					}
-				}
-				for(Line line : linePool.getLines()){
 					GRBLinExpr capacityOfLine = new GRBLinExpr();
 					capacityOfLine.addTerm(capacity, f.get(line.getId()));
 					//There may be a line that is not acceptable for anybody
 					GRBLinExpr directTravellersOnLine = directTravellersOnLineAndEdge.get(line.getId());
-					if(directTravellersOnLine != null){
+					if (directTravellersOnLine != null) {
 						directModel.addConstr(directTravellersOnLine, GRB.LESS_EQUAL, capacityOfLine,
 								"capacity_constraint_" + link.getId() + "_" + line.getId());
 					}
 				}
 			}
 			//Constraint 3.8 -> Ensure the upper and lower frequency bounds on the links
-			logger.log(LogLevel.DEBUG, "Add upper and lower frequency bounds");
+			logger.debug("Add upper and lower frequency bounds");
 			for (Link link : ptn.getEdges()) {
 				GRBLinExpr sumOfFrequencies = new GRBLinExpr();
 				for (Line line : linePool.getLines()) {
@@ -135,7 +139,7 @@ public class DirectGurobi {
 			}
 
 			//Budget constraints -> Restrict the costs of the line concept
-			logger.log(LogLevel.DEBUG, "Add budget constraint");
+			logger.debug("Add budget constraint");
 			int budget = config.getIntegerValue("lc_budget");
 			GRBLinExpr costOfLineConcept = new GRBLinExpr();
 			for (Line line : linePool.getLines()) {
@@ -146,18 +150,18 @@ public class DirectGurobi {
 			if (logLevel.equals(LogLevel.DEBUG)) {
 				directModel.write("DirectModelGurobi.lp");
 			}
-			logger.log(LogLevel.DEBUG, "Start optimizing");
+			logger.debug("Start optimizing");
 			directModel.optimize();
 			if(directModel.get(GRB.IntAttr.Status) != GRB.Status.OPTIMAL){
-				logger.log(LogLevel.DEBUG, "Solver could not find an optimal solution, Gurobi status is " +
+				logger.debug("Solver could not find an optimal solution, Gurobi status is " +
 						directModel.get(GRB.IntAttr.Status));
-				if(logLevel == LogLevel.DEBUG){
+				if(logLevel == LogLevel.DEBUG && commonFrequencyDivisor == 1){
 					directModel.computeIIS();
 					directModel.write("DirectModelGurobi.ilp");
 				}
 				return new DirectSolutionDescriptor(false, Double.NEGATIVE_INFINITY);
 			}
-			logger.log(LogLevel.DEBUG, "Read back solution");
+			logger.debug("Read back solution");
 			//Read the frequencies and set the lines accordingly
 			for(Line line : linePool.getLines()){
 				line.setFrequency((int) Math.round(f.get(line.getId()).get(GRB.DoubleAttr.X)));
@@ -200,7 +204,7 @@ public class DirectGurobi {
 				}
 				Collection<Path<Stop, Link>> odPath = dijkstra.getPaths(destination);
 				if (odPath.size() == 0) {
-					logger.log(LogLevel.WARN, "Found no path from " + origin + " to " + destination + "but there are "
+					logger.warn("Found no path from " + origin + " to " + destination + "but there are "
 							+ od.getValue(origin.getId(), destination.getId()) + " passengers");
 				}
 				paths.put(new Pair<>(origin.getId(), destination.getId()), odPath);
@@ -209,30 +213,31 @@ public class DirectGurobi {
 		return paths;
 	}
 
-	private static boolean lineContainsPath(Line line, Collection<Path<Stop, Link>> paths) {
+	private static Pair<Boolean, Path<Stop, Link>> lineContainsPath(Line line, Collection<Path<Stop, Link>> paths) {
 		for (Path<Stop, Link> path : paths) {
 			if (line.getLinePath().contains(path)) {
-				return true;
+				return new Pair<>(true, path);
 			}
 		}
-		return false;
+		return new Pair<>(false, null);
 	}
 
-	private static HashMap<Pair<Integer, Integer>, HashSet<Integer>> computeAcceptableLineIds(LinePool linePool,
+	private static Map<Pair<Integer, Integer>, Map<Integer, Path<Stop, Link>>> computeAcceptableLineIds(LinePool linePool,
 	                                                                                          Map<Pair<Integer,
 			                                                                                          Integer>,
 			                                                                                          Collection<Path<Stop, Link>>> preferablePaths,
 	                                                                                          Graph<Stop, Link> ptn) {
-		HashMap<Pair<Integer, Integer>, HashSet<Integer>> acceptableLineIds = new HashMap<>();
+		Map<Pair<Integer, Integer>, Map<Integer, Path<Stop, Link>>> acceptableLineIds = new HashMap<>();
 		for (Pair<Integer, Integer> odPair : preferablePaths.keySet()) {
-			acceptableLineIds.put(odPair, new HashSet<>());
+			acceptableLineIds.put(odPair, new HashMap<>());
 			for (Line line : linePool.getLines()) {
 				if(!line.getLinePath().contains(ptn.getNode(odPair.getFirstElement())) || !line.getLinePath()
 						.contains(ptn.getNode(odPair.getSecondElement()))){
 					continue;
 				}
-				if (lineContainsPath(line, preferablePaths.get(odPair))) {
-					acceptableLineIds.get(odPair).add(line.getId());
+				Pair<Boolean, Path<Stop, Link>> isContained = lineContainsPath(line, preferablePaths.get(odPair));
+				if (isContained.getFirstElement()) {
+					acceptableLineIds.get(odPair).put(line.getId(), isContained.getSecondElement());
 				}
 			}
 		}
