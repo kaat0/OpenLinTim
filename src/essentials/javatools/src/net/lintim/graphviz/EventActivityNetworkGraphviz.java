@@ -64,6 +64,7 @@ public class EventActivityNetworkGraphviz {
         LinkedHashSet<Event> events = ean.getEvents();
         LinkedHashSet<Activity> activities = ean.getActivities();
 
+        graphvizFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(graphvizFile);
 
         fw.write("digraph EventActivityNetwork {\n" + "rankdir=\"LR\"\n"

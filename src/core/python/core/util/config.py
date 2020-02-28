@@ -1,7 +1,7 @@
 import logging
 
 from core.exceptions.config_exceptions import ConfigKeyNotFoundException, ConfigTypeMismatchException
-from core.util.solver_type import SolverType
+from core.solver.generic_solver_interface import SolverType
 
 
 class Config:

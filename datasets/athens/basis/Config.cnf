@@ -13,6 +13,7 @@ gen_vehicle_speed; 100
 gen_conversion_length; 1
 gen_conversion_coordinates; 0.001
 ptn_stop_waiting_time; 3
+ean_change_penalty; 5
 ean_default_minimal_waiting_time; 3
 ean_default_maximal_waiting_time; 6
 ean_default_minimal_change_time; 10

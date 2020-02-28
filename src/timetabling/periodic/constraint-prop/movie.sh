@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SRC_DIR="../../src"
 animation_dir=$("${SRC_DIR}"/config/config_cmd -c basis/Config.cnf -s tim_cp_animate_directory -t string -u)

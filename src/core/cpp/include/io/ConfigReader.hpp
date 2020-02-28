@@ -96,7 +96,7 @@ public:
         }
         std::string key = args[0];
         std::string value = "";
-        for(int i = 1; i < (int) args.size() - 1; i++) value += args[1] + ";";
+        for(int i = 1; i < (int) args.size() - 1; i++) value += args[i] + ";";
         value += args[args.size() - 1];
 
         // trim endline

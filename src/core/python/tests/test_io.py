@@ -21,7 +21,6 @@ from core.model.lines import LineDirection
 from core.model.vehicle_scheduling import TripType
 from core.util.config import Config
 from core.util.statistic import Statistic
-from .context import core
 
 
 class IOTest(unittest.TestCase):

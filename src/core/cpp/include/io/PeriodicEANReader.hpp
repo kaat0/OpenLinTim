@@ -78,6 +78,8 @@ public:
             type = ARRIVAL;
         } else if(args[1].find("departure") != std::string::npos){
             type = DEPARTURE;
+        } else if(args[1].find("fix") != std::string::npos){
+            type = FIX;
         } else{
             throw DataIllegalEventTypeException(eventId, args[1]);
         }

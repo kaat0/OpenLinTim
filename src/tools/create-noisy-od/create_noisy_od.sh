@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo This script is for reference purposes only and will terminate now. You
 echo will find the OD pool in the basis/OD_Pool directory.

@@ -164,7 +164,9 @@ public:
     void read(void){
         CsvReader c;
         c.readCsv(lineCollectionFileName, *this, &LinePoolReader::processLinePoolLine);
-        c.readCsv(linePoolCostFileName, *this, &LinePoolReader::processLineCostLine);
+        if (!linePoolCostFileName.empty()) {
+            c.readCsv(linePoolCostFileName, *this, &LinePoolReader::processLineCostLine);
+        }
     }
 };
 #endif

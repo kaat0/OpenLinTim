@@ -5,14 +5,13 @@ import net.lintim.model.Line;
 import net.lintim.model.LinePool;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Class containing helper methods for the line planning.
  */
 public class LinePlanningHelper {
 
-    private static Logger logger = Logger.getLogger(LinePlanningHelper.class.getCanonicalName());
+    private static Logger logger = new Logger(LinePlanningHelper.class);
 
     /**
      * Determine the possible system frequencies based on the given config value. For config values smaller or equal
@@ -67,7 +66,7 @@ public class LinePlanningHelper {
                 line.setFrequency(frequencies.get(line.getId()));
             }
             catch (NullPointerException e) {
-                logger.log(LogLevel.FATAL, "Should read frequency for line " + line.getId() + " but it is not " +
+                logger.fatal("Should read frequency for line " + line.getId() + " but it is not " +
                     "present!");
                 throw new LinTimException(e.getMessage());
             }

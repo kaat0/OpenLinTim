@@ -1,18 +1,17 @@
 package net.lintim.model;
 
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Class representing a vehicle schedule
  */
 public class VehicleSchedule implements Iterable<Circulation> {
-	private static Logger logger = Logger.getLogger("net.lintim.model.VehicleScheduleEvaluator");
+	private static Logger logger = new Logger(VehicleSchedule.class);
 	private HashMap<Integer, Circulation> circulations;
 
     /**
@@ -48,7 +47,7 @@ public class VehicleSchedule implements Iterable<Circulation> {
      */
 	public void addCirculation(Circulation circulation){
 		if(circulations.containsKey(circulation.getCirculationId())){
-			logger.log(LogLevel.WARN, "Resetting circulation with id " + circulation.getCirculationId());
+			logger.warn("Resetting circulation with id " + circulation.getCirculationId());
 		}
 		this.circulations.put(circulation.getCirculationId(), circulation);
 	}

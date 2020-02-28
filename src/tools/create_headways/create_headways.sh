@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
 source ${PROGRAMPATH}/../../base.sh
 
 # no default value specified in global config
-# default_headway_value==`${CONFIGCMD} -s ??? -u`
-default_headway_value=`${CONFIGCMD} -s ptn_default_headway_value -u`
+# default_headway_value==`"${CONFIGCMD[@]}" -s ??? -u`
+default_headway_value=`"${CONFIGCMD[@]}" -s ptn_default_headway_value -u`
 
-EDGES=`${CONFIGCMD} -s default_edges_file -u`
+EDGES=`"${CONFIGCMD[@]}" -s default_edges_file -u`
 
 # 1st argument = EDGE-file, 2nd Argument Output_file
 function readprint {
@@ -33,8 +33,8 @@ function readprint {
    done < $1
    #echo "${edges[*]}"
 }
-headways_header=`${CONFIGCMD} -s headways_header -u`
-OUTPUT=`${CONFIGCMD} -s default_headways_file -u`
+headways_header=`"${CONFIGCMD[@]}" -s headways_header -u`
+OUTPUT=`"${CONFIGCMD[@]}" -s default_headways_file -u`
 echo "# headways initialized by create_headways.sh" > $OUTPUT
 echo "# headways initialized with default value $default_headway_value" >> $OUTPUT
 echo "#$headways_header" >> $OUTPUT

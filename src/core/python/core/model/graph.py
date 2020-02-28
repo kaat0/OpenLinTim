@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable, TypeVar, Generic, Any, List
+from typing import Callable, TypeVar, Generic, Any, List, Union
 
-
-# TODO: no need to raise NotImplementedError, since defined as abstractmethod
 class Node(metaclass=ABCMeta):
     """
     The template for a node object for a graph structure.
@@ -35,8 +33,6 @@ class Node(metaclass=ABCMeta):
     @abstractmethod
     def __hash__(self) -> int:
         raise NotImplementedError
-
-# TODO: extends class Node in java? -> class Edge(Node) ????
 
 
 N = TypeVar('N', bound=Node)
@@ -155,6 +151,10 @@ class Graph(Generic[N, E], metaclass=ABCMeta):
         provided value, or null if none exists
         """
         raise NotImplementedError
+
+    def get_edge_by_nodes(self, node1: N, node2: N) -> E:
+        return next(iter([link for link in self.getOutgoingEdges(node1) if (link.getRightNode() is node2) or (not link.isDirected() and link.getLeftNode() is node2 and link.getRightNode() is node1)]), None)
+
 
     @abstractmethod
     def addEdge(self, edge: E) -> bool:
@@ -301,3 +301,15 @@ class Graph(Generic[N, E], metaclass=ABCMeta):
         :return: whether the graph is directed
         """
         raise NotImplementedError
+
+    def get_edge_from_nodes(self, left_node: N, right_node: N) -> Union[E, None]:
+        """
+        Get edge by its nodes. The optional will be empty, when the edge does not exist. For directed edges, the nodes
+        must be provided in the correct order.
+        :param left_node: the left node, i.e., the start, of the edge
+        :param right_node: the right node, i.e., the end, of the edge
+        :return: the corresponding edge, when it exists
+        """
+        return next(iter([edge for edge in self.getOutgoingEdges(left_node) if edge.getRightNode() == right_node or
+                   (not edge.isDirected() and edge.getLeftNode() == right_node)]),
+                    None)

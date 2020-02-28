@@ -196,14 +196,14 @@ double evaluation::sum_od_pairs(){
         routingEAN.getAllRouting(*station_from, distances, number_stations);
         for (EvalEvent* station_to: routingEAN.station_nodes){
             if (station_from->getId() == station_to->getId()) continue;
-            int passenger = od.getValue(station_from->getStopId(), station_to->getStopId());
+            double passenger = od.getValue(station_from->getStopId(), station_to->getStopId());
             int res = distances[station_to->getId()];
             if (res == 0){
                 std::cout << "Watch out: No connection from " <<
                     station_from->getStopId() << " to " <<
                     station_to->getStopId() << " possible." << std::endl;
             }
-            result +=  double(res) * double(passenger);
+            result +=  res * passenger;
             passengers += passenger;
         }
     }

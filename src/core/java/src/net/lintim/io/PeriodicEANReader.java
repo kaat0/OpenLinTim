@@ -2,7 +2,7 @@ package net.lintim.io;
 
 import net.lintim.exception.*;
 import net.lintim.model.*;
-import net.lintim.model.impl.ArrayListGraph;
+import net.lintim.model.impl.SimpleMapGraph;
 import net.lintim.util.Config;
 import net.lintim.util.Pair;
 
@@ -46,7 +46,7 @@ public class PeriodicEANReader {
         else {
             this.timetableFileName = "";
         }
-        this.ean = builder.ean == null ? new ArrayListGraph<>() : builder.ean;
+        this.ean = builder.ean == null ? new SimpleMapGraph<>() : builder.ean;
         if (builder.timetable == null && readTimetable) {
             int periodLength = builder.periodLength == 0 ? builder.config.getIntegerValue("period_length") :
                 builder.periodLength;
@@ -117,6 +117,10 @@ public class PeriodicEANReader {
             case "departure":
             case "\"departure\"":
                 type = EventType.DEPARTURE;
+                break;
+            case "fix":
+            case "\"fix\"":
+                type = EventType.FIX;
                 break;
             default:
                 throw new DataIllegalEventTypeException(eventId, args[1]);
@@ -367,7 +371,7 @@ public class PeriodicEANReader {
          *         timetable file name (dependent on config) - the file name to read the timetable from
          *     </li>
          *     <li>
-         *         ean (Empty {@link ArrayListGraph}) - the ean to store the events in.
+         *         ean (Empty {@link SimpleMapGraph}) - the ean to store the events in.
          *     </li>
          *     <li>
          *         timetable (Empty {@link PeriodicTimetable}) - the timetable to store the times in. The time units per

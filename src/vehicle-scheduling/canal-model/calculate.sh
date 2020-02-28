@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
@@ -19,18 +19,18 @@ vs_turn_over_time
 vs_verbose"
 
 VARLIST=`for setting in ${SLIST}; do
-	VALUE=\`${CONFIGCMD} -s ${setting} -u\`
+	VALUE=\`"${CONFIGCMD[@]}" -s ${setting} -u\`
 	echo -n ${setting}=${VALUE},
 done`
 
-VS_MODEL=`${CONFIGCMD} -s vs_model -u`
+VS_MODEL=`"${CONFIGCMD[@]}" -s vs_model -u`
 
-vs_vehicle_costs=`${CONFIGCMD} -s vs_vehicle_costs -u`
-vs_min_distance=`${CONFIGCMD} -s vs_min_distance -u`
-vs_penalty_costs=`${CONFIGCMD} -s vs_penalty_costs -u`
-vs_depot_index=`${CONFIGCMD} -s vs_depot_index -u`
-vs_turn_over_time=`${CONFIGCMD} -s vs_turn_over_time -u`
-vs_verbose=`${CONFIGCMD} -s vs_verbose -u`
+vs_vehicle_costs=`"${CONFIGCMD[@]}" -s vs_vehicle_costs -u`
+vs_min_distance=`"${CONFIGCMD[@]}" -s vs_min_distance -u`
+vs_penalty_costs=`"${CONFIGCMD[@]}" -s vs_penalty_costs -u`
+vs_depot_index=`"${CONFIGCMD[@]}" -s vs_depot_index -u`
+vs_turn_over_time=`"${CONFIGCMD[@]}" -s vs_turn_over_time -u`
+vs_verbose=`"${CONFIGCMD[@]}" -s vs_verbose -u`
 
 if [[ ${VS_MODEL} == "MDM1" ]]; then
 	echo "exec ${PROGRAMPATH}/mdm1" | mosel -s || exit 1

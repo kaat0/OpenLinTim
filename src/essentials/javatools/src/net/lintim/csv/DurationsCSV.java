@@ -98,6 +98,7 @@ public class DurationsCSV {
     public static void toFile(EventActivityNetwork ean, File durationsFile)
     throws IOException, DataInconsistentException{
 
+        durationsFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(durationsFile);
 
         // TODO make proper annotation framework for all CSV writers

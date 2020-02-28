@@ -82,6 +82,10 @@ public class ExtendedCostGurobi extends ExtendedCostSolver {
                 return true;
             }
             logger.log(LogLevel.DEBUG, "No optimal solution found");
+            if (status == GRB.INFEASIBLE && logLevel == LogLevel.DEBUG) {
+                costModel.computeIIS();
+                costModel.write("extended-cost.ilp");
+            }
             return false;
         } catch (GRBException e) {
             throw new SolverGurobiException(e.toString());

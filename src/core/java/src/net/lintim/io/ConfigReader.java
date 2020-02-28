@@ -26,7 +26,7 @@ public class ConfigReader {
     private final String sourceFileName;
     private final boolean onlyIfExists;
     private final Config config;
-    private static final Logger logger = new Logger(ConfigReader.class.getCanonicalName());
+    private static final Logger logger = new Logger(ConfigReader.class);
 
     private ConfigReader(Builder builder) {
         sourceFileName = builder.configFileName;

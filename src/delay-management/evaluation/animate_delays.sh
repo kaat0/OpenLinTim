@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e # exit if an error occurs during the execution of this script
 
 # directory with source code, relative to from where this script is called

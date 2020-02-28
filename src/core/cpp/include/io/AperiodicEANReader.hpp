@@ -105,7 +105,7 @@ public:
 
         AperiodicEvent aperiodicEvent = AperiodicEvent(eventId, periodicEventId, stopId, type, time, passengers);
 
-        if(aperiodicEAN->addNode(aperiodicEvent)){
+        if(!aperiodicEAN->addNode(aperiodicEvent)){
             throw GraphNodeIdMultiplyAssignedException(eventId);
         }
     }
@@ -208,7 +208,7 @@ public:
         bool activityAdded = aperiodicEAN->addEdge(AperiodicActivity(activityId, periodicActivityId, type,
                                                                                 sourceEvent, targetEvent, lowerBound, upperBound, passengers));
 
-        if(activityAdded){
+        if(!activityAdded){
             throw GraphEdgeIdMultiplyAssignedException(activityId);
         }
 

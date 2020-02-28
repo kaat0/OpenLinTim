@@ -25,16 +25,21 @@ ConvertTTF
 ConvertTTFSP
 saucy
 plot-PTN
-statistic
 solution.txt
 temp.xml
 Release
 thirdparty
 conprop
 evaluation
-!evaluation/
 shortest_paths_cc
 shortest_paths_sh
+
+# file to commit
+!makefile
+!Makefile
+!Release/Makefile
+!evaluation/
+!FILES_TO_CLEAN
 
 # LinTim specific data files #
 ##############################
@@ -65,7 +70,7 @@ Vehicle_Flow.vs
 Vehicle_Schedules.vs
 Vehicles.vs
 data_vehicle_flow
-statistic
+statistic.sta
 Evaluation.txt
 Line-Concept.lin
 Delays-Events.giv

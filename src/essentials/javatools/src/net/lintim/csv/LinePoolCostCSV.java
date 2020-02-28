@@ -125,6 +125,7 @@ public class LinePoolCostCSV {
     public static void toFile(LineCollection lc, File lcFile, Boolean undirected)
             throws IOException, DataInconsistentException {
 
+        lcFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(lcFile);
 
         fw.write("# line_index; length; cost\n");

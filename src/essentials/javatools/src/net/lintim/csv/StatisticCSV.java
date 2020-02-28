@@ -7,9 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,8 +74,7 @@ public class StatisticCSV {
     public static void toFile(Statistic statistic, File statisticFile)
     throws IOException, DataInconsistentException, FileNotFoundException {
 
-        Path writerFolderPath = Paths.get(statisticFile.getAbsolutePath()).getParent();
-        Files.createDirectories(writerFolderPath);
+        statisticFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(statisticFile);
 
         TreeMap<String,String> sorted_map =

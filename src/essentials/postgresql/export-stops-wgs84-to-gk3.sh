@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
@@ -17,7 +17,7 @@ DATASETDB=`pwd | sed -r 's/.*\/datasets\/([^\/]+)/\1/'`
 if [[ $# -ge 2 ]]; then
     DATASETDB=$2
 fi
-STOPS_FILE=`${CONFIGCMD} -s default_stops_file -u`
+STOPS_FILE=`"${CONFIGCMD[@]}" -s default_stops_file -u`
 
 grep "^#" "${STOPS_FILE}" > "${STOPS_FILE}.new"
 cat "${PROGRAMPATH}/export-stops-wgs84-to-gk3.sql" | psql -q -v dataset="$DATASETDB" -v srid=31467 >> "${STOPS_FILE}.new"

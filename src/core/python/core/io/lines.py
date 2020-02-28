@@ -140,7 +140,7 @@ class LineReader:
                 line_file_name = config.getStringValue("default_pool_file")
         if read_costs and not line_cost_file_name:
             line_cost_file_name = config.getStringValue("default_pool_cost_file")
-        if not create_directed_lines:
+        if create_directed_lines is None:
             create_directed_lines = ptn.isDirected()
         reader = LineReader(line_file_name, line_cost_file_name, line_pool, ptn, create_directed_lines,
                             read_frequencies)

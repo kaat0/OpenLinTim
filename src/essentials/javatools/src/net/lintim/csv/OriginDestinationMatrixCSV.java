@@ -107,6 +107,7 @@ public class OriginDestinationMatrixCSV {
 
         PublicTransportationNetwork ptn = od.getPublicTransportationNetwork();
 
+        odFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(odFile);
 
         fw.write("# from; to; customers\n");

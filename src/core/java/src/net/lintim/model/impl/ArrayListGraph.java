@@ -91,9 +91,13 @@ public class ArrayListGraph<N extends Node, E extends Edge<N>> implements Graph<
 
     @Override
     public boolean removeNode(N node) {
-        List<E> edgeToRemove = new ArrayList<>(incidentEdges.get(node));
-        for (E edge : edgeToRemove) removeEdge(edge);
-        if (!removeElement(nodes, nodeIndices, node)) return false;
+        List<E> edges = new ArrayList<>(incidentEdges.get(node));
+        for (E edge : edges){
+            removeEdge(edge);
+        }
+        if (!removeElement(nodes, nodeIndices, node)) {
+            return false;
+        }
         incidentEdges.remove(node);
         return true;
     }

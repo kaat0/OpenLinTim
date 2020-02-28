@@ -123,6 +123,7 @@ public class HeadwayCSV {
     public static void toFile(PublicTransportationNetwork ptn, File headwayFile,
             Boolean undirected)	throws IOException, DataInconsistentException{
 
+        headwayFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(headwayFile);
 
         fw.write("# link_index; headway\n");

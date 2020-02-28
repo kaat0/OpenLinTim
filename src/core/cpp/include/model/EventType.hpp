@@ -6,7 +6,8 @@
  */
 enum EventType{
     ARRIVAL,
-    DEPARTURE
+    DEPARTURE,
+    FIX
 };
 
 #endif

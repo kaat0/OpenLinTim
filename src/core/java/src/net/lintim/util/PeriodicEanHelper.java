@@ -49,4 +49,8 @@ public class PeriodicEanHelper {
                     .getType() == ActivityType.WAIT)
             ).findAny().orElse(null);
     }
+
+    public static Integer transformTimeToPeriodic(int time, int periodLength) {
+        return ((time % periodLength) + periodLength ) % periodLength;
+    }
 }

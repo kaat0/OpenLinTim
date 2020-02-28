@@ -167,7 +167,7 @@ class Dijkstra(Generic[N, E, G]):
             # Find all shortest paths to nextNode
             if nextNode == self.start_node:
                 sp = ListPath(self.graph.isDirected())
-                sp.addFirst(next_edge)
+                sp.addFirstEdge(next_edge)
                 paths.append(sp)
                 continue
             shortest_part_paths = self.getPaths(nextNode)
@@ -179,7 +179,7 @@ class Dijkstra(Generic[N, E, G]):
             for shortest_part_path in shortest_part_paths:
                 shortest_path = ListPath(self.graph.isDirected())
                 shortest_path.addLast(shortest_part_path.getEdges())
-                shortest_path.addLast(next_edge)
+                shortest_path.addLastEdge(next_edge)
                 paths.append(shortest_path)
         # Copy all paths to store for buffering
         buffer_paths = []
@@ -250,7 +250,7 @@ class Dijkstra(Generic[N, E, G]):
 
                 new_distance = next_node.distance + edge_length
                 if new_distance == adjacent_shortest_path_node.distance and new_distance < math.inf:
-                    self.predecessors.get(adjacent_node).add(next_node.distance)
+                    self.predecessors.get(adjacent_node).add(next_node.node)
                 elif new_distance < adjacent_shortest_path_node.distance:
                     # Update the shortest path node and set predecessor
                     predecessors_for_node = set()

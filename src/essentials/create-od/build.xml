@@ -2,26 +2,30 @@
 <project name="LinTim-create-od" default="build-create-od" basedir=".">
 	<property name="enable_debug" value="true"/>
 	<property name="enable_optimize" value="true"/>
+    <property name="jgrapht-jar" value="../../../libs/jgrapht/jgrapht-core-1.1.0.jar" />
+    <property name="config-src" value="../config" />
+    <property name="ptn-tools-src" value="../sl-helper/PTNTools" />
+    <property name="shortest-path-src" value="../shortest-paths/src" />
 	<target depends="build-config,build-slhelper,build-create-od,build-shortest-paths" name="build-all"/>
 	<target name="build-slhelper" depends="build-shortest-paths">
-		<javac srcdir="../sl-helper/PTNTools"
-		       destdir="../sl-helper/PTNTools"
-			   classpath="../shortest-paths/src"
+		<javac srcdir="${ptn-tools-src}"
+		       destdir="${ptn-tools-src}"
+			   classpath="${shortest-path-src}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
 	<target name="build-config">
-		<javac srcdir="../config"
-		       destdir="../config"
+		<javac srcdir="${config-src}"
+		       destdir="${config-src}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
 	<target name="build-shortest-paths">
-		<javac srcdir="../shortest-paths/src"
-		       destdir="../shortest-paths/src"
-			   classpath="../shortest-paths/lib/jgrapht-jdk1.6.jar"
+		<javac srcdir="${shortest-path-src}"
+		       destdir="${shortest-path-src}"
+			   classpath="${jgrapht-jar}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
@@ -29,7 +33,7 @@
 	<target name="build-create-od" depends="build-config,build-slhelper,build-shortest-paths">
 		<javac srcdir="."
 		       destdir="."
-		       classpath="../config:../sl-helper/PTNTools:../shortest-paths/src:../shortest-paths/lib/jgrapht-jdk1.6.jar"
+		       classpath="${config-src}:${ptn-tools-src}:${shortest-path-src}:${jgrapht-jar}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true">

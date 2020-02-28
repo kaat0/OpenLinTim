@@ -152,7 +152,7 @@ ean-add-simple-vs:
 # -----------------------------------------------------------------------------
 
 tim-timetable:
-	${SRC_DIR}/timetabling/timetabling.sh
+	${SRC_DIR}/timetabling/timetabling.sh ${FILENAME_CONFIG}
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -219,6 +219,8 @@ dm-disposition-timetable-evaluate:
 dm-disposition-timetable-batch-evaluate:
 	${SRC_DIR}/tools/delay-batch-eval/batch-eval.sh
 
+dm-robustness-check:
+	bash ${SRC_DIR}/timetabling/aperiodic/robustness-evaluation/run_execute.sh
 
 # -----------------------------------------------------------------------------
 # === Vehicle Scheduling ======================================================
@@ -234,6 +236,26 @@ vs-add-circulations-to-ean:
 
 vs-vehicle-schedules-evaluate:
 	bash ${SRC_DIR}/vehicle-scheduling/evaluation/evaluate_vs.sh
+
+
+# -----------------------------------------------------------------------------
+# === Integrated Models =======================================================
+# -----------------------------------------------------------------------------
+int-lin-tim-pass:
+	bash ${SRC_DIR}/integrated_models/lin_tim_pass/run.sh ${FILENAME_CONFIG}
+int-lin-tim-pass-veh:
+	bash ${SRC_DIR}/integrated_models/lin_tim_pass_veh/run.sh ${FILENAME_CONFIG}
+int-tim-pass:
+	bash ${SRC_DIR}/integrated_models/tim_pass/run.sh ${FILENAME_CONFIG}
+int-tim-veh:
+	bash ${SRC_DIR}/integrated_models/tim_veh/run.sh ${FILENAME_CONFIG}
+
+# -----------------------------------------------------------------------------
+# === Eigenmodel =============================================================
+# -----------------------------------------------------------------------------
+
+em-lin-veh-to-tim:
+	bash ${SRC_DIR}/integrated_models/eigenmodel/lin_veh_to_tim/run.sh ${FILENAME_CONFIG}
 
 # =============================================================================
 # =============================================================================
@@ -273,8 +295,6 @@ mapgui:
 # -----------------------------------------------------------------------------
 # === Bureaucracy =============================================================
 # -----------------------------------------------------------------------------
-nix-shell:
-	nix-shell -p gurobi python3Packages.gurobipy
 
 clean:
 	rm -f *.log
@@ -286,4 +306,7 @@ clean:
 
 all-clean:
 	make clean
-	make -C ${SRC_DIR} clean
+	make clean-src
+
+clean-src:
+	${SRC_DIR}/clean.py

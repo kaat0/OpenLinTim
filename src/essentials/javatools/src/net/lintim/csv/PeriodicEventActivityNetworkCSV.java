@@ -193,6 +193,7 @@ public class PeriodicEventActivityNetworkCSV {
         LinkedHashSet<Event> events = ean.getEvents();
         LinkedHashSet<Activity> activities = ean.getActivities();
 
+        eventsFile.getParentFile().mkdirs();
         FileWriter fw = new FileWriter(eventsFile);
 
         fw.write("# event_id; type; stop-id; line-id; passengers; line-direction; line-freq-repetition\n");
@@ -212,6 +213,7 @@ public class PeriodicEventActivityNetworkCSV {
 
         fw.close();
 
+        activitiesFile.getParentFile().mkdirs();
         fw = new FileWriter(activitiesFile);
 
         fw.write("# activity_index; type; from_event; to_event; lower_bound; " +

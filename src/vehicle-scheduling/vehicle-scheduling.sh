@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
 source ${PROGRAMPATH}/../base.sh
 
-vs_model=`${CONFIGCMD} -s vs_model -u`
+vs_model=`"${CONFIGCMD[@]}" -s vs_model -u`
 echo "${vs_model}"
 if [[ ${vs_model} = "MDM1" || ${vs_model} = "MDM2" || ${vs_model} = "ASSIGNMENT_MODEL" || ${vs_model} = "TRANSPORTATION_MODEL" || ${vs_model} = "NETWORK_FLOW_MODEL" || ${vs_model} = "CANAL_MODEL" ]]; then
 	ant -q -f ${PROGRAMPATH}/canal-model/build.xml

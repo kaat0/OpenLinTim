@@ -35,7 +35,7 @@ class CsvReader:
 
         with input_file:
             for line_number, line in enumerate(input_file):
-                line = line.split('#')[0]
+                line = line.split('#')[0].strip()
                 if not line:
                     continue
                 else:

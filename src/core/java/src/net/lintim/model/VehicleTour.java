@@ -1,16 +1,15 @@
 package net.lintim.model;
 
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Class representing a vehicle tour, i.e., a sequence of trips served by one vehicle
  */
 public class VehicleTour implements Iterable<Map.Entry<Integer, Trip>> {
-	private static Logger logger = Logger.getLogger("net.lintim.model.VehicleTour");
+	private static Logger logger = new Logger(VehicleTour.class);
 	private int vehicleId;
 	private HashMap<Integer, Trip> trips;
 
@@ -70,16 +69,16 @@ public class VehicleTour implements Iterable<Map.Entry<Integer, Trip>> {
 		Trip tripAfter = trips.get(tripId+1);
 		if(tripBefore != null){
 			if(tripBefore.getEndAperiodicEventId() != trip.getStartAperiodicEventId()){
-				logger.log(LogLevel.WARN, "Fitting a nonmatching trip into a vehicle tour");
+				logger.warn("Fitting a nonmatching trip into a vehicle tour");
 			}
 		}
 		if(tripAfter != null){
 			if(tripAfter.getStartAperiodicEventId() != trip.getEndAperiodicEventId()){
-				logger.log(LogLevel.WARN, "Fitting a nonmatching trip into a vehicle tour");
+				logger.warn("Fitting a nonmatching trip into a vehicle tour");
 			}
 		}
 		if(trips.containsKey(tripId)){
-			logger.log(LogLevel.WARN, "Replacing existing trip in vehicle tour!");
+			logger.warn("Replacing existing trip in vehicle tour!");
 		}
 		trips.put(tripId, trip);
 	}

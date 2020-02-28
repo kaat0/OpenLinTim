@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
@@ -17,11 +17,11 @@ DATASETDB=`pwd | sed -r 's/.*\/datasets\/([^\/]+)/\1/'`
 if [[ $# -ge 2 ]]; then
     DATASETDB=$2
 fi
-DEMAND_FILE=`${CONFIGCMD} -s default_demand_file -u`
-STOPS_FILE=`${CONFIGCMD} -s default_stops_file -u`
-EDGES_FILE=`${CONFIGCMD} -s default_edges_file -u`
-OD_FILE=`${CONFIGCMD} -s default_od_file -u`
-STOPS_FILE=`${CONFIGCMD} -s default_stops_file -u`
+DEMAND_FILE=`"${CONFIGCMD[@]}" -s default_demand_file -u`
+STOPS_FILE=`"${CONFIGCMD[@]}" -s default_stops_file -u`
+EDGES_FILE=`"${CONFIGCMD[@]}" -s default_edges_file -u`
+OD_FILE=`"${CONFIGCMD[@]}" -s default_od_file -u`
+STOPS_FILE=`"${CONFIGCMD[@]}" -s default_stops_file -u`
 
 cat "${PROGRAMPATH}/insert-dataset.sql" | psql -v dataset="$DATASETDB"
 

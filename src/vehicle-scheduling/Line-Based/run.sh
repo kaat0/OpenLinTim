@@ -10,10 +10,10 @@ source ${PROGRAMPATH}/../../base.sh
 PARAM_ONE=${PWD}
 
 # arameter param2 describes the program type and should be either 4,3 or 2
-PARAM_TWO=`${CONFIGCMD} -s vs_line_based_method -u`
+PARAM_TWO=`"${CONFIGCMD[@]}" -s vs_line_based_method -u`
 
 # param3 is a value for alpha
-PARAM_THREE=`${CONFIGCMD} -s vs_line_based_alpha -u`
+PARAM_THREE=`"${CONFIGCMD[@]}" -s vs_line_based_alpha -u`
 
 # Executes it
 

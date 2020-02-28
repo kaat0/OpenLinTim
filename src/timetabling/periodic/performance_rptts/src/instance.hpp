@@ -41,7 +41,7 @@ public:
         // lines
         LinePoolReader lpr = LinePoolReader(&lp, &ptn,
                 config.getStringValue("default_lines_file"),
-                config.getStringValue("default_pool_cost_file"),
+                "",
                 !config.getBooleanValue("ptn_is_undirected"),
                 true);
         lpr.read();
@@ -78,7 +78,7 @@ public:
 
         // split line into directed lines. The linepool now consists of directed lines
         for (RpttsEvent re: EAN.getNodes()){
-            if (re.getPrevEvent() != NULL || lp.getLine(re.getLineId())->getFrequency() == 0)  continue;
+            if (re.getPrevEvent() != NULL || re.getLineId() == -1 || lp.getLine(re.getLineId())->getFrequency() == 0)  continue;
             if (re.getStopId() != ((lp.getLine(re.getLineId()))->getLinePath()).getNodes().front().getId()) continue;
             // this is start of a new line
             Line l = Line(re.getLineId() + max_line_id, true);
@@ -124,7 +124,9 @@ public:
         // sync edges
         for (RpttsActivity a: EAN.getEdges()){
             if (a.getType() == SYNC){
-                if (a.getLeftNode()->getLineClusterId() == a.getRightNode()->getLineClusterId()) continue;
+                if (a.getLeftNode()->getLineClusterId() == a.getRightNode()->getLineClusterId()) {
+                    continue;
+                }
                 mergeRequest m;
                 m.setLeftId(a.getLeftNode()->getLineClusterId());
                 m.setRightId(a.getRightNode()->getLineClusterId());

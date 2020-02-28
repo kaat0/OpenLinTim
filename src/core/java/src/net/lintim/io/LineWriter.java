@@ -5,12 +5,11 @@ import net.lintim.model.Line;
 import net.lintim.model.LinePool;
 import net.lintim.model.Link;
 import net.lintim.util.Config;
+import net.lintim.util.Logger;
 
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class to write files of lines.
@@ -18,7 +17,7 @@ import java.util.logging.Logger;
  * Use {@link Builder#build()} on a {@link Builder} object to create the writer and use {@link #write()} afterwards.
  */
 public class LineWriter {
-    private static final Logger logger = Logger.getLogger(LineWriter.class.getCanonicalName());
+    private static final Logger logger = new Logger(LineWriter.class);
 
     private final LinePool linePool;
     private final boolean writePool;
@@ -99,7 +98,7 @@ public class LineWriter {
                 conceptWriter.close();
             }
             catch (IOException e){
-                logger.log(Level.WARNING, "Encountered exception: " + e.toString());
+                logger.warn("Encountered exception: " + e.toString());
                 throw new OutputFileException(conceptFileName);
             }
         }

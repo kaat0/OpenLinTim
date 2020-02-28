@@ -13,6 +13,7 @@ lpool_coordinate_factor; 1
 gen_vehicle_speed; 180
 gen_conversion_length; 12
 gen_conversion_coordinates; 0.12
+ean_change_penalty; 5
 ean_default_minimal_waiting_time; 1
 ean_default_maximal_waiting_time; 3
 ean_default_minimal_change_time; 3

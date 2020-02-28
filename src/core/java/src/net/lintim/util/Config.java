@@ -9,7 +9,6 @@ import net.lintim.solver.Solver;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Implementation of a config class, handling all the config interaction. Based on the "old" LinTim implementation.
@@ -30,7 +29,7 @@ public class Config implements MapData {
     /**
      * The logger to log read values.
      */
-    private static Logger logger = Logger.getLogger("net.lintim.util.Config");
+    private static Logger logger = new Logger(Config.class);
 
     /**
      * Initialize an empty config. Can be filled manually with {@link #put(String, String)} or automatically with
@@ -64,7 +63,7 @@ public class Config implements MapData {
         if (value == null) {
             throw new ConfigKeyNotFoundException(key);
         }
-        logger.log(LogLevel.DEBUG, "Read key " + key + " with value " + value + " from config");
+        logger.debug("Read key " + key + " with value " + value + " from config");
         return value;
     }
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 CONFIGPROG=${PROGRAMPATH}/../essentials/config/config.sh

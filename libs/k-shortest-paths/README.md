@@ -6,7 +6,7 @@ d028fd8
 
 ## Filename
 
-*.java
+src/main/java/*
 
 ## Project Homepage
 
@@ -14,8 +14,4 @@ https://github.com/yan-qi/k-shortest-paths-java-version
 
 ## Needed by
 
-- Line pool generation (/src/linepool)
-
-## Remarks
-
-Just copy every .java file in this folder and remove the package annotations
+- Line planning min changes (/src/line-planning/min-changes)

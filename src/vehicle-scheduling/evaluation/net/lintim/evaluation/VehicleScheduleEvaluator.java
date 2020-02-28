@@ -50,8 +50,8 @@ public class VehicleScheduleEvaluator {
 		boolean feasibility = true;
 		int numberOfEmptyTripsWithoutDepot = 0;
 		int numberOfEmptyTripsDepot = 0;
-		double minWaitingTimeInStation = Double.POSITIVE_INFINITY;
-		double maxWaitingTimeInStation = 0;
+		double minWaitingTimeInStation = Double.MAX_VALUE;
+		double maxWaitingTimeInStation = -1;
 		double sumWaitingTimeInStation = 0;
 		int numberOfWaitingTimesInStation = 0;
 		//First, calculate the distances between the stations and for the lines

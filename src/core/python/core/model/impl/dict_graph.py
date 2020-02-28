@@ -99,7 +99,8 @@ class DictGraph(Graph):
         return True
 
     def removeNode(self, node: N) -> bool:
-        for edge in self.incident_edges[node]:
+        edges_to_remove = self.incident_edges[node].copy()
+        for edge in edges_to_remove:
             self.removeEdge(edge)
         if not self.remove_element(self.nodes, self.node_indices, node):
             return False
@@ -107,7 +108,11 @@ class DictGraph(Graph):
         return True
 
     def removeEdge(self, edge: E) -> bool:
-        return self.remove_element(self.edges, self.edge_indices, edge)
+        if not self.remove_element(self.edges, self.edge_indices, edge):
+            return False
+        self.incident_edges[edge.getLeftNode()].remove(edge)
+        self.incident_edges[edge.getRightNode()].remove(edge)
+        return True
 
     def get_node_by_function(self, search_function: Callable[[N], T], search_value: T) -> N:
         return next(iter([x for x in self.nodes if search_function(x) == search_value] or []), None)

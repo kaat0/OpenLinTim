@@ -146,7 +146,7 @@ class Line:
             return False
         return (self.getId() == other.getId()
                 and math.isclose(self.getLength(), other.getLength())
-                and math.isclose(self.getCost(), other.getCost)
+                and math.isclose(self.getCost(), other.getCost())
                 and self.getLinePath() == other.getLinePath())
 
     def __ne__(self, other):

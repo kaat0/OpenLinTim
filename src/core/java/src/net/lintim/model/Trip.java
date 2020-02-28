@@ -1,16 +1,15 @@
 package net.lintim.model;
 
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * Class representing a trip in the vehicle schedule. A trip contains all necessary information to reconstruct the
  * trip of a line served by a vehicle.
  */
 public class Trip {
-	private static Logger logger = Logger.getLogger("net.lintim.model.Trip");
+	private static Logger logger = new Logger(Trip.class);
 	private int startAperiodicEventId;
 	private int startPeriodicEventId;
 	private int startStopId;
@@ -48,7 +47,7 @@ public class Trip {
 		this.lineId = lineId;
 		this.tripType = tripType;
 		if((lineId == -1 && tripType == TripType.TRIP) || (lineId != -1 && tripType == TripType.EMPTY)){
-			logger.log(LogLevel.WARN, "Unfitting line id and trip type " + lineId + " and " + tripType.name());
+			logger.warn("Unfitting line id and trip type " + lineId + " and " + tripType.name());
 		}
 	}
 

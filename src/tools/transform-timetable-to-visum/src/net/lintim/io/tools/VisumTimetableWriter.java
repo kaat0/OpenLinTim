@@ -7,6 +7,7 @@ import net.lintim.util.tools.PeriodicEanHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,22 +31,10 @@ public class VisumTimetableWriter {
 		CsvWriter writer = new CsvWriter(fileName, header);
 		// First, find all events to consider. We only need to write each line once, therefore we only need the first
 		// line repetitions
-		List<PeriodicEvent> events = ean.getNodes().stream().filter(periodicEvent -> periodicEvent
-				.getLineFrequencyRepetition() == 1).collect(Collectors.toList());
+		List<PeriodicEvent> events = new ArrayList<>(ean.getNodes());
 		// Sort by line id and direction. First sort by line id, afterwards, sort forward direction to the front
-		events.sort((e1, e2) -> {
-			int compareResultLines = Integer.compare(e1.getLineId(), e2.getLineId());
-			if (compareResultLines == 0) {
-				if (e1.getDirection() == e2.getDirection()) {
-					return 0;
-				}
-				if(e1.getDirection() == LineDirection.FORWARDS) {
-					return -1;
-				}
-				return 1;
-			}
-			return compareResultLines;
-		});
+		events.sort(Comparator.comparingInt(PeriodicEvent::getLineId).thenComparing(PeriodicEvent::getDirection)
+				.thenComparing(PeriodicEvent::getLineFrequencyRepetition));
 		while (events.size() > 0) {
 			PeriodicEvent event = events.get(0);
 			// Always look for the forward direction first
@@ -55,8 +44,11 @@ public class VisumTimetableWriter {
 			}
 			// Process the line in the helper method
 			processLine(startEvent, writer, ean, lineConcept);
-			events = events.stream().filter(periodicEvent -> !(periodicEvent.getLineId() == startEvent.getLineId() && periodicEvent
-					.getDirection() == startEvent.getDirection())).collect(Collectors.toList());
+			events = events.stream()
+					.filter(periodicEvent -> !(periodicEvent.getLineId() == startEvent.getLineId()
+							&& periodicEvent.getDirection() == startEvent.getDirection()
+							&& periodicEvent.getLineFrequencyRepetition() == startEvent.getLineFrequencyRepetition()))
+					.collect(Collectors.toList());
 		}
 		writer.close();
 	}
@@ -84,7 +76,7 @@ public class VisumTimetableWriter {
 			PeriodicEvent searchEvent = currentEvent;
 			PeriodicActivity outgoingActivity = ean.getEdge(periodicActivity -> periodicActivity.getLeftNode().equals
 					(searchEvent) && (periodicActivity.getType() == ActivityType.DRIVE || periodicActivity.getType()
-					== ActivityType.WAIT),	true);
+					== ActivityType.WAIT), true);
 			if (outgoingActivity == null) {
 				break;
 			}
@@ -104,6 +96,10 @@ public class VisumTimetableWriter {
 		boolean forward = startEvent.getDirection() == LineDirection.FORWARDS;
 		String direction = forward ? ">" : "<";
 		String lineCode = lineId + (forward ? "H" : "R");
+		Line line = lineConcept.getLine(lineId);
+		if (line == null) {
+			throw new LinTimException("Inconsistent state, event " + startEvent + " has line " + lineId + " that is not present in the line concept!");
+		}
 		while (timeIterator.hasNext()) {
 			writer.writeLine(
 					String.valueOf(lineId),
@@ -111,9 +107,10 @@ public class VisumTimetableWriter {
 					direction,
 					String.valueOf(stopIndex),
 					String.valueOf(idIterator.next()),
-					String.valueOf(lineConcept.getLine(lineId).getFrequency()),
+					String.valueOf(line.getFrequency()),
 					String.valueOf(timeIterator.next()),
-					String.valueOf(timeIterator.next())
+					String.valueOf(timeIterator.next()),
+					String.valueOf(startEvent.getLineFrequencyRepetition())
 			);
 			stopIndex += 1;
 		}

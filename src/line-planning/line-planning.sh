@@ -1,18 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAMPATH=`dirname $0`
 
 source ${PROGRAMPATH}/../base.sh
 
-lc_model=`${CONFIGCMD} -s lc_model -u`
-default_lines_file=`${CONFIGCMD} -s default_lines_file -u`
-lc_minimal_global_frequency=`${CONFIGCMD} -s lc_minimal_global_frequency -u`
-statistic_file=`${CONFIGCMD} -s default_statistic_file -u`
-lc_respect_fixed_lines=`${CONFIGCMD} -s lc_respect_fixed_lines -u`
-lc_common_frequency_divisor=`${CONFIGCMD} -s lc_common_frequency_divisor -u`
+lc_model=`"${CONFIGCMD[@]}" -s lc_model -u`
+default_lines_file=`"${CONFIGCMD[@]}" -s default_lines_file -u`
+lc_minimal_global_frequency=`"${CONFIGCMD[@]}" -s lc_minimal_global_frequency -u`
+statistic_file=`"${CONFIGCMD[@]}" -s default_statistic_file -u`
+lc_respect_fixed_lines=`"${CONFIGCMD[@]}" -s lc_respect_fixed_lines -u`
+lc_common_frequency_divisor=`"${CONFIGCMD[@]}" -s lc_common_frequency_divisor -u`
 
 if [[ ${lc_model} == from_default ]]; then
-	lc_model_default_file=`${CONFIGCMD} -s default_lines_default_file -u`
+	lc_model_default_file=`"${CONFIGCMD[@]}" -s default_lines_default_file -u`
 	cp ${lc_model_default_file} ${default_lines_file} || (
 			echo "Failed to copy default line concept"
 			exit 1 )
@@ -65,7 +65,7 @@ elif [[ ${lc_model} == direct ]] || [[ ${lc_model} == direct_relaxation ]]; then
 
 elif [[ ${lc_model} == mult-cost-direct || ${lc_model} == mult-cost-direct-relax ]]; then
 	ant -q -f ${PROGRAMPATH}/cost-model-direct-travellers/build.xml build-cost-model-direct-travellers
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config CostDirect
+	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-direct-travellers${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar CostDirect basis/Config.cnf
 
 elif [[ ${lc_model} == traveling-time-cg ]]; then
 	ant -q -f ${PROGRAMPATH}/traveling-time/column-generation-approach/build.xml build-traveling-time
@@ -73,11 +73,11 @@ elif [[ ${lc_model} == traveling-time-cg ]]; then
 
 elif [[ ${lc_model} == minchanges_ip ]]; then
 	ant -q -f ${PROGRAMPATH}/min-changes/build.xml build-min-changes
-	java -cp ${CLASSPATH}:${PROGRAMPATH}/min-changes:${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar:${PROGRAMPATH}/../essentials/shortest-paths/src:${PROGRAMPATH}/../essentials/k-shortest-paths:${PROGRAMPATH}/direct-travellers:${PROGRAMPATH}/../essentials/config:${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesIP "basis/Config.cnf"
+	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../essentials/shortest-paths/src${PATHSEP}${PROGRAMPATH}/../../libs/k-shortest-paths/build${PATHSEP}${PROGRAMPATH}/direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesIP "basis/Config.cnf"
 
 elif [[ ${lc_model} == minchanges_cg ]]; then
 	ant -q -f ${PROGRAMPATH}/min-changes/build.xml build-min-changes
-	java -cp ${CLASSPATH}:${PROGRAMPATH}/min-changes:${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar:${PROGRAMPATH}/../essentials/shortest-paths/src:${PROGRAMPATH}/../essentials/k-shortest-paths:${PROGRAMPATH}/direct-travellers:${PROGRAMPATH}/../essentials/config:${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesColGen "basis/Config.cnf"
+	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../essentials/shortest-paths/src${PATHSEP}${PROGRAMPATH}/../../libs/k-shortest-paths/build${PATHSEP}${PROGRAMPATH}/direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesColGen "basis/Config.cnf"
 
 else
 	echo "Error: Invalid lc_model argument: ${lc_model}"

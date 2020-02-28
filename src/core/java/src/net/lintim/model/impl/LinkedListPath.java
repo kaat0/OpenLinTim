@@ -3,17 +3,16 @@ package net.lintim.model.impl;
 import net.lintim.model.Edge;
 import net.lintim.model.Node;
 import net.lintim.model.Path;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Path implementation using two instances of java.util.LinkedList (one for edges, one for nodes)
  */
 public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N, E> {
 
-    private static Logger logger = Logger.getLogger("net.lintim.model.impl.LinkedListPath");
+    private static Logger logger = new Logger(LinkedListPath.class);
 
     private LinkedList<E> edgeList = new LinkedList<>();
     private LinkedList<N> nodeList = new LinkedList<>();
@@ -26,20 +25,6 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
     @Override
     public List<N> getNodes() {
         return new LinkedList<>(nodeList);
-        // old code from implementation without nodeList
-        /*LinkedList<N> nodeList = new LinkedList<N>();
-        if (edgeList.size() == 1) {
-            nodeList.add(edgeList.getFirst().getLeftNode());
-            nodeList.add(edgeList.getFirst().getLeftNode());
-        }
-        if (edgeList.size() <= 1) return nodeList;
-        E e1 = edgeList.getFirst();
-        E e2 = edgeList.get(1);
-        nodeList.add(e1.getLeftNode().equals(e2.getLeftNode()) || e1.getLeftNode().equals(e2.getRightNode()) ?
-                e1.getRightNode() : e1.getLeftNode());
-        for (E edge : edgeList)
-            nodeList.add(nodeList.getLast().equals(edge.getLeftNode()) ? edge.getRightNode() : edge.getLeftNode());
-        return nodeList;*/
     }
 
     @Override
@@ -64,7 +49,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
             nodeList.add(edge.getRightNode());
         }
         //Case 2: The list has a size of at least 1 and the order we used in Case 1 was correct
-        else if (edge.getLeftNode().equals(nodeList.getFirst()) && !edge.isDirected())
+        else if (edge.getLeftNode().equals(nodeList.getFirst()) && !directed)
             nodeList.addFirst(edge.getRightNode());
         else if (edge.getRightNode().equals(nodeList.getFirst()))
             nodeList.addFirst(edge.getLeftNode());
@@ -73,17 +58,17 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
         else if (nodeList.size() == 2 && !directed){
             Collections.reverse(nodeList);
             //Now we can handle case 2 again
-            if (edge.getLeftNode().equals(nodeList.getFirst()) && !edge.isDirected())
+            if (edge.getLeftNode().equals(nodeList.getFirst()) && !directed)
                 nodeList.addFirst(edge.getRightNode());
             else if (edge.getRightNode().equals(nodeList.getFirst()))
                 nodeList.addFirst(edge.getLeftNode());
             else {
-                logger.log(LogLevel.DEBUG, "edge " + edge.getId() + " cannot be prepended to path (nodes don't match)");
+                logger.debug("edge " + edge.getId() + " cannot be prepended to path (nodes don't match)");
                 return false;
             }
         }
         else {
-            logger.log(LogLevel.DEBUG, "edge " + edge.getId() + " cannot be prepended to path (nodes don't match)");
+            logger.debug("edge " + edge.getId() + " cannot be prepended to path (nodes don't match)");
             return false;
         }
         edgeList.addFirst(edge);
@@ -92,10 +77,38 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
 
     @Override
     public boolean addFirst(List<E> edges) {
-        LinkedList<E> list = new LinkedList<>();
-        for (E edge : edges) list.addFirst(edge);
-        for (E edge : list) this.addFirst(edge);
-        return true;
+        LinkedList<E> list = new LinkedList<>(edges);
+        Collections.reverse(list);
+        boolean succeeded = true;
+        E failedElement = null;
+        for (E edge : list) {
+            succeeded = addFirst(edge);
+            if (!succeeded) {
+                failedElement = edge;
+                break;
+            }
+        }
+        if (!succeeded) {
+            resetPath(list, failedElement);
+        }
+        return succeeded;
+    }
+
+    /**
+     * Helper method to reset the path
+     * @param insertList the list that was tried to add to the path
+     * @param failedElement the failed element
+     */
+    private void resetPath(List<E> insertList, E failedElement) {
+        List<E> listToRemove = new ArrayList<>();
+        for (E edge : insertList) {
+            if (edge.equals(failedElement)) {
+                break;
+            }
+            listToRemove.add(edge);
+        }
+        Collections.reverse(listToRemove);
+        this.remove(listToRemove);
     }
 
     @Override
@@ -110,7 +123,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
             nodeList.add(edge.getRightNode());
         }
         //Case 2: The list has a size of at least 1 and the order we used in Case 1 was correct
-        else if (edge.getRightNode().equals(nodeList.getLast()) && !edge.isDirected())
+        else if (edge.getRightNode().equals(nodeList.getLast()) && !directed)
             nodeList.addLast(edge.getLeftNode());
         else if (edge.getLeftNode().equals(nodeList.getLast()))
             nodeList.addLast(edge.getRightNode());
@@ -119,17 +132,17 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
         else if (nodeList.size() == 2 && !directed){
             Collections.reverse(nodeList);
             //Now we can handle case 2 again
-            if (edge.getRightNode().equals(nodeList.getLast()) && !edge.isDirected())
+            if (edge.getRightNode().equals(nodeList.getLast()) && !directed)
                 nodeList.addLast(edge.getLeftNode());
             else if (edge.getLeftNode().equals(nodeList.getLast()))
                 nodeList.addLast(edge.getRightNode());
             else {
-                logger.log(LogLevel.DEBUG, "edge " + edge.getId() + " cannot be appended to path (nodes don't match)");
+                logger.debug("edge " + edge.getId() + " cannot be appended to path (nodes don't match)");
                 return false;
             }
         }
         else {
-            logger.log(LogLevel.DEBUG, "edge " + edge.getId() + " cannot be appended to path (nodes don't match)");
+            logger.debug("edge " + edge.getId() + " cannot be appended to path (nodes don't match)");
             return false;
         }
         edgeList.addLast(edge);
@@ -138,13 +151,27 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
 
     @Override
     public boolean addLast(List<E> edges) {
-        for (E edge : edges) this.addLast(edge);
-        return true;
+        boolean succeeded = true;
+        E failedElement = null;
+        for (E edge : edges) {
+            succeeded = addLast(edge);
+            if (!succeeded) {
+                failedElement = edge;
+                break;
+            }
+        }
+        if (!succeeded) {
+            resetPath(edges, failedElement);
+        }
+        return succeeded;
     }
 
     @Override
     public boolean remove(E edge) {
         if (edge == null) throw new IllegalArgumentException("null cannot be an edge");
+        if (edgeList.isEmpty()) {
+            return false;
+        }
         if (edge.equals(edgeList.getFirst())) {
             edgeList.removeFirst();
             nodeList.removeFirst();
@@ -167,9 +194,10 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
             if (e.equals(edge)) {
                 edgeIterator.remove();
                 nodeIterator.remove();
+                return true;
             }
-
         }
+        // The element was not in the list
         return false;
     }
 
@@ -189,7 +217,6 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
                     toRemove.descendingIterator() : null;
         if (it == null)
             throw new RuntimeException("removing of interior edge sequences from a path is not yet implemented");
-        // TODO implement removing interior edge sequences
         while (it.hasNext()) this.remove(it.next());
         return true;
     }
@@ -203,7 +230,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
             return true;
         }
         //Case 2: We already have added a list. Can we add the edge directly, without changing the path?
-        else if (edge.getLeftNode().equals(nodeList.getFirst()) && !edge.isDirected())
+        else if (edge.getLeftNode().equals(nodeList.getFirst()) && !directed)
             return true;
         else if (edge.getRightNode().equals(nodeList.getFirst()))
             return true;
@@ -211,7 +238,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
         // the start could be done by reversing the path and adding to the front afterwards. We need to check for that.
         else if (nodeList.size() == 2 && !directed){
             //Check if we can add the edge to the start of the reversed path
-            if (edge.getLeftNode().equals(nodeList.getLast()) && !edge.isDirected())
+            if (edge.getLeftNode().equals(nodeList.getLast()) && !directed)
                 return true;
             else if (edge.getRightNode().equals(nodeList.getLast()))
                 return true;
@@ -228,7 +255,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
             return true;
         }
         //Case 2: We already have added a list. Can we add the edge directly, without changing the path?
-        else if (edge.getRightNode().equals(nodeList.getLast()) && !edge.isDirected())
+        else if (edge.getRightNode().equals(nodeList.getLast()) && !directed)
             return true;
         else if (edge.getLeftNode().equals(nodeList.getLast()))
             return true;
@@ -236,7 +263,7 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
         // the end could be done by reversing the path and adding to the end afterwards. We need to check for that.
         else if (nodeList.size() == 2 && !directed) {
             //Check if we can add the edge to the end of the reversed path
-            if (edge.getRightNode().equals(nodeList.getFirst()) && !edge.isDirected())
+            if (edge.getRightNode().equals(nodeList.getFirst()) && !directed)
                 return true;
             else if (edge.getLeftNode().equals(nodeList.getFirst()))
                 return true;

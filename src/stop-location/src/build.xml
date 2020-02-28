@@ -2,41 +2,52 @@
 <project name="LinTim-stop-location" default="build-stop-location" basedir=".">
 	<property name="enable_debug" value="true"/>
 	<property name="enable_optimize" value="true"/>
-	<target depends="build-config,build-slhelper,build-stop-location,build-statistic,build-shortest-paths" name="build-all"/>
+    <property name="jgrapht-jar" value="../../../libs/jgrapht/jgrapht-core-1.1.0.jar" />
+    <property name="statistic-src" value="../../essentials/statistic" />
+    <property name="config-src" value="../../essentials/config" />
+    <property name="shortest-path-src" value="../../essentials/shortest-paths/src" />
+    <property name="ptn-tools-src" value="../../essentials/sl-helper/PTNTools" />
+    <condition property="xpress.installed" id="xpress.installed">
+        <available classname="com.dashoptimization.XPRS" />
+    </condition>
+	<target depends="build-without-xpress,build-with-xpress" name="build-project"/>
 	<target name="build-slhelper" depends="build-shortest-paths">
-		<javac srcdir="../../essentials/sl-helper/PTNTools"
-		       destdir="../../essentials/sl-helper/PTNTools"
-			   classpath="../../essentials/shortest-paths/src"
+		<javac srcdir="${ptn-tools-src}"
+		       destdir="${ptn-tools-src}"
+			   classpath="${shortest-path-src}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
 	<target name="build-config">
-		<javac srcdir="../../essentials/config"
-		       destdir="../../essentials/config"
+		<javac srcdir="${config-src}"
+		       destdir="${config-src}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
 	<target name="build-statistic">
-		<javac srcdir="../../essentials/statistic"
-		       destdir="../../essentials/statistic"
+		<javac srcdir="${statistic-src}"
+		       destdir="${statistic-src}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
 	<target name="build-shortest-paths">
-			<javac srcdir="../../essentials/shortest-paths/src"
-			       destdir="../../essentials/shortest-paths/src"
-				   classpath="../../essentials/shortest-paths/lib/jgrapht-jdk1.6.jar"
+			<javac srcdir="${shortest-path-src}"
+			       destdir="${shortest-path-src}"
+			       classpath="${jgrapht-jar}"
 			       debug="${enable_debug}"
 			       optimize="${enable_optimize}"
 			       includeAntRuntime="true" />
 	</target>
-	<target name="build-stop-location" depends="build-config,build-slhelper,build-statistic,build-shortest-paths">
+	<target name="build-without-xpress" unless="${xpress.installed}">
+		<fail message="Xpress is not installed"/>
+	</target>
+	<target name="build-with-xpress"  if="${xpress.installed}" depends="build-config,build-slhelper,build-statistic,build-shortest-paths">
 		<javac srcdir="."
 		       destdir="."
-		       classpath="../../essentials/config:../../essentials/sl-helper/PTNTools:../../essentials/statistic:../../essentials/shortest-paths/src:../essentials/shortest-paths/lib/jgrapht-jdk1.6.jar"
+		       classpath="${config-src}:${ptn-tools-src}:${statistic-src}:${shortest-path-src}:${jgrapht-jar}"
 		       debug="${enable_debug}"
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true">
