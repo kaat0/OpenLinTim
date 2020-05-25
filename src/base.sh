@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-declare -r SRC_DIR=`dirname "$(readlink -f ${BASH_SOURCE[0]})"`
+declare -r SRC_DIR=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' ${BASH_SOURCE[0]}`
 
 CORE_DIR="${SRC_DIR}/core"
 
