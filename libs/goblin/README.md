@@ -17,4 +17,4 @@ http://goblin2.sourceforge.net/
 ## Needed by
 
 - aperiodic network simplex (/src/timetabling/aperiodic/networksimplex)
-- modulo simplex (/src/timetabling/periodic/modulo-simplex)
+- plot-tt-evals (/src/tools/plot-tt-evals)

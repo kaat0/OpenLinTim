@@ -10,7 +10,8 @@ public class DirectSolutionDescriptor {
 	/**
 	 * Create a new descriptor with the given parameters
 	 * @param isFeasible whether the solution is feasible
-	 * @param objectiveValue the objective value of the solution
+	 * @param objectiveValue the objective value of the solution. The objective value of an infeasible solution should
+     *                       be {@link Double#NEGATIVE_INFINITY}.
 	 */
 	public DirectSolutionDescriptor(boolean isFeasible, double objectiveValue) {
 		this.isFeasible = isFeasible;

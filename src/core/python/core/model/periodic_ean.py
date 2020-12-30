@@ -272,7 +272,7 @@ class PeriodicActivity(Edge[PeriodicEvent]):
                 and math.isclose(other.getUpperBound(), self.getUpperBound())
                 and math.isclose(other.getNumberOfPassengers(),
                                  self.getNumberOfPassengers())
-                and other.getType == self.getType()
+                and other.getType() == self.getType()
                 and other.getLeftNode() == self.getLeftNode()
                 and other.getRightNode() == self.getRightNode())
 

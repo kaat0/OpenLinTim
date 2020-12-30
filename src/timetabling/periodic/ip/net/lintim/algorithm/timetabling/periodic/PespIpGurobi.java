@@ -11,14 +11,17 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
+import java.util.Locale;
+
 /**
  * Pesp solver implementation using Gurobi.
  */
 public class PespIpGurobi extends PespSolver {
 	@Override
-	public boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean,
-	                                         PeriodicTimetable<PeriodicEvent> timetable, double changePenalty, int
-	                                         timeLimit, double mipGap) {
+	public boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean, PeriodicTimetable<PeriodicEvent> timetable,
+																					 boolean solverOutput, int threadLimit, boolean useOldSolution,
+	                                         double changePenalty, int timeLimit, double mipGap,
+																					 int solutionLimit, double bestBoundStop, int mipFocus) {
 		Logger logger = new Logger(PespIpGurobi.class.getCanonicalName());
 		Level logLevel = LogManager.getLogManager().getLogger("").getLevel();
 		try {
@@ -26,17 +29,30 @@ public class PespIpGurobi extends PespSolver {
 			GRBEnv env = new GRBEnv();
 			GRBModel model = new GRBModel(env);
 			model.set(GRB.IntAttr.ModelSense, GRB.MINIMIZE);
+
 			if (logLevel.equals(LogLevel.DEBUG)) {
 				model.set(GRB.IntParam.LogToConsole, 1);
 				model.set(GRB.StringParam.LogFile, "PespModelGurobi.log");
-			} else {
+			} else if (!solverOutput){
 				model.set(GRB.IntParam.OutputFlag, 0);
 			}
-			if(timeLimit != 0){
+			if(timeLimit > 0){
 				model.set(GRB.DoubleParam.TimeLimit, timeLimit);
 			}
-			if(mipGap != 0){
+			if(mipGap > 0){
 				model.set(GRB.DoubleParam.MIPGap, mipGap);
+			}
+			if(solutionLimit > 0){
+				model.set(GRB.IntParam.SolutionLimit, solutionLimit);
+			}
+			if(bestBoundStop > 0){
+				model.set(GRB.DoubleParam.BestBdStop, bestBoundStop);
+			}
+			if(threadLimit > 0){
+				model.set(GRB.IntParam.Threads, threadLimit);
+			}
+			if(mipFocus > 0){
+				model.set(GRB.IntParam.MIPFocus, mipFocus);
 			}
 
 			logger.debug("Add event variables");
@@ -72,6 +88,15 @@ public class PespIpGurobi extends PespSolver {
 			}
 			model.setObjective(objective);
 
+			// add start solution
+			if(useOldSolution) {
+				logger.debug("Setting start solution.");
+				for(PeriodicEvent event : ean.getNodes()){
+					int startTime = event.getTime();
+					eventIdToVarMap.get(event.getId()).set(GRB.DoubleAttr.Start, startTime);
+				}
+			}
+
 			if(logLevel.equals(LogLevel.DEBUG)){
 				logger.debug("Writing lp file");
 				model.write("PeriodicTimetablingPespIp.lp");
@@ -80,8 +105,21 @@ public class PespIpGurobi extends PespSolver {
 			model.optimize();
 			logger.debug("End optimization");
 
+			// needed for Phase I evaluation (felix master thesis)
+			double runtime = model.get(GRB.DoubleAttr.Runtime);
+			logger.info("Pure optimization runtime (in sec): " + String.format(Locale.US, "%.4f", runtime));
+
 			int status = model.get(GRB.IntAttr.Status);
-			if(status==GRB.TIME_LIMIT || (status==GRB.OPTIMAL && model.get(GRB.DoubleAttr.MIPGap) > 0.0001)) {
+			int solCount = model.get(GRB.IntAttr.SolCount);
+
+			if(status==GRB.TIME_LIMIT) {
+				logger.info("Time limit reached.");
+			}
+
+			if((status==GRB.TIME_LIMIT && solCount > 0) ||
+				 (status==GRB.OPTIMAL && model.get(GRB.DoubleAttr.MIPGap) > 0.0001) ||
+				 (status==GRB.SOLUTION_LIMIT) ||
+				 (status==GRB.USER_OBJ_LIMIT && solCount > 0)) {
 				logger.debug("Feasible solution found");
 			}
 			else if(status==GRB.OPTIMAL){

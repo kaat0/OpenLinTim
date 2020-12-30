@@ -36,7 +36,8 @@ class StatisticReader:
         self.statistic.setValue(key, value)
 
     @staticmethod
-    def read(file_name: str = "", statistic: Statistic = None, config: Config = Config.getDefaultConfig()) -> Statistic:
+    def read(file_name: str = "", statistic: Statistic = Statistic.getDefaultStatistic(),
+             config: Config = Config.getDefaultConfig()) -> Statistic:
         """
         Read the statistic defined by the given file name.
         :param config:
@@ -44,8 +45,6 @@ class StatisticReader:
         :param statistic    if statistic exists
         :return: the statistic
         """
-        if not statistic:
-            statistic = Statistic()
         if not file_name:
             file_name = config.getStringValue("default_statistic_file")
         reader = StatisticReader(file_name, statistic)
@@ -62,9 +61,39 @@ class StatisticWriter:
 
     @staticmethod
     def write(statistic: Statistic = Statistic.getDefaultStatistic(), file_name: str = "",
-              config: Config = Config.getDefaultConfig()) -> None:
+              config: Config = Config.getDefaultConfig(), append: bool = True) -> None:
+        """
+        Write the given statistic (or the default statistic, when none is given).
+        :param statistic: the statistic to write. Will default to the static default statistic
+        :param file_name: the file to write to. When none is given, this will be read from the config
+        :param config: used to read the file name to write to when none is given
+        :param append: whether to append to the statistic already present on disc or overwrite. When set to true,
+            the current statistic will be read from disc.
+        """
         if not file_name:
             file_name = config.getStringValue("default_statistic_file")
-        CsvWriter.writeListStatic(file_name, list(statistic.getData().items()),
+        toWrite = statistic
+        if append:
+            toWrite = StatisticWriter.getAppendedStatistic(statistic=statistic, file_name=file_name)
+
+        CsvWriter.writeListStatic(file_name, list(toWrite.getData().items()),
                                   lambda item: [item[0], CsvWriter.shortenDecimalValueIfItsDecimal(item[1])],
                                   lambda item: item[0])
+
+    @staticmethod
+    def getAppendedStatistic(statistic: Statistic, file_name: str) -> Statistic:
+        """
+        Read the statistic at file_name, overwrite with all values from the provided statistic and returned the new
+        statistic object
+        :param statistic: the statistic containing the current values. Will be used to overwrite the values read
+            from disc
+        :param file_name: the file to read from disc
+        :return: the appended statistic
+        """
+        try:
+            discStatistic = StatisticReader.read(file_name=file_name)
+            for key in list(statistic.getData().keys()):
+                discStatistic.setValue(key, statistic.getData().get(key))
+            return discStatistic
+        except:
+            return statistic

@@ -116,12 +116,11 @@ namespace modulosimplex
 	//The nonperiodic solver.
 	enum NONPERIODIC_SOLVER
 	{
-		//Goblin.
-		SOLVER_GOBLIN = 1,
+		//Gurobi
+		SOLVER_GUROBI = 1,
 
 		//MCF
 		SOLVER_MCF = 2
-
 	};
 
 //main solver class
@@ -142,6 +141,7 @@ public:
 	void set_sa_coolness_factor(double fac);
 	void set_ts_memory(int length);
 	void set_ts_max_iterations(int number);
+	void set_pivot_count_max_iterations(int number);
 	void set_loc_improvement(LOCAL_IMPROVEMENT loc);
 	void set_loc_number_of_nodes(int number);
 	void set_loc_number_of_tries(int number);
@@ -149,6 +149,7 @@ public:
 	void set_headways(bool what);
 	void set_limit(int number);
 	void set_timelimit(double time);
+	void set_gurobi_threads(int number);
 
 	//Initialises the algorithm.
 	void init(std::string activities_file, std::string events_file, int given_period);
@@ -156,7 +157,7 @@ public:
 	//Initialises the algorithm with feasible timetable given.
 	void init(std::string activities_file, std::string events_file, int given_period, std::string timetable);
 
-	void improvable();
+	void improvable(clock_t begin);
 	void transform();
 	void non_periodic();
 	bool pivot();
@@ -166,6 +167,10 @@ public:
 
 	//Writes the found timetable to the given file.
 	void write_result(std::string filename);
+
+	void check_spanning_tree();
+	int calculate_number_of_connected_components(); //TODO: Can be removed
+	int repair_spanning_tree(int *gurobi_vbasis, int gurobi_basis_size);
 
 private:
 	//struct for tabu list
@@ -244,6 +249,7 @@ private:
 
 	int nr_of_edges;
 	int nr_of_nodes;
+	int nr_of_connected_components; //TODO: Can be removed
 	int period;
 	eta cut;
 
@@ -273,11 +279,14 @@ private:
 	int loc_number_of_tries;
 	int loc_current_tries;
 
+	int gurobi_threads;
+
 	double sa_temperature;
 	double sa_cooling_factor;
 
 	int ts_memory_length;
 	int ts_max_iterations;
+	int pivot_count_max_iterations;
 	ts_memory best_solution;
 	int best_objective;
 	std::deque< ts_memory > ts_memory_deque;
@@ -299,7 +308,6 @@ private:
 	double dyn_rob_penalty;
 	std::vector<double> robustness;
 
-	bool goblin_initial;
 	std::vector<int> best_feasible;
 	double best_feasible_obj;
 

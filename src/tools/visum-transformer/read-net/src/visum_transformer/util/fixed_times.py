@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 
 from core.model.graph import Graph
-from core.model.impl.dict_graph import DictGraph
+from core.model.impl.simple_dict_graph import SimpleDictGraph
 from core.model.lines import Line
 from core.model.periodic_ean import PeriodicEvent, PeriodicActivity, LineDirection, EventType
 from core.model.ptn import Stop
@@ -26,7 +26,7 @@ def get_fixed_times(net: Net, whole_ean: Graph[PeriodicEvent, PeriodicActivity],
     :return: an ean containing the fixed events
     """
     time_traversals = net.get_section(constants.LINE_TIME_TRAVERSAL_SECTION_HEADER)
-    fixed_ean: Graph[PeriodicEvent, PeriodicActivity] = DictGraph()
+    fixed_ean: Graph[PeriodicEvent, PeriodicActivity] = SimpleDictGraph()
     for line_name, line in fixed_lines.items():
         logger.debug("Searching for events for {}, {}".format(line_name, line.getId()))
         new_events = set_times_for_line(line, line_name, LineDirection.FORWARDS, time_traversals, whole_ean)

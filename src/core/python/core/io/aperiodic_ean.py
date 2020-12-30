@@ -12,7 +12,7 @@ from core.exceptions.graph_exceptions import (GraphEdgeIdMultiplyAssignedExcepti
 from core.io.csv import CsvReader, CsvWriter
 from core.model.aperiodic_ean import AperiodicEvent, AperiodicActivity
 from core.model.graph import Graph
-from core.model.impl.dict_graph import DictGraph
+from core.model.impl.simple_dict_graph import SimpleDictGraph
 from core.model.periodic_ean import ActivityType, EventType
 from core.model.timetable import Timetable
 from core.util.config import Config, default_config
@@ -280,7 +280,7 @@ class AperiodicEANReader:
         timetable in.
         """
         if not ean:
-            ean = DictGraph()
+            ean = SimpleDictGraph()
         if time_units_per_minute == 0:
             time_units_per_minute = config.getIntegerValue("time_units_per_minute")
         if not timetable:

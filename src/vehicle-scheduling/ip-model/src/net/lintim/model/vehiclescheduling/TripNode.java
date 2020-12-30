@@ -3,18 +3,17 @@ package net.lintim.model.vehiclescheduling;
 import net.lintim.model.Node;
 import net.lintim.model.Trip;
 import net.lintim.util.LogLevel;
-
-import java.util.logging.Logger;
+import net.lintim.util.Logger;
 
 /**
  * Representation of a node in the trip graph. A node represents a trip or the depot.
  */
 public class TripNode implements Node {
 
-	private Logger logger = Logger.getLogger("net.lintim.model.vehiclescheduling.TripNode");
+	private static final Logger logger = new Logger(TripNode.class.getCanonicalName());
 
-	private Trip trip;
-	private boolean isDepot;
+	private final Trip trip;
+	private final boolean isDepot;
 	private int id;
 
 	/**
@@ -28,7 +27,7 @@ public class TripNode implements Node {
 		this.trip = trip;
 		this.isDepot = isDepot;
 		if((this.trip != null && isDepot) || (this.trip == null && !isDepot)) {
-			logger.log(LogLevel.WARN, "Unfitting trip and isDepot!");
+			logger.warn("Unfitting trip and isDepot!");
 		}
 	}
 

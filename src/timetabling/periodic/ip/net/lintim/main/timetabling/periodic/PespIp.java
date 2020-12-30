@@ -33,24 +33,42 @@ public class PespIp {
 		catch (InputFileException exc){
 			logger.debug("Could not read statistic file, maybe it does not exist");
 		}
+				
+		boolean solverOutput = Config.getBooleanValueStatic("tim_solver_output");
+		int gurobiThreads = Config.getIntegerValueStatic("tim_solver_threads");
+		boolean useOldSolution = Config.getBooleanValueStatic("tim_use_old_solution");
+		
 		double timeUnitsPerMinute = Config.getDoubleValueStatic("time_units_per_minute");
 		int periodLength = Config.getIntegerValueStatic("period_length");
 		SolverType solverType = Config.getSolverTypeStatic("tim_solver");
 		int timeLimit = Config.getIntegerValueStatic("tim_pesp_ip_timelimit");
 		double mipGap = Config.getDoubleValueStatic("tim_pesp_ip_gap");
+		int mipFocus = Config.getIntegerValueStatic("tim_pesp_ip_mip_focus");
 		double eanChangePenalty = Config.getDoubleValueStatic("ean_change_penalty");
+		
+		// especially for phase one
+		int solutionLimit = Config.getIntegerValueStatic("tim_pesp_ip_solution_limit");
+		double bestBoundStop = Config.getDoubleValueStatic("tim_pesp_ip_best_bound_stop");
+		
 		logger.info("Finished reading configuration");
 
 		logger.info("Begin reading input data");
-		Graph<PeriodicEvent, PeriodicActivity> ean = new PeriodicEANReader.Builder().build().read().getFirstElement();
+		Graph<PeriodicEvent, PeriodicActivity> ean;
+		if(useOldSolution) {
+			ean = new PeriodicEANReader.Builder().readTimetable(true).build().read().getFirstElement();
+		}
+		else {
+			ean = new PeriodicEANReader.Builder().build().read().getFirstElement();
+		}
+		
+		
 		logger.info("Finished reading input data");
 		logger.info("Begin execution of the periodic timetabling pesp ip solver");
 		PeriodicTimetable<PeriodicEvent> timetable = new PeriodicTimetable<>(timeUnitsPerMinute, periodLength);
 		PespSolver solver = PespSolver.getSolver(solverType);
-		boolean optimalSolutionFound = solver.solveTimetablingPespModel(ean, timetable, eanChangePenalty, timeLimit,
-				mipGap);
+		boolean optimalSolutionFound = solver.solveTimetablingPespModel(ean, timetable, solverOutput, gurobiThreads, useOldSolution, eanChangePenalty, timeLimit, mipGap, solutionLimit, bestBoundStop, mipFocus);
 
-		logger.info("Finished execution of the periodic timetabling pesp ip solverl");
+		logger.info("Finished execution of the periodic timetabling pesp ip solver");
 
 		if (!optimalSolutionFound) {
 			throw new AlgorithmStoppingCriterionException("pesp ip periodic timetabling");

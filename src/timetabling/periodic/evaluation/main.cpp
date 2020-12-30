@@ -12,8 +12,12 @@ int main (void)
     Statistic stat;
 	std::string filename_statistic = config.getStringValue("default_statistic_file");
     StatisticReader statr = StatisticReader(&stat, filename_statistic);
-    statr.read();
-
+    try {
+        statr.read();
+    }
+    catch (const InputFileException& e) {
+        std::cout << "Could not read statistic, continue" << std::endl;
+    }
 	evaluation eval;
 
 	eval.init(

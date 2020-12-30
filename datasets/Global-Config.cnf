@@ -300,6 +300,7 @@ lc_model; "cost"
 #lc_model; "mult-cost-direct-relax"
 #lc_model; "minchanges_ip"
 #lc_model; "minchanges_cg"
+lc_direct_optimize_costs; false
 lc_number_of_possible_frequencies; 2
 # time limit in seconds (-1 = no timelimit)
 lc_timelimit; -1
@@ -356,6 +357,9 @@ tim_eval_extended; false
 #tim_solver; "xpress"
 #tim_solver; "cplex"
 tim_solver; "gurobi"
+tim_solver_output; true
+# number of threads to use (xpress and gurobi); 0 means all cores can be used
+tim_solver_threads; 1
 # tim_linear_model will affect tim_model javatools only
 # Only tim_model; "javatools" has support for selecting the linear model
 # cpf: javatools default. Support for cplex, gurobi and xpress
@@ -413,11 +417,15 @@ tim_nws_tab_search; "TAB_PERCENTAGE"
 # parameters
 tim_nws_ts_memory; 40
 tim_nws_ts_max_iterations; 150
+tim_nws_pivot_count_max_iterations; 100
+tim_nws_loc_number_of_nodes; 10
 tim_nws_sa_init; 50000
 tim_nws_sa_cooldown; 0.95
 tim_nws_percentage; 80
 tim_nws_min_pivot; 0.1
 tim_nws_dyn_pivot; 0.5
+# gurobi thread = 0 means gurobi can use all cores
+tim_nws_gurobi_threads; 1
 # random seed = 0 means no given seed.
 tim_nws_seed; 0
 #maximum iteration number = 0 means no limit.
@@ -446,6 +454,12 @@ tim_cp_time_limit; 0
 tim_pesp_ip_gap; 0
 # in seconds. time limit = 0 means no given limit.
 tim_pesp_ip_timelimit; 0
+# only implemented for gurobi
+tim_pesp_ip_solution_limit; 0
+# only implemented for gurobi
+tim_pesp_ip_best_bound_stop; 0
+# see gurobi MIPFocus
+tim_pesp_ip_mip_focus; 0
 #
 # -----------------------------------------------------------------------------
 # === LOAD GENERATOR (load_generator_*) =======================================

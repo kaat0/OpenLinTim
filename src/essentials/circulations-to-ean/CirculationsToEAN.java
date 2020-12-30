@@ -14,6 +14,7 @@ public class CirculationsToEAN
 	private static String circulationFileName;
 	private static String activityFileName;
 	private static String distanceFileName;
+	private static int turnoverTime;
 	private static boolean DEBUG;
 	private static boolean VERBOSE;
 
@@ -39,9 +40,9 @@ public class CirculationsToEAN
 		// corresponding non-periodic events
 		int count = Tools.countRelevantLines(periodicEventInputFile);
 		ArrayList<LinkedList<NonPeriodicEvent>> rolledOutEvents =
-			new ArrayList<LinkedList<NonPeriodicEvent>>(count);
+			new ArrayList<>(count);
 		for (int i=0; i<count; i++)
-			rolledOutEvents.add(new LinkedList<NonPeriodicEvent>());
+			rolledOutEvents.add(new LinkedList<>());
 		for (NonPeriodicEvent e: Net.getEvents())
 			rolledOutEvents.get(e.getPeriodicParentEventID()-1).add(e);
 
@@ -109,9 +110,9 @@ public class CirculationsToEAN
 				  System.out.println("Neglecting circulation " + tokens[2].trim() + ", seems to take more than a day!");
 				  continue;
 			}
-	    
+
 			outputFile.println(  ID + "; -1; \"fixed-turnaround\"; " + source.getID()
-			                   + "; " + target.getID() + "; " + d + "; 0");
+			                   + "; " + target.getID() + "; " + d + "; " + d + "; 0");
 			ID++;
 		}
 		outputFile.close();
@@ -122,7 +123,7 @@ public class CirculationsToEAN
 	private static Hashtable<String, Double> readDistanceFile() throws IOException
 	{
 		int size = Tools.countRelevantLines(distanceFileName);
-		Hashtable<String, Double> distances = new Hashtable<String, Double>(size);
+		Hashtable<String, Double> distances = new Hashtable<>(size);
 
 		BufferedReader reader = new BufferedReader(new FileReader(distanceFileName));
 		String line;
@@ -139,7 +140,7 @@ public class CirculationsToEAN
 			int fromStation = Integer.parseInt(tokens[0].trim());
 			int toStation = Integer.parseInt(tokens[1].trim());
 			double d = Double.parseDouble(tokens[2].trim());
-			distances.put(fromStation + "-" + toStation, d);
+			distances.put(fromStation + "-" + toStation, d + turnoverTime);
 		}
 
 		return distances;
@@ -154,6 +155,8 @@ public class CirculationsToEAN
 		circulationFileName = config.getStringValue("default_vehicle_schedule_file");
 		activityFileName = config.getStringValue("default_activities_expanded_file");
 		distanceFileName = config.getStringValue("default_vs_station_distances_file");
+		// convert turnover time from time units to seconds
+		turnoverTime = config.getIntegerValue("vs_turn_over_time") * 60 / config.getIntegerValue("time_units_per_minute");
 		DEBUG = config.getBooleanValue("DM_debug");
 		VERBOSE = config.getBooleanValue("DM_verbose");
 

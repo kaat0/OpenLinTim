@@ -142,4 +142,4 @@ class DictGraph(Graph):
         return [x for x in self.incident_edges[node] if not x.isDirected() or x.getRightNode() == node]
 
     def isDirected(self) -> bool:
-        return any([x.isDirected() for x in self.edges])
+        return any([x and x.isDirected() for x in self.edges])

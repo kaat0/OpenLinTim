@@ -6,17 +6,14 @@
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.8"/>
     <property name="source" value="1.8"/>
+    <property name="build-dir" value="build" />
+    <property name="src-dir" value="src" />
     <path id="VehicleScheduling.classpath">
         <pathelement location="."/>
         <pathelement location="${core.location}/lintim-core.jar"/>
     </path>
     <target name="init">
-        <copy includeemptydirs="false" todir=".">
-            <fileset dir=".">
-                <exclude name="**/*.launch"/>
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
+        <mkdir dir="${build-dir}"/>
     </target>
     <target name="clean">
         <delete>
@@ -30,8 +27,7 @@
         <ant target="build" dir="${core.location}"/>
     </target>
     <target depends="init, build-dependencies" name="build-project">
-        <javac includeantruntime="false" debug="false" debuglevel="${debuglevel}" destdir="." source="${source}" target="${target}">
-            <src path="."/>
+        <javac includeantruntime="false" debug="false" srcdir="${src-dir}" destdir="${build-dir}" debuglevel="${debuglevel}" source="${source}" target="${target}">
             <classpath refid="VehicleScheduling.classpath"/>
         </javac>
     </target>

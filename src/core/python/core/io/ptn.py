@@ -4,9 +4,9 @@ from core.exceptions.graph_exceptions import GraphEdgeIdMultiplyAssignedExceptio
     GraphNodeIdMultiplyAssignedException
 from core.io.csv import CsvReader, CsvWriter
 from core.model.graph import Graph
-from core.model.impl.dict_graph import DictGraph
+from core.model.impl.simple_dict_graph import SimpleDictGraph
 from core.model.ptn import Stop, Link
-from core.util.config import Config, default_config
+from core.util.config import Config
 
 
 class PTNReader:
@@ -188,7 +188,7 @@ class PTNReader:
         :return: the ptn with the added data
         """
         if not ptn:
-            ptn = DictGraph()
+            ptn = SimpleDictGraph()
         if read_stops:
             if not stop_file_name:
                 stop_file_name = config.getStringValue("default_stops_file")

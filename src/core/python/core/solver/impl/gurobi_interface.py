@@ -89,10 +89,30 @@ def raise_for_non_gurobi_expression(expr: LinearExpression):
         raise LinTimException("Try to work with non gurobi expression in gurobi context")
 
 
+class GurobiFilter(logging.Filter):
+    """
+    Filter to remove gurobi output, since otherwise the output will be on stdout and in the logger. Solution is based on
+    an answer provided at https://stackoverflow.com/a/58547894 by Irv
+    """
+    def __init__(self, name="GurobiFilter"):
+        super().__init__(name)
+
+    def filter(self, record):
+        return False
+
+
 class GurobiModel(generic_solver_interface.Model):
 
     def __init__(self, model: Model):
         self._model = model
+        grbfilter = GurobiFilter()
+
+        grblogger = logging.getLogger('gurobipy')
+        if grblogger is not None:
+            grblogger.addFilter(grbfilter)
+            grblogger = grblogger.getChild('gurobipy')
+            if grblogger is not None:
+                grblogger.addFilter(grbfilter)
 
     def addVariable(self, lower_bound: float = 0, upper_bound: float = math.inf,
                     var_type: VariableType = VariableType.CONTINOUS, objective: float = 0, name: str = "") -> Variable:

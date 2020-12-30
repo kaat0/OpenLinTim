@@ -121,7 +121,7 @@ class AperiodicEvent(Node):
                 and other.getStopId() == self.getStopId()
                 and other.getTime() == self.getTime()
                 and math.isclose(other.getNumberOfPassengers(), self.getNumberOfPassengers())
-                and other.getType == self.getType())
+                and other.getType() == self.getType())
 
     def __ne__(self, other) -> bool:
         return not self == other
@@ -255,7 +255,7 @@ class AperiodicActivity(Edge[AperiodicEvent]):
                 and other.getLowerBound() == self.getLowerBound()
                 and other.getUpperBound() == self.getUpperBound()
                 and math.isclose(other.getNumberOfPassengers(), self.getNumberOfPassengers())
-                and other.getType == self.getType()
+                and other.getType() == self.getType()
                 and other.getLeftNode() == self.getLeftNode()
                 and other.getRightNode() == self.getRightNode())
 

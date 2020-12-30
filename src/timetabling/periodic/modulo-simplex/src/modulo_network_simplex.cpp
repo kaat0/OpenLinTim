@@ -28,9 +28,8 @@
 #include <boost/graph/connected_components.hpp>
 #include "boost/bimap/bimap.hpp"
 
-//goblin stuff
-#include "goblin.h"
-#include "networkSimplex.h"
+// gurobi stuff
+#include "gurobi_c++.h"
 
 //defines unfeasible pivot changes
 #define coeff_not_feasible std::numeric_limits<int>::max()
@@ -43,7 +42,6 @@
 using namespace boost;
 using namespace modulosimplex;
 
-static goblinController *CT_NW_Simplex;
 
 int getch() {
     static int ch = -1, fd = 0;
@@ -84,6 +82,7 @@ simplex::simplex(int seed)
 
 	nr_of_nodes = 0;
 	nr_of_edges = 0;
+	nr_of_connected_components = 0;
 
 	search = TAB_FULL;
 	search_impro = FIXED;
@@ -96,14 +95,16 @@ simplex::simplex(int seed)
 	sa_cooling_factor = 0.80;
 	loc_number_of_nodes = 10;
 	loc_number_of_tries = 3;
+	gurobi_threads = 1;
 
 	ts_memory_length = 10;
 	ts_max_iterations = 100;
+	pivot_count_max_iterations = 100;
 	best_objective = 0;
 
 	improved_last_time = true;
 	if (seed ==0)
-	   srand(time(NULL));
+	   srand(std::time(NULL));
 	else
 	   srand(seed);
 
@@ -114,7 +115,7 @@ simplex::simplex(int seed)
  //	verbose = OUT_DEFAULT;
  //	verbose = OUT_DEBUG;
 
-	non_solver = SOLVER_GOBLIN;
+	non_solver = SOLVER_GUROBI;
 
 	nr_col_ops = 0;
 	nr_piv_ops = 0;
@@ -126,10 +127,9 @@ simplex::simplex(int seed)
 	min_robustness = config::get_double_value("tim_nws_min_robustness");
 
 
-	cout<<"Min robustness is "<<min_robustness<<"\n";
+	std::cout<<"Min robustness is "<<min_robustness<<"\n";
 	dyn_rob_penalty = 1e8;
 
-	goblin_initial = false;
 	best_feasible_obj = std::numeric_limits<double>::max();
 }
 
@@ -187,8 +187,8 @@ void simplex::init(std::string activities_file, std::string events_file, int giv
 //     typedef edge_list <vecS, vecS, undirectedS> CGraph;
     CGraph G(nr_of_nodes);
 
-    vector<pair<int,int> > edgevec;
-    vector<pair<int,int> > minvec;
+    std::vector<std::pair<int,int> > edgevec;
+    std::vector<std::pair<int,int> > minvec;
 
 	//read in the activities
 	std::string headway("eadway");
@@ -247,8 +247,8 @@ void simplex::init(std::string activities_file, std::string events_file, int giv
 			add_edge(tail-1, head-1, Edge_props(weight,Mintime(min,Maxtime(max))), *g);
 			add_edge(tail-1,head-1,G);
 			edge_types.push_back(name);
-			edgevec.push_back(make_pair(tail-1,head-1));
-			minvec.push_back(make_pair(min,max));
+			edgevec.push_back(std::make_pair(tail-1,head-1));
+			minvec.push_back(std::make_pair(min,max));
 			//}
 		}
 		else
@@ -270,8 +270,8 @@ void simplex::init(std::string activities_file, std::string events_file, int giv
 			add_edge(tail-1, head-1, Edge_props(weight,Mintime(min,Maxtime(max))), *g);
 			add_edge(tail-1,head-1,G);
 			edge_types.push_back(name);
-			edgevec.push_back(make_pair(tail-1,head-1));
-			minvec.push_back(make_pair(min,max));
+			edgevec.push_back(std::make_pair(tail-1,head-1));
+			minvec.push_back(std::make_pair(min,max));
 		  }
 		}
 	}
@@ -279,7 +279,7 @@ void simplex::init(std::string activities_file, std::string events_file, int giv
 	{
 		std::cout<<"Ignoring headways not possible in connection with constraint propagation!\n"<<std::flush;
 		std::cout<<"Aborting.\n"<<std::flush;
-		exit(0);
+		std::exit(0);
 	}
        }
     }
@@ -435,11 +435,11 @@ property_map<Graph,edge_weight_t>::type w = get(edge_weight, *g);
 
 
 	if (verbose == OUT_DEBUG)
-	    cout<<"Searched 0%"<<std::flush;
+	    std::cout<<"Searched 0%"<<std::flush;
 	int numedges = num_edges(*g);
 
 	if (verbose == OUT_DEBUG)
-	    cout<<"Searched 0%"<<std::flush;
+	    std::cout<<"Searched 0%"<<std::flush;
 	for (uint i=0; i<numedges; i++)
 	{
 	  		if (verbose == OUT_DEBUG)
@@ -482,12 +482,12 @@ property_map<Graph,edge_weight_t>::type w = get(edge_weight, *g);
 		if (target_val_loop - source_val_loop > max_loop)
 		{
 // 		 cout<<"GIVEN TIMETABLE IS NOT FEASIBLE: "<< graph_vertices.right.at(source(e_loop,*g))+1<<" - "<<graph_vertices.right.at(target(e_loop,*g))+1<<"\n";
- 		 cout<<"GIVEN TIMETABLE IS NOT FEASIBLE.\n"<<source_val_loop<<" - "<<target_val_loop<<": ("<<minvec[i].first<<","<<minvec[i].second<<")\n";
-		 exit(1);
+ 		 std::cout<<"GIVEN TIMETABLE IS NOT FEASIBLE.\n"<<source_val_loop<<" - "<<target_val_loop<<": ("<<minvec[i].first<<","<<minvec[i].second<<")\n";
+		 std::exit(1);
 		}
 	}
-
-	cout<<"Done.\nCalculating starting structure.\n"<<flush;
+	nr_of_connected_components = simplex::calculate_number_of_connected_components();
+	std::cout<<"Done.\nCalculating starting structure.\n"<<std::flush;
 	/*
 	//test: create an aperiodic problem instance
 	std::ofstream apac("Activities.giv");
@@ -508,8 +508,8 @@ property_map<Graph,edge_weight_t>::type w = get(edge_weight, *g);
 
 	if (config::get_bool_value("tim_nws_use_robustness"))
 	{
-	  cout<<"NEW: Reading robustness.\n"<<flush;
-	  ifstream rob( (config::get_string_value("default_activity_buffer_file")).c_str() );
+	  std::cout<<"NEW: Reading robustness.\n"<<std::flush;
+	  std::ifstream rob( (config::get_string_value("default_activity_buffer_file")).c_str() );
 	  int robline = 1;
 	  while (!rob.eof())
 	  {
@@ -526,11 +526,11 @@ property_map<Graph,edge_weight_t>::type w = get(edge_weight, *g);
 		  }
 	  }
 	  rob.close();
-	  cout<<"Done.\n"<<flush;
+	  std::cout<<"Done.\n"<<std::flush;
 	}
 	else
 	{
-	  cout<<"Robustness not used.\n"<<flush;
+	  std::cout<<"Robustness not used.\n"<<std::flush;
 	  for (int i=0; i<numedges; ++i)
 	    robustness.push_back(0);
 	}
@@ -627,7 +627,7 @@ void simplex::set_time(Vertex where)
 }
 
 //search for a local cut
-void simplex::improvable()
+void simplex::improvable(clock_t begin)
 {
 
 	graph_traits<Graph>::out_edge_iterator out_i, out_end;
@@ -1014,8 +1014,10 @@ void simplex::improvable()
 	}//search for connected cut
 	else if (local_search == CONNECTED_CUT)
 	{
-		for (int n=0; n<loc_number_of_nodes && !found; ++n)
+		int n=0;
+		while ( (n<loc_number_of_nodes || (loc_number_of_nodes == 0 && n < 3 * nr_of_nodes)) && !found && (timelimit > 1.0* (clock() - begin) / CLOCKS_PER_SEC || timelimit == 0) && get_objective() > 0)
 		{
+			++n;
 			uint k = rand() % nr_of_nodes;
 
 			if (verbose == OUT_DEBUG)
@@ -1143,9 +1145,9 @@ void simplex::improvable()
 					//sort cut edges according to u - l
 					std::list<std::pair<int, Edge> > edgelist;
 					for (std::set<Edge>::iterator it = cut_edges.first.begin(); it!= cut_edges.first.end(); ++it)
-						edgelist.push_back(make_pair(max[*it] - min[*it],*it));
+						edgelist.push_back(std::make_pair(max[*it] - min[*it],*it));
 					for (std::set<Edge>::iterator it = cut_edges.second.begin(); it!= cut_edges.second.end(); ++it)
-						edgelist.push_back(make_pair(max[*it] - min[*it],*it));
+						edgelist.push_back(std::make_pair(max[*it] - min[*it],*it));
 					edgelist.sort();
 
 					//in this version: ignore if the cut is really connected. just let it grow.
@@ -1166,7 +1168,7 @@ void simplex::improvable()
 	else
 	{
 	  std::cout<<"Unknown local improvement procedure.\nAborting.";
-	  exit(1);
+	  std::exit(1);
 	}
 
 	if (verbose == OUT_DEBUG && !(cut.active))
@@ -1802,110 +1804,181 @@ void simplex::transform()
 //solve the dual problem
 void simplex::non_periodic()
 {
+
+	if (nr_of_connected_components == 0) 
+	{
+		std::cout<<"Number of connected compontents = 0. Calculate it before!"<<std::endl;
+		std::abort();
+	}
+
 	property_map<Graph,edge_maxtime_t>::type max = get(edge_maxtime, *g);
 	property_map<Graph,edge_mintime_t>::type min = get(edge_mintime, *g);
 	property_map<Graph,edge_weight_t>::type w = get(edge_weight, *g);
 
-	if (non_solver == SOLVER_GOBLIN)
+	if (non_solver == SOLVER_GUROBI)
 	{
-		//create goblin solver
-		if (verbose == OUT_DEBUG)
-			std::cout<<"Creating Goblin Controller.\n"<<std::flush;
-		CT_NW_Simplex = new goblinController();
-	    CT_NW_Simplex -> traceLevel = 0;
-	    CT_NW_Simplex -> methMCF = abstractMixedGraph::MCF_BF_SIMPLEX;
+		if (verbose == OUT_DEBUG) std::cout<<"Creating dual problem instance: GUROBI.\n"<<std::flush;
 
-	    //CT->logEventHandler = &myLogEventHandler;
+		//create needed information
+		graph_traits<Graph>::out_edge_iterator out_i, out_end;
+		graph_traits<Graph>::in_edge_iterator in_i, in_end;
 
-	    if (verbose == OUT_DEBUG)
-		std::cout<<"Creating dual problem instance: GOBLIN.\n"<<std::flush;
+		//std::cout<<"Vertices: "<<nr_of_nodes<<"; Edges: "<<nr_of_edges<<endl;
 
-		//create goblin graph
-		sparseDiGraph *goblin_graph = new sparseDiGraph((TNode)0, *CT_NW_Simplex);
-		sparseRepresentation* goblin_rep = static_cast<sparseRepresentation*> (goblin_graph->Representation());
+		// to prevent warning
+		if (nr_of_nodes < 1)
+		{
+			std::cout<<"nr_of_nodes < 1.";
+			std::abort();
+		}
 
-	    graph_traits<Graph>::out_edge_iterator out_i, out_end;
-	    graph_traits<Graph>::in_edge_iterator in_i, in_end;
+		int demand_array[nr_of_nodes] = {};
+		int cost_array[2*nr_of_edges] = {};
+		int basis_gurobi[nr_of_nodes-1] = {};
 
-	    int count_edges=0;
+		// Calculate demand of nodes
 		int test_demand=0;
-
-// 	    ofstream mcf("mcf-netherlands.net");
-// 	    mcf<<"c GOGO Netherlands!\n";
-// 	    mcf<<"c nodes, links\nc\n";
-// 	    mcf<<"p min "<<nr_of_nodes<<" "<<2*nr_of_edges<<"\n";
-// 	    mcf<<"c\nc Suppy and demand\n";
-
-		int numvertices = num_vertices(*g);
-	    for (uint i=0; i<numvertices; i++)
+	    for (uint i=0; i<nr_of_nodes; i++)
 	    {
-			goblin_graph->InsertNode();
 			int demand=0;
+			if (current_robustness >= min_robustness - 0.0001)
+			{
+				for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(i) , *g); out_i != out_end; ++out_i)
+					demand-=w[*out_i];
 
-if (!goblin_initial && current_robustness >= min_robustness - 0.0001)
-{
-			for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(i) , *g);
-							out_i != out_end; ++out_i)
- 				demand-=w[*out_i];
-
-			for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(i) , *g);
-									in_i != in_end; ++in_i)
- 				demand+=w[*in_i];
-}
-else
-{
-			for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(i) , *g);
-							out_i != out_end; ++out_i)
+				for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(i) , *g); in_i != in_end; ++in_i)
+					demand+=w[*in_i];
+			}
+			else
+			{
+				for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(i) , *g); out_i != out_end; ++out_i)
 					demand+=(int)(1e8*robustness[graph_edges.right.at(*out_i)]);
 
 
-			for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(i) , *g);
-									in_i != in_end; ++in_i)
+				for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(i) , *g); in_i != in_end; ++in_i)
 					demand-=(int)(1e8*robustness[graph_edges.right.at(*in_i)]);
-}
+			}
 
-
-//cout<<demand<<"\n";
-
-			goblin_rep->SetDemand(i,demand);
-
-// 			mcf<<"n "<<i+1<<" "<<demand<<"\n";
-
+			demand_array[i] = (-1) * demand;
 			test_demand += demand;
 	    }
 
-		goblin_initial = false;
+		if (test_demand != 0)
+		{
+			std::cout<<"Sum of demands not zero.";
+			std::abort();
+		}
 
-		//if (verbose == OUT_DEBUG)
-			//std::cout<<"TEST DEMAND: "<<test_demand<<"\n"<<flush;
-
-
-// 		mcf<<"c\nc Arcs: from, to, min, max, cost\n";
-
-		int numedges = nr_of_edges;
-	    for (uint i=0; i<numedges; ++i)
+		// Calculate costs for edges
+	    for (uint i=0; i<nr_of_edges; ++i)
 	    {
-// 		Edge e = graph_edges.left.at(i);
-		Edge e = graph_edges_left[i];
-		int source_v = graph_vertices.right.at(source(e,*g));
-		int target_v = graph_vertices.right.at(target(e,*g));
+			Edge e = graph_edges_left[i];
+			int source_v = graph_vertices.right.at(source(e,*g));
+			int target_v = graph_vertices.right.at(target(e,*g));
 
-		goblin_graph->InsertArc(source_v, target_v, InfCap, -(min[e]-modulo_param[graph_edges.right.at(e)]*period),0);
-		goblin_graph->InsertArc(target_v, source_v, InfCap, max[e]-modulo_param[graph_edges.right.at(e)]*period,0);
+			cost_array[2*i] = min[e]-modulo_param[graph_edges.right.at(e)]*period;
+			cost_array[2*i+1] = -(max[e]-modulo_param[graph_edges.right.at(e)]*period);
+		}
 
-// 		mcf<<"a "<<graph_vertices.right.at(source(e,*g))+1<<" "<<graph_vertices.right.at(target(e,*g))+1<<" 0 -1 "<<-(min[e]-modulo_param[graph_edges.right.at(e)]*period)<<"\n";
-// 		mcf<<"a "<<graph_vertices.right.at(target(e,*g))+1<<" "<<graph_vertices.right.at(source(e,*g))+1<<" 0 -1 "<<max[e]-modulo_param[graph_edges.right.at(e)]*period<<"\n";
-	    }
+		//start gurobi solver
+	    if (verbose == OUT_DEBUG) std::cout<<"Start Gurobi.\n"<<std::flush;
+		int gurobi_basis_size = 0;
+		int gurobi_vbasis[2*nr_of_edges] = {};
+		int gurobi_x_val[2*nr_of_edges] = {};
 
-// 	    mcf<<"c\nc End.";
-// 	    mcf.close();
 
-		//start goblin solver
-	    if (verbose == OUT_DEBUG) std::cout<<"Invoking goblin solver.\n"<<std::flush;
-	    double return_val = goblin_graph->MinCostBFlow();
-	    if (verbose == OUT_DEBUG) std::cout<<"Objective value: "<<return_val<<"\n"<<std::flush;
+		try {
+			// Create an environment
+			GRBEnv env = GRBEnv(true);
+			env.set(GRB_IntParam_OutputFlag, 0);
+			env.start();
 
-	    if (verbose == OUT_DEBUG) std::cout<<"Organizing edges..."<<std::flush;
+			// Create an empty model
+			GRBModel model = GRBModel(env);
+			model.set(GRB_IntParam_Method, 0);
+			model.set(GRB_IntParam_Threads, gurobi_threads);
+			// model.set(GRB_IntParam_Presolve, 0);
+
+			// Create variables
+			GRBVar* flow = 0;
+			flow = model.addVars(2*nr_of_edges, GRB_CONTINUOUS);
+				// lb, ub should be set to standard values aka 0, Inf
+				// don't know why following line is not working
+				// model.addVars(0.0, GRB_INFINITY, NULL, GRB_CONTINUOUS, NULL, NULL, 2*nr_of_edges);
+			
+			// Add constraints
+			for (uint i = 0; i < nr_of_nodes; ++i) 
+			{
+				GRBLinExpr lhs = 0;
+
+				for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(i) , *g); out_i != out_end; ++out_i)
+				{
+					Edge e = *out_i;
+					int cur_id = graph_edges.right.at(e);
+					lhs += flow[2*cur_id];
+					lhs -= flow[2*cur_id+1];
+				}
+
+				for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(i) , *g); in_i != in_end; ++in_i)
+				{
+					Edge e = *in_i;
+					int cur_id = graph_edges.right.at(e);
+					lhs -= flow[2*cur_id];
+					lhs += flow[2*cur_id+1];
+				}
+
+				model.addConstr(lhs == demand_array[i]);
+			}
+
+			//Set objective
+			GRBLinExpr obj = 0;
+			for (uint i = 0; i < 2*nr_of_edges; ++i) 
+			{
+				obj += cost_array[i] * flow[i];
+			}
+			model.setObjective(obj, GRB_MAXIMIZE);
+
+			// Optimize model
+			model.optimize();
+			
+			// Status checking
+    		int status = model.get(GRB_IntAttr_Status);
+
+            if (status != GRB_OPTIMAL) 
+			{
+				std::cout << "Optimization was stopped with status " << status << std::endl;
+				std::abort();;
+			}
+
+			//std::cout<<"Gurobi VBasis attribute (0 means basis)"<<endl;
+			//std::cout<<"id\tvbasis\tx_val"<<endl;
+			for (uint i = 0; i < 2*nr_of_edges; ++i)
+			{
+				//std::cout<<i<<"\t"<<flow[i].get(GRB_IntAttr_VBasis)<<"\t("<<flow[i].get(GRB_DoubleAttr_X)<<")"<<endl;
+
+				gurobi_vbasis[i] = flow[i].get(GRB_IntAttr_VBasis);
+				gurobi_x_val[i] = flow[i].get(GRB_DoubleAttr_X);
+
+				if (flow[i].get(GRB_IntAttr_VBasis) == 0) {
+					basis_gurobi[gurobi_basis_size] = i;
+					gurobi_basis_size++;
+				}
+			}
+		
+			// model.write("basis.bas");
+			// model.write("model.lp");
+
+			//std::cout<<endl<<"End"<<endl;
+			//std::cout<<"Number of gurobi basis elements: "<<gurobi_basis_size<<endl;
+			if (verbose == OUT_DEBUG) std::cout << "Obj: " << model.get(GRB_DoubleAttr_ObjVal) << std::endl;
+		} catch(GRBException e) {
+    		std::cout << "Error code = " << e.getErrorCode() << std::endl;
+    		std::cout << e.getMessage() << std::endl;
+			std::abort();
+  		}
+
+		//std::cout<<"Number of nodes: "<<nr_of_nodes<<endl;
+		//std::cout<<"Size of gurobi basis: "<<gurobi_basis_size<<endl;
 
 	    in_tree_edges.clear();
 	    out_tree_edges.clear();
@@ -1913,101 +1986,64 @@ else
 
 	    //record the spanning tree as a graph
 	    if (spanning_tree != 0)
-		delete spanning_tree;
-	    spanning_tree = new Tree(nr_of_nodes);
+			delete spanning_tree;
+		spanning_tree = new Tree(nr_of_nodes);
 		spanning_set.clear();
 
-	    count_edges = 0;
-	    int count_span=0;
+		//std::cout<<"Print tree"<<endl;
+		//std::cout<<"flow id\tedge_id\tedge"<<endl;
 
-	    // ofstream out("new-timetable.tim");
-
-	    for (uint i=0; i<numvertices; i++)
+	    for (uint i=0; i<gurobi_basis_size; i++)
 	    {
-		int pre = goblin_graph->Pred(i);
-		pre/=2;
-
-	// 	cout<<pre<<"\n";
-
-		// out<<i+1<<";"<<-goblin_graph->Pi(i)<<"\n"<<flush;
-
-		if (pre <= numedges*2-1)
-		{
-// 			Edge e = graph_edges.left.at(pre/2);
+			int pre = basis_gurobi[i];
 			Edge e = graph_edges_left[pre/2];
-			span[count_span]=e;
+			//std::cout<<pre<<"\t"<<int(pre/2)<<"\t"<<e<<endl;
+			
+			span[i]=e;
 			spanning_set.insert(pre/2);
-	//     		std::cout<<"Spanning tree edge: "<<graph_edges.left.at(pre/2);
-			++count_span;
 			in_tree_edges.push_back(graph_edges.right.at(e));
+			
 			if (pre%2 ==1)
 			{
 				lower_tree_edges.push_back(false);
-				//std::cout<<"Edge "<<graph_edges.left.at(pre/2)<<" as upper.\n";
 			}
 			else
 			{
 				lower_tree_edges.push_back(true);
-				//std::cout<<"Edge "<<graph_edges.left.at(pre/2)<<" as lower.\n";
 			}
+
+			add_edge(source(e,*g), target(e,*g), *spanning_tree);
+	    }
+		//std::cout<<"End"<<endl;
+		//std::cout<<"Edges in spanning tree: "<<gurobi_basis_size<<endl;
+		//std::cout<<"Vertices-1: "<<nr_of_nodes - 1<<endl;
+
+		if (gurobi_basis_size < nr_of_nodes - 1) 
+		{
+			repair_spanning_tree(gurobi_vbasis, gurobi_basis_size);
 		}
-	    }
-
-	    // out.close();
-
-		//is there something wrong?
-	    if (count_span !=  numvertices-1)
-	    {
-		std::cout<<"Number of edges: "<<count_span<<"\n";
-		std::cout<<"Number of nodes: "<<nr_of_nodes<<"\n";
-		//HACK!
-	// 	abort();
-		// int count_adds = 0;
-		// for (int i=0; i<nr_of_edges; ++i)
-		// {
-		// if (edge_types[i].find("help_edge") != std::string::npos)
-		// {
-		  // ++count_adds;
-		  // lower_tree_edges.push_back(true);
-		  // span[count_span] =graph_edges.left.at(i);
-		  // ++count_span;
-		  // spanning_set.insert(i);
-		  // in_tree_edges.push_back(i);
-		// }
-		// }
-		// cout<<"ADDED "<<count_adds<<" help edges to ST.\n";
-
-		// if (count_span != (int)nr_of_nodes-1)
-		  abort();
-	    }
-		else
-		// cout<<"Tree found!\n";
-
-	    for (int i=0; i<count_span; i++)
-	    {
-		//if (verbose == OUT_DEBUG)
-		//	std::cout<<"Adding to tree: "<<source(span[i],*g)<<" <-> "<<target(span[i],*g)<<"\n"<<std::flush;
-		add_edge(source(span[i],*g), target(span[i],*g), *spanning_tree);
-	    }
-
-	    delete CT_NW_Simplex;
-
-	    // cout<<"Added and deleted.\n"<<flush;
+		else if (gurobi_basis_size > nr_of_nodes - 1)
+		{
+			std::cout<<"gurobi basis size > nr_of_nodes - 1- This should not happen."<<std::endl;
+			// because we have a tree with nr_of_nodes - 1 edges.
+			std::abort();
+		}
+		
+		// check if it is really a tree
+		check_spanning_tree();
 
 		//sort if in or out
 		typedef graph_traits<Graph>::edge_iterator eite;
 		for (std::pair<eite,eite> p = edges(*g); p.first != p.second; ++p.first)
 		{
 			bool in = false;
-			for (uint i = 0; i<count_span; ++i)
+			for (uint i = 0; i<nr_of_nodes-1; ++i)
 				if (span[i] == *p.first )
 					in = true;
 
 			if (!in)
 			{
-			// cout<<*p.first<<"\n";
 				out_tree_edges.push_back(graph_edges.right.at(*p.first));
-				// if (verbose == OUT_DEBUG) std::cout<<"Out tree edge found: "<<graph_edges.right.at(*p.first)<<"\n"<<std::flush;
 			}
 		}
 		if (verbose == OUT_DEBUG) std::cout<<"done.\n"<<std::flush;
@@ -2032,7 +2068,7 @@ else
 	    int count_edges=0;
 	    int test_demand=0;
 
-	    ofstream mcf("mcf-temp.net");
+	    std::ofstream mcf("mcf-temp.net");
 	    mcf<<"c GOGO Netherlands!\n";
 	    mcf<<"c nodes, links\nc\n";
 	    mcf<<"p min "<<nr_of_nodes<<" "<<2*nr_of_edges<<"\n";
@@ -2077,8 +2113,8 @@ else
 	}
 	else
 	{
-		cout<<"Unknown nonperiodic solver.\n";
-		exit(1);
+		std::cout<<"Unknown nonperiodic solver.\n";
+		std::exit(1);
 	}
 }
 
@@ -2090,7 +2126,7 @@ void simplex::solve()
 	int limit_counter = 1;
 	time_t rawtime;
 	struct tm * timeinfo;
-	time ( &rawtime );
+	std::time ( &rawtime );
 	timeinfo = localtime ( &rawtime );
 	std::cout<<asctime(timeinfo)<<"\n";
 
@@ -2100,7 +2136,7 @@ void simplex::solve()
 
 	//begin without local cut
 	cut.active = false;
-	string cuttype;
+	std::string cuttype;
 	switch (local_search)
 	{
 		case SINGLE_NODE_CUT: cuttype = "single node cut"; break;
@@ -2111,6 +2147,7 @@ void simplex::solve()
 	}
 
 	save_best_feasible();
+	if (get_objective() == 0) return;
 
 	clock_t begin = clock();
 	do
@@ -2143,6 +2180,8 @@ void simplex::solve()
 				//cout<<"*\n"<<flush;
 					best_feasible_obj = get_objective();
 					save_best_feasible();
+
+					if (get_objective() == 0) return;
 				}
 			}
 		}
@@ -2158,7 +2197,7 @@ void simplex::solve()
 		if (verbose != OUT_DEBUG && limit_counter == 1)
 			std::cout<<limit_counter<<";"<<get_objective()<<";"<<1.0* (clock() - begin) / CLOCKS_PER_SEC<<";"<<nr_col_ops<<";"<<nr_piv_ops<<";"<<nr_calc_ops<<";"<<current_robustness<<";input solution\n"<<std::flush;
 
-		while(pivot() && (search != TAB_SIMPLE_TABU_SEARCH || pivot_count < ts_max_iterations) && (!countpercentages || pivot_count<100) && (timelimit > 1.0* (clock() - begin) / CLOCKS_PER_SEC || timelimit == 0) )
+		while(pivot() && (search != TAB_SIMPLE_TABU_SEARCH || pivot_count < ts_max_iterations) && (!countpercentages || pivot_count < pivot_count_max_iterations || pivot_count_max_iterations == 0) && (timelimit > 1.0* (clock() - begin) / CLOCKS_PER_SEC || timelimit == 0) )
 		{
 			++limit_counter;
 
@@ -2179,6 +2218,8 @@ void simplex::solve()
 			//cout<<"*\n"<<flush;
 				best_feasible_obj = get_objective();
 				save_best_feasible();
+
+				if (get_objective() == 0) return;
 			}
 
 			if (limit !=0 && limit_counter>limit)
@@ -2189,7 +2230,7 @@ void simplex::solve()
 				if (c == 'q')
 				{
 					std::cout<<"Aborting...\n";
-					time ( &rawtime );
+					std::time ( &rawtime );
 					timeinfo = localtime ( &rawtime );
 					std::cout<<asctime(timeinfo)<<"\n";
 					write_result(config::get_string_value("default_timetable_periodic_file"));
@@ -2240,11 +2281,11 @@ void simplex::solve()
 			for (uint i=0; i<10; ++i)
 				std::cout<<dis[i]<<"\n";
 
-			exit(0);
+			std::exit(0);
 		}
 		if (verbose == OUT_DEBUG)
 			std::cout<<"\n*** Searching for an improving cut. ***\n\n"<<std::flush;
-		improvable();
+		improvable(begin);
 		if (presentation || allow_keylistener) getchar();
 
 		if (cut.active == false && (search == TAB_STEEPEST_SA_HYBRID && !sa_hybrid_active))
@@ -2255,7 +2296,7 @@ void simplex::solve()
 	if (timelimit < 1.0* (clock() - begin) / CLOCKS_PER_SEC && timelimit != 0)
 	  std::cout<<"Timelimit hit!\n";
 
-	time ( &rawtime );
+	std::time ( &rawtime );
 	timeinfo = localtime ( &rawtime );
 	std::cout<<asctime(timeinfo)<<"\n";
 
@@ -2741,7 +2782,7 @@ void simplex::write_result(std::string filename)
 	output<<"#timetable found by modulo network simplex algorithm\n";
 	time_t rawtime;
 	struct tm * timeinfo;
-	time ( &rawtime );
+	std::time ( &rawtime );
 	timeinfo = localtime ( &rawtime );
 	output<<"#"<<asctime(timeinfo);
 
@@ -2891,6 +2932,16 @@ void simplex::set_timelimit(double time)
 	timelimit = time;
 }
 
+void simplex::set_pivot_count_max_iterations(int number)
+{
+	pivot_count_max_iterations = number;
+}
+
+void simplex::set_gurobi_threads(int number)
+{
+	gurobi_threads = number;
+}
+
 void simplex::save_best_feasible()
 {
 	set_time();
@@ -2907,7 +2958,7 @@ void simplex::restore_best_feasible()
 	output<<"#timetable found by modulo network simplex algorithm\n";
 	time_t rawtime;
 	struct tm * timeinfo;
-	time ( &rawtime );
+	std::time ( &rawtime );
 	timeinfo = localtime ( &rawtime );
 	output<<"#"<<asctime(timeinfo);
 
@@ -2922,4 +2973,280 @@ void simplex::restore_best_feasible()
 	}
 
 	output.close();
+}
+
+void simplex::check_spanning_tree()
+{
+	if (verbose == OUT_DEBUG) std::cout<<"Check if spanning tree is a real tree."<<std::endl;
+
+	int number_of_vertices = num_vertices(*spanning_tree);
+	int number_of_edges = num_edges(*spanning_tree);
+
+	//create needed iterator
+	graph_traits<Tree>::out_edge_iterator out_i, out_end;
+	graph_traits<Tree>::in_edge_iterator in_i, in_end;
+
+	// list for node visting status
+	bool visited[number_of_vertices] = {false};
+	int parents[number_of_vertices] = {-1};
+
+	// queue for bfs
+	std::list<int> queue;
+	int cur;
+
+	// start
+	visited[0] = true;
+	queue.push_back(0);
+
+	while( !queue.empty() )
+	{
+		// Dequeue a vertex from queue
+        cur = queue.front();
+        queue.pop_front();
+
+		for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(cur) , *spanning_tree); out_i != out_end; ++out_i)
+		{
+			//int s = source(*out_i, *spanning_tree); // == cur
+			int t = target(*out_i, *spanning_tree);
+
+			if ( !visited[t] )
+			{
+				visited[t] = true;
+				parents[t] = cur;
+				queue.push_back(t);
+			}
+			else if ( parents[cur] != t )
+			{
+				std::cout<<"Spanning tree is not a tree (has a cycle)!"<<std::endl;
+				std::abort();
+			}
+		}
+	}
+
+	bool connected = true;
+	for (int i=0; i < number_of_vertices; ++i)
+	{
+		if ( !visited[i] )
+		{
+			connected = false;
+			std::cout<<i<<" ";
+		}
+	}
+
+	if ( !connected) 
+	{
+		std::cout<<std::endl<<"Spanning tree is not a tree (not connected)!"<<std::endl;
+		std::cout<<"Above nodes are not connected to node 0 (but may be connected among themselves)"<<std::endl;
+		std::abort();
+	}
+
+	if (verbose == OUT_DEBUG) std::cout<<"It is a tree."<<std::endl;
+}
+
+int simplex::calculate_number_of_connected_components()
+{
+	if (verbose == OUT_DEBUG) std::cout<<"Count number of connected compontens."<<std::endl;
+
+	int number_of_vertices = num_vertices(*g);
+	int number_of_edges = num_edges(*g);
+
+	//create needed iterator
+	graph_traits<Graph>::out_edge_iterator out_i, out_end;
+	graph_traits<Graph>::in_edge_iterator in_i, in_end;
+
+	// list for node visting status
+	bool visited[number_of_vertices] = {false};
+
+	// queue for bfs
+	std::list<int> queue;
+	int cur;
+	int count_number_of_connected_components = 0;
+
+	for (int v = 0; v < number_of_vertices; ++v)
+	{
+		if (visited[v] == false)
+		{
+			visited[v] = true;
+			queue.push_back(v);
+			count_number_of_connected_components += 1;
+
+			while ( !queue.empty() )
+			{
+				// Dequeue a vertex from queue
+        		cur = queue.front();
+        		queue.pop_front();
+				for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(cur) , *g); out_i != out_end; ++out_i)
+				{
+					int t = target(*out_i, *g);
+
+					if ( !visited[t] )
+					{
+						visited[t] = true;
+						queue.push_back(t);
+					}
+				}
+
+				for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(cur) , *g); in_i != in_end; ++in_i)
+				{
+					int s = source(*in_i, *g);
+					if ( !visited[s] )
+					{
+						visited[s] = true;
+						queue.push_back(s);
+					}
+				}
+			}
+		}
+	}
+
+	if (verbose == OUT_DEBUG) std::cout<<"Number of connected compontens: "<<count_number_of_connected_components<<std::endl;
+	return count_number_of_connected_components;
+}
+
+int simplex::repair_spanning_tree(int *gurobi_vbasis, int gurobi_basis_size)
+{
+	//std::cout<<"Repairing spanning tree."<<endl;
+	if (verbose == OUT_DEBUG) std::cout<<"Repairing spanning tree."<<std::endl;
+
+	//create needed iterator
+	graph_traits<Tree>::out_edge_iterator out_i, out_end;
+	graph_traits<Tree>::in_edge_iterator in_i, in_end;
+
+	// list for node visting status
+	bool visited[nr_of_nodes] = {false};
+	int node_component[nr_of_nodes] = {0};
+
+	// queue for bfs
+	std::list<int> queue;
+	int cur;
+	int tree_components = 0;
+
+	// start
+	visited[0] = true;
+	queue.push_back(0);
+
+	// determine components and number of components
+	for (int v = 0; v < nr_of_nodes; ++v) 
+	{
+		if ( visited[v] ) 
+		{
+			continue;
+		}
+
+		// else
+		tree_components += 1;
+		visited[v] = true;
+
+		queue.push_back(v);
+		
+		while ( !queue.empty() ) 
+		{
+			// Dequeue a vertex from queue
+			cur = queue.front();
+			queue.pop_front();
+			node_component[cur] = tree_components;
+
+			for (tie(out_i, out_end) = out_edges(graph_vertices.left.at(cur) , *spanning_tree); out_i != out_end; ++out_i) 
+			{
+				int t = target(*out_i, *spanning_tree);
+
+				if ( !visited[t] )
+				{
+					visited[t] = true;
+					queue.push_back(t);
+				}
+			}
+
+			for (tie(in_i, in_end) = in_edges(graph_vertices.left.at(cur) , *spanning_tree); in_i != in_end; ++in_i) 
+			{
+				int s = source(*in_i, *spanning_tree);
+				if ( !visited[s] )
+				{
+					visited[s] = true;
+					queue.push_back(s);
+				}
+			}
+		}
+		
+	}
+
+	//std::cout<<"(nr_of_nodes-1) - gurobi_basis_size: "<<nr_of_nodes-1-gurobi_basis_size<<endl;
+	//std:cout<<"tree_components: "<<tree_components<<endl;
+
+	/*
+	std::cout<<"-------------------------------------"<<endl;
+	std::cout<<"Node and component"<<endl;
+	for (int i=0; i<nr_of_nodes; ++i) 
+	{
+		std::cout<<i<<"\t"<<node_component[i]<<endl;
+	}
+	*/
+
+	// add fitting edges
+	int count_added_edges = 0;
+	int basis_size = gurobi_basis_size;
+	for (int pre=0; pre<2*nr_of_edges; pre++) 
+	{
+		if (gurobi_vbasis[pre] == -1) // -1 (non-basic at lower bound)
+		{
+			// get edge
+			Edge e = graph_edges_left[pre/2];
+			int e_source = source(e,*g);
+			int e_target = target(e,*g);
+
+			//std::cout<<"Try edge: "<<e<<endl;
+			//std::cout<<"Source component: "<<node_component[e_source]<<"; Target component: "<<node_component[e_target]<<endl;
+
+			// if nodes already in same component
+			if (node_component[e_source] == node_component[e_target])
+			{
+				continue;
+			}
+			
+			//else add edge to spanning tree (and corresponding lists)
+			//std::cout<<"Add edge: "<<e<<endl;
+			if (verbose == OUT_DEBUG) std::cout<<"Add edge: "<<e<<std::endl;
+			span[gurobi_basis_size]=e;
+			spanning_set.insert(pre/2);
+			in_tree_edges.push_back(graph_edges.right.at(e));
+			
+			if (pre%2 ==1)
+			{
+				lower_tree_edges.push_back(false);
+			}
+			else
+			{
+				lower_tree_edges.push_back(true);
+			}
+
+			add_edge(source(e,*g), target(e,*g), *spanning_tree);
+
+			// after work
+			count_added_edges++;
+			basis_size++;
+
+			// if all needed edges are added
+			//std::cout<<"Step: "<<count_added_edges<<" "<<tree_components-1<<endl;
+			if ( count_added_edges == tree_components - 1)
+			{
+				if (verbose == OUT_DEBUG) std::cout<<"Repairing spanning tree finished."<<std::endl;
+				return basis_size;
+			}
+
+			// adjust node component id
+			int min_component_id = std::min(node_component[e_source], node_component[e_target]);
+			int max_component_id = std::max(node_component[e_source], node_component[e_target]);
+
+			for (int j=0; j<nr_of_nodes; ++j)
+			{
+				if (node_component[j] == max_component_id)
+				{
+					node_component[j] = min_component_id;
+				}
+			}
+		}
+	}
+
+	std::cout<<"This should not be reachable."<<std::endl;
+	std::abort();
 }

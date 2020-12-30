@@ -57,7 +57,7 @@
         <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
             <src path="."/>
             <classpath refid="lintim-lineplanning-cost.classpath"/>
-            <exclude name="net/lintim/algorithm/lineplanning/CostGurobi.java" />
+            <exclude name="net/lintim/algorithm/lineplanning/CostRestrictingFrequenciesGurobi.java" />
         </javac>
     </target>
     <target name="build-with-gurobi" depends="init" if="${gurobi.installed}">
@@ -65,7 +65,7 @@
         <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
             <src path="."/>
             <classpath refid="lintim-lineplanning-cost.classpath"/>
-            <exclude name="net/lintim/algorithm/lineplanning/CostXpress.java" />
+            <exclude name="net/lintim/algorithm/lineplanning/CostRestrictingFrequenciesXpress.java" />
         </javac>
     </target>
     <!-- Either Xpress or Gurobi is necessary, fail if none is present -->

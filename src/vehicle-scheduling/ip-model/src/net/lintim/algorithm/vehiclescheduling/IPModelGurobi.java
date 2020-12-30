@@ -8,13 +8,14 @@ import net.lintim.model.VehicleSchedule;
 import net.lintim.model.vehiclescheduling.TripConnection;
 import net.lintim.model.vehiclescheduling.TripNode;
 import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 import net.lintim.util.SolverType;
+import net.lintim.util.vehiclescheduling.Parameters;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * An implementation of an ip solver for the vehicle scheduling problem using Gurobi. Use
@@ -22,17 +23,18 @@ import java.util.logging.Level;
  */
 public class IPModelGurobi extends IPModelSolver{
 
+    private static final Logger logger = new Logger(IPModelGurobi.class.getCanonicalName());
+
 	@Override
-	public VehicleSchedule solveVehicleSchedulingIPModel(Graph<TripNode, TripConnection> tripGraph, boolean useDepot,
-	                                                     int timeLimit, Level logLevel) {
+	public VehicleSchedule solveVehicleSchedulingIPModel(Graph<TripNode, TripConnection> tripGraph, Parameters parameters) {
 		try {
 			GRBEnv env = new GRBEnv();
 			GRBModel vsModel = new GRBModel(env);
 			vsModel.set(GRB.IntAttr.ModelSense, GRB.MINIMIZE);
-			double solverTimelimit = timeLimit == -1 ? GRB.INFINITY : timeLimit;
-			logger.log(LogLevel.DEBUG, "Set Gurobi timelimit to " + solverTimelimit);
+			double solverTimelimit = parameters.getTimeLimit() == -1 ? GRB.INFINITY : parameters.getTimeLimit();
+			logger.debug("Set Gurobi timelimit to " + solverTimelimit);
 			vsModel.set(GRB.DoubleParam.TimeLimit, solverTimelimit);
-			if (logLevel.equals(LogLevel.DEBUG)) {
+			if (parameters.getLogLevel().equals(LogLevel.DEBUG)) {
 				vsModel.set(GRB.IntParam.LogToConsole, 1);
 				vsModel.set(GRB.StringParam.LogFile, "VSModelGurobi.log");
 			} else {
@@ -40,7 +42,7 @@ public class IPModelGurobi extends IPModelSolver{
 			}
 
 			// Add variables
-			logger.log(LogLevel.DEBUG, "Add variables");
+			logger.debug("Add variables");
 			HashMap<Integer, GRBVar> edgeVariables = new HashMap<>();
 			for(TripConnection connection : tripGraph.getEdges()) {
 				edgeVariables.put(connection.getId(), vsModel.addVar(0, 1, connection.getCost(), GRB.INTEGER, "v_"
@@ -48,7 +50,7 @@ public class IPModelGurobi extends IPModelSolver{
 			}
 
 			// Add constraints
-			logger.log(LogLevel.DEBUG, "Add incoming connection constraints");
+			logger.debug("Add incoming connection constraints");
 			GRBLinExpr incomingEdges;
 			GRBLinExpr outgoingEdges;
 			for(TripNode tripNode : tripGraph.getNodes()) {
@@ -67,23 +69,23 @@ public class IPModelGurobi extends IPModelSolver{
 				vsModel.addConstr(outgoingEdges, GRB.EQUAL, 1, "c_out_" + tripNode.getId());
 			}
 
-			logger.log(LogLevel.DEBUG, "Start optimization");
+			logger.debug("Start optimization");
 			vsModel.write("vsModel.lp");
 			vsModel.optimize();
-			logger.log(LogLevel.DEBUG, "End optimization");
+			logger.debug("End optimization");
 
 			int status = vsModel.get(GRB.IntAttr.Status);
 			if (status == GRB.INFEASIBLE) {
-				logger.log(LogLevel.ERROR, "The problem is infeasible");
+				logger.error("The problem is infeasible");
 				return null;
 			}
 			else if (status == GRB.OPTIMAL) {
-				logger.log(LogLevel.DEBUG, "Optimal solution found");
+				logger.debug("Optimal solution found");
 			}
 			else {
-				logger.log(LogLevel.DEBUG, "No optimal solution found");
+				logger.debug("No optimal solution found");
 				if(vsModel.get(GRB.IntAttr.SolCount) == 0) {
-					logger.log(LogLevel.WARN, "Could not find feasible solution");
+					logger.warn("Could not find feasible solution");
 					return null;
 				}
 			}
@@ -116,7 +118,7 @@ public class IPModelGurobi extends IPModelSolver{
 					throw new SolverGurobiException(e.getErrorCode() + ": " + e.toString());
 				}
 			}
-			return computeSchedule(usedTripConnections, useDepot);
+			return computeSchedule(usedTripConnections);
 
 		} catch (GRBException e) {
 			throw new SolverGurobiException(e.toString());

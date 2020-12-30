@@ -194,7 +194,7 @@ class VehicleScheduleWriter:
         schedule file.
         """
         if not file_name:
-            file_name = config.getStringValue("default_vehile_schedule_file")
+            file_name = config.getStringValue("default_vehicle_schedule_file")
         if not header:
             header = config.getStringValue("vehicle_schedule_header")
 
