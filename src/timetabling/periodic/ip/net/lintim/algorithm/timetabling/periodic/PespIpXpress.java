@@ -18,9 +18,10 @@ import java.util.logging.LogManager;
  */
 public class PespIpXpress extends PespSolver{
 	@Override
-	public boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean,
-	                                         PeriodicTimetable<PeriodicEvent> timetable, double changePenalty, int
-			                                             timeLimit, double mipGap) {
+	public boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean, PeriodicTimetable<PeriodicEvent> timetable,
+																					 boolean solverOutput, int threadLimit, boolean useOldSolution,
+	                                         double changePenalty, int timeLimit, double mipGap,
+																					 int solutionLimit, double bestBoundStop, int mipFocus) {
 
 		Logger logger = new Logger(PespIpXpress.class.getCanonicalName());
 		Level logLevel = LogManager.getLogManager().getLogger("").getLevel();
@@ -29,18 +30,36 @@ public class PespIpXpress extends PespSolver{
 		XPRB bcl = new XPRB();
 		XPRBprob model = bcl.newProb("pesp ip periodic timetabling");
 		model.setSense(XPRB.MINIM);
-		if(timeLimit != 0){
+		if(timeLimit > 0){
 			//Set timetlimit to -timelimit, otherwise Xpress will search until a solution is found, see docs for MAXTIME
 			model.getXPRSprob().setIntControl(XPRS.MAXTIME, -1*timeLimit);
 		}
-		if(mipGap != 0){
+		if(mipGap > 0){
 			model.getXPRSprob().setDblControl(XPRS.MIPRELSTOP, mipGap);
+		}
+
+		if(solutionLimit > 0){
+			logger.warn("Parameter solutionLimit (> 0) only implemented for Gurobi.");
+		}
+		if(bestBoundStop > 0){
+			logger.warn("Parameter bestBoundStop (> 0) only implemented for Gurobi.");
+		}
+		if(threadLimit > 0){
+		    model.getXPRSprob().setIntControl(XPRS.THREADS, threadLimit);
+		}
+		if(mipFocus > 0){
+			logger.warn("Parameter mipFocus (> 0) only implemented for Gurobi.");
+		}
+		if(useOldSolution){
+			logger.warn("Parameter useOldSolution only implemented for Gurobi.");
 		}
 
 
 		if (logLevel.equals(LogLevel.DEBUG)) {
 			model.setMsgLevel(4);
-		} else if (logLevel.equals(LogLevel.INFO)) {
+		} else if (!solverOutput) {
+            model.setMsgLevel(0);
+        } else if (logLevel.equals(LogLevel.INFO)) {
 			model.setMsgLevel(2);
 		} else if (logLevel.equals(LogLevel.WARN)) {
 			model.setMsgLevel(2);

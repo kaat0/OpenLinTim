@@ -18,24 +18,45 @@ public class DirectGurobi {
 
 	private static Logger logger = new Logger(DirectGurobi.class.getCanonicalName());
 
-	public static DirectSolutionDescriptor solveLinePlanningDirect(Graph<Stop, Link> ptn, OD od, LinePool linePool, Config config,
-	                                                               int commonFrequencyDivisor) {
-		return solveLinePlanningDirect(ptn, od, linePool, config, computeShortestPaths(ptn, od, config),
-            commonFrequencyDivisor);
+    /**
+     * Solve the direct line planning problem without a given set of preferable paths, i.e., the shortest paths for each
+     * passenger will be computed beforehand and set as preferable.
+     * @param ptn the infrastructure network
+     * @param od the demand
+     * @param linePool the line pool
+     * @param commonFrequency the common frequency, i.e., an integer divisor to all allowed frequencies
+     * @param parameters the parameters of the model
+     * @return a descriptor of the found solution
+     */
+	public static DirectSolutionDescriptor solveLinePlanningDirect(Graph<Stop, Link> ptn, OD od, LinePool linePool, int commonFrequency,
+                                                                   DirectParameters parameters) {
+		return solveLinePlanningDirect(ptn, od, linePool, computeShortestPaths(ptn, od, parameters), commonFrequency,
+            parameters);
 	}
 
-	public static DirectSolutionDescriptor solveLinePlanningDirect(Graph<Stop, Link> ptn, OD od, LinePool linePool, Config config,
+    /**
+     * Solve the direct line planning problem for a given set of preferable paths.
+     * @param ptn the infrastructure network
+     * @param od the demand
+     * @param linePool the line pool
+     * @param preferablePaths the preferable paths of the passengers. A passenger is counted as a direct traveller if
+     *                        it can travel directly on a preferable path.
+     * @param commonFrequency the common frequency, i.e., an integer divisor to all allowed frequencies
+     * @param parameters the parameters of the model
+     * @return a descriptor of the found solution
+     */
+	public static DirectSolutionDescriptor solveLinePlanningDirect(Graph<Stop, Link> ptn, OD od, LinePool linePool,
 	                                                               Map<Pair<Integer, Integer>, Collection<Path<Stop, Link>>>
-			                                              preferablePaths, int commonFrequencyDivisor) {
+			                                              preferablePaths, int commonFrequency, DirectParameters parameters) {
 		try {
 			GRBEnv env = new GRBEnv();
 			GRBModel directModel = new GRBModel(env);
 			directModel.set(GRB.IntAttr.ModelSense, GRB.MAXIMIZE);
-			double mipGap = config.getDoubleValue("lc_mip_gap");
+			double mipGap = parameters.getMipGap();
 			if (mipGap >= 0) {
 				directModel.set(GRB.DoubleParam.MIPGap, mipGap);
 			}
-			double timeLimit = config.getDoubleValue("lc_timelimit");
+			double timeLimit = parameters.getTimelimit();
 			if (timeLimit >= 0) {
 				directModel.set(GRB.DoubleParam.TimeLimit, timeLimit);
 			}
@@ -56,6 +77,9 @@ public class DirectGurobi {
 			// mentioned there.
 			//d[i][j][l] = number of passenger directly travelling from i to j using line with id l
 			HashMap<Integer, HashMap<Integer, HashMap<Integer, GRBVar>>> d = new HashMap<>();
+            double directFactor = parameters.getDirectFactor();
+            double costFactor = parameters.getCostFactor();
+            logger.debug("Using directFactor " + directFactor + " and costFactor " + costFactor);
 			for (Stop origin : ptn.getNodes()) {
 				d.put(origin.getId(), new HashMap<>());
 				for (Stop destination : ptn.getNodes()) {
@@ -66,7 +90,7 @@ public class DirectGurobi {
 					}
 					for (int lineId : acceptableLineIds.get(new Pair<>(origin.getId(), destination.getId())).keySet()) {
 						d.get(origin.getId()).get(destination.getId()).put(lineId, directModel.addVar(0, od.getValue
-								(origin.getId(), destination.getId()), 1, GRB.INTEGER, "d_" + origin.getId() + "_" +
+								(origin.getId(), destination.getId()), directFactor, GRB.INTEGER, "d_" + origin.getId() + "_" +
 								destination.getId() + "_" + lineId));
 						sumOfAllVariablesPerODPair.addTerm(1, d.get(origin.getId()).get(destination.getId())
 								.get(lineId));
@@ -79,17 +103,17 @@ public class DirectGurobi {
 			//f[l] = frequency of line l
 			HashMap<Integer, GRBVar> f = new HashMap<>();
 			for (Line line : linePool.getLines()) {
-                GRBVar frequency = directModel.addVar(0, GRB.INFINITY, 0, GRB.INTEGER, "f_" + line.getId());
+                GRBVar frequency = directModel.addVar(0, GRB.INFINITY, -1 * costFactor * line.getCost(), GRB.INTEGER, "f_" + line.getId());
 				f.put(line.getId(), frequency);
                 GRBVar systemFrequencyDivisor = directModel.addVar(0, GRB.INFINITY, 0, GRB.INTEGER, "g_" +
                     line.getId());
                 GRBLinExpr rhs = new GRBLinExpr();
-                rhs.addTerm(commonFrequencyDivisor, systemFrequencyDivisor);
+                rhs.addTerm(commonFrequency, systemFrequencyDivisor);
                 directModel.addConstr(frequency, GRB.EQUAL, rhs, "systemFrequency_" + line.getId());
 			}
 			logger.debug("Add capacity constraints");
 			//Constraint 3.7 -> Ensure that the capacity of each line is not exceeded
-			int capacity = config.getIntegerValue("gen_passengers_per_vehicle");
+			int capacity = parameters.getCapacity();
 			for (Link link : ptn.getEdges()) {
 				HashMap<Integer, GRBLinExpr> directTravellersOnLineAndEdge = new HashMap<>();
 				for (Line line : linePool.getLines()) {
@@ -140,7 +164,7 @@ public class DirectGurobi {
 
 			//Budget constraints -> Restrict the costs of the line concept
 			logger.debug("Add budget constraint");
-			int budget = config.getIntegerValue("lc_budget");
+			double budget = parameters.getBudget();
 			GRBLinExpr costOfLineConcept = new GRBLinExpr();
 			for (Line line : linePool.getLines()) {
 				costOfLineConcept.addTerm(line.getCost(), f.get(line.getId()));
@@ -155,7 +179,7 @@ public class DirectGurobi {
 			if(directModel.get(GRB.IntAttr.Status) != GRB.Status.OPTIMAL){
 				logger.debug("Solver could not find an optimal solution, Gurobi status is " +
 						directModel.get(GRB.IntAttr.Status));
-				if(logLevel == LogLevel.DEBUG && commonFrequencyDivisor == 1){
+				if(logLevel == LogLevel.DEBUG && commonFrequency == 1){
 					directModel.computeIIS();
 					directModel.write("DirectModelGurobi.ilp");
 				}
@@ -173,11 +197,11 @@ public class DirectGurobi {
 	}
 
 	private static HashMap<Pair<Integer, Integer>, Collection<Path<Stop, Link>>> computeShortestPaths(Graph<Stop,
-			Link> ptn, OD od, Config config) {
+			Link> ptn, OD od, DirectParameters parameters) {
 		HashMap<Pair<Integer, Integer>, Collection<Path<Stop, Link>>> paths = new HashMap<>();
 		//First determine what the length of an edge in a shortest path should be
 		Function<Link, Double> lengthFunction;
-		switch (config.getStringValue("ean_model_weight_drive").toUpperCase()) {
+		switch (parameters.getWeightDrive()) {
 			case "AVERAGE_DRIVING_TIME":
 				lengthFunction = link -> (link.getLowerBound() + link.getUpperBound()) / 2.0;
 				break;
@@ -191,8 +215,7 @@ public class DirectGurobi {
 				lengthFunction = Link::getLength;
 				break;
 			default:
-				throw new ConfigTypeMismatchException("ean_model_weight_drive", "String", config.getStringValue
-						("ean_model_weight_drive"));
+				throw new ConfigTypeMismatchException("ean_model_weight_drive", "String", parameters.getWeightDrive());
 		}
 		//Now iterate all od pairs, compute shortest path and add them to the returned map
 		for (Stop origin : ptn.getNodes()) {

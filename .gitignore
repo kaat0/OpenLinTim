@@ -31,15 +31,9 @@ Release
 thirdparty
 conprop
 evaluation
+!evaluation/
 shortest_paths_cc
 shortest_paths_sh
-
-# file to commit
-!makefile
-!Makefile
-!Release/Makefile
-!evaluation/
-!FILES_TO_CLEAN
 
 # LinTim specific data files #
 ##############################
@@ -96,6 +90,7 @@ cmake_install.cmake
 # #####
 .idea
 *.iml
+.vscode
 
 # C++ #
 # #####

@@ -10,7 +10,7 @@ using namespace modulosimplex;
 int main(int argc, char** argv)
 {
       
-      cout<<"**************************\n**************************\n**************************\n**************************\n";
+    std::cout<<"**************************\n**************************\n**************************\n**************************\n";
   
 	config::from_file("basis/Config.cnf", false);
 	
@@ -20,6 +20,12 @@ int main(int argc, char** argv)
 	solver.set_limit(config::get_integer_value("tim_nws_limit"));
 	
 	solver.set_timelimit(config::get_integer_value("tim_nws_timelimit"));
+
+	solver.set_pivot_count_max_iterations(config::get_integer_value("tim_nws_pivot_count_max_iterations"));
+	
+	solver.set_loc_number_of_nodes(config::get_integer_value("tim_nws_loc_number_of_nodes"));
+
+	solver.set_gurobi_threads(config::get_integer_value("tim_nws_gurobi_threads"));
 	
 	//set usage of headways
 	solver.set_headways(config::get_bool_value("tim_nws_headways"));
@@ -38,7 +44,7 @@ int main(int argc, char** argv)
 		solver.set_loc_improvement(NO_CUT);	  
 	else
 	{
-		cout<<"Unknown local search method: "<<loc_method<<".\nAborting algorithm.\n";
+		std::cout<<"Unknown local search method: "<<loc_method<<".\nAborting algorithm.\n";
 		exit(1);
 	}
 	
@@ -47,34 +53,34 @@ int main(int argc, char** argv)
 	if (tab_method == "TAB_FULL")
 	{
 		solver.set_tab_search(TAB_FULL);
-		cout<<"Using tab full search method.\n";
+		std::cout<<"Using tab full search method.\n";
 	}
 	else if (tab_method == "TAB_SIMPLE_TABU_SEARCH")
 	{
 		solver.set_tab_search(TAB_SIMPLE_TABU_SEARCH);
 		solver.set_ts_memory(config::get_integer_value("tim_nws_ts_memory"));
 		solver.set_ts_max_iterations(config::get_integer_value("tim_nws_ts_max_iterations"));
-		cout<<"Using tabu search method.\n";
+		std::cout<<"Using tabu search method.\n";
 	}
 	else if (tab_method == "TAB_SIMULATED_ANNEALING")
 	{
 		solver.set_tab_search(TAB_SIMULATED_ANNEALING);
 		solver.set_sa_init_temperature(config::get_integer_value("tim_nws_sa_init"));
 		solver.set_sa_coolness_factor(config::get_double_value("tim_nws_sa_cooldown"));
-		cout<<"Using simulated annealing search method.\n";
+		std::cout<<"Using simulated annealing search method.\n";
 	}
 	else if (tab_method == "TAB_STEEPEST_SA_HYBRID")
 	{
 		solver.set_tab_search(TAB_STEEPEST_SA_HYBRID);
 		solver.set_sa_init_temperature(config::get_integer_value("tim_nws_sa_init"));
 		solver.set_sa_coolness_factor(config::get_double_value("tim_nws_sa_cooldown"));
-		cout<<"Using steepest descend simulated annealing hybrid search method.\n";
+		std::cout<<"Using steepest descend simulated annealing hybrid search method.\n";
 	}
 	else if (tab_method == "TAB_PERCENTAGE")
 	{
 		solver.set_tab_search(TAB_PERCENTAGE);
 		solver.set_percentage_improvement(config::get_integer_value("tim_nws_percentage"));	
-		cout<<"Using tab percentage search method.\n";
+		std::cout<<"Using tab percentage search method.\n";
 	}
 	else if (tab_method == "TAB_FASTEST")
 	{
@@ -82,16 +88,16 @@ int main(int argc, char** argv)
 		solver.set_min_pivot_improvement(config::get_double_value("tim_nws_min_pivot"));
 		solver.set_dynamic_pivot_factor(config::get_double_value("tim_nws_dyn_pivot"));
 		solver.set_tab_min_improvement(DYNAMIC);
-		cout<<"Using tab fastest search method.\n";
+		std::cout<<"Using tab fastest search method.\n";
 	}
 	else if (tab_method == "TAB_NOTHING")
 	{
 		solver.set_tab_search(TAB_NOTHING);
-		cout<<"Using tab nothing search method.\n";
+		std::cout<<"Using tab nothing search method.\n";
 	}
 	else
 	{
-		cout<<"Unknown fundamental search method: "<<tab_method<<".\nAborting algorithm.\n";
+		std::cout<<"Unknown fundamental search method: "<<tab_method<<".\nAborting algorithm.\n";
 		exit(1);
 	}	
 	

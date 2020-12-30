@@ -2,44 +2,27 @@ package net.lintim.evaluation;
 
 import net.lintim.algorithm.Dijkstra;
 import net.lintim.exception.LinTimException;
+import net.lintim.main.evaluation.util.evaluation.Parameters;
 import net.lintim.model.*;
-import net.lintim.util.Config;
-import net.lintim.util.LogLevel;
-import net.lintim.util.Pair;
-import net.lintim.util.Statistic;
+import net.lintim.util.*;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 /**
  * Class for evaluating a vehicle schedule
  */
 public class VehicleScheduleEvaluator {
-	private static Logger logger = Logger.getLogger("net.lintim.evaluation.VehicleScheduleEvaluator");
-	private static final int minutesPerHour = 60;
-	private static final int secondsPerMinute = 60;
+	private static final Logger logger = new Logger(VehicleScheduleEvaluator.class.getCanonicalName());
+	private static final int SECONDS_PER_MINUTE = 60;
 
-	public static void evaluateVehicleSchedule(VehicleSchedule vehicleSchedule, Collection<Trip> trips,
-	                                           Graph<Stop, Link> ptn, LinePool lineConcept, Statistic statistic,
-	                                           Config config){
-		//Read parameters from config
-		logger.log(LogLevel.INFO, "Reading parameters needed for evaluation");
-		int depotIndex = config.getIntegerValue("vs_depot_index");
-		double vehicleSpeed = config.getDoubleValue("gen_vehicle_speed");
-		//Convert cost factors to cost per minute, not hour
-		double costFactorFullDuration = config.getDoubleValue("vs_eval_cost_factor_full_trips_duration") /
-				minutesPerHour;
-		double costFactorEmptyDuration = config.getDoubleValue("vs_eval_cost_factor_empty_trips_duration") / minutesPerHour;
-		double costFactorFullLength = config.getDoubleValue("vs_eval_cost_factor_full_trips_length");
-		double costFactorEmptyLength = config.getDoubleValue("vs_eval_cost_factor_empty_trips_length");
-		double costPerVehicle = config.getDoubleValue("vs_vehicle_costs");
-		int turnOverTime = config.getIntegerValue("vs_turn_over_time");
-		logger.log(LogLevel.INFO, "Finished reading parameters");
-		logger.log(LogLevel.INFO, "Begin evaluation");
-		int numberOfCirculations = vehicleSchedule.getCirculations().size();
+	public static Statistic evaluateVehicleSchedule(VehicleSchedule vehicleSchedule, Collection<Trip> trips,
+                                               Graph<Stop, Link> ptn, LinePool lineConcept,
+                                               Parameters parameters){
+		logger.info("Begin evaluation");
 		int numberOfUsedVehicles = 0;
 		double emptyTripDistanceWithoutDepot = 0;
 		double emptyTripDistanceDepot = 0;
@@ -55,32 +38,12 @@ public class VehicleScheduleEvaluator {
 		double sumWaitingTimeInStation = 0;
 		int numberOfWaitingTimesInStation = 0;
 		//First, calculate the distances between the stations and for the lines
-		// Store by stop ids, first the duration (in minutes), second the length (in kilometers)
-		HashMap<Pair<Integer, Integer>, Pair<Double, Double>> shortestPathLengths = new HashMap<>();
-		Function<Link, Double> lengthFunction = l -> (double) l.getLowerBound();
-		for(Stop startStop : ptn.getNodes()){
-			Dijkstra<Stop, Link, Graph<Stop, Link>> dijkstra = new Dijkstra<>(ptn, startStop, lengthFunction);
-			dijkstra.computeShortestPaths();
-			for(Stop endStop : ptn.getNodes()){
-				double pathLength = startStop.equals(endStop) ? 0 : dijkstra.getPath(endStop).getEdges().stream()
-						.mapToDouble(Link::getLength).sum();
-				shortestPathLengths.put(new Pair<>(startStop.getId(), endStop.getId()), new Pair<>(dijkstra
-						.getDistance(endStop), pathLength));
-			}
-		}
-		HashMap<Integer, Double> lineLength = new HashMap<>();
-		for(Line line : lineConcept.getLines()){
-			if(line.getFrequency() > 0){
-				double sumOfLength = 0;
-				for(Link link : line.getLinePath().getEdges()){
-					sumOfLength += link.getLength();
-				}
-				lineLength.put(line.getId(), sumOfLength);
-			}
-		}
-		for(Circulation circulation : vehicleSchedule.getCirculations()){
-			numberOfUsedVehicles += circulation.getVehicleTourList().size();
+		// Store by stop ids, first the duration (in seconds), second the length (in kilometers)
+        Map<Pair<Integer, Integer>, Pair<Double, Double>> shortestPathLengths = computeStationDistances(ptn, parameters);
+        Map<Integer, Double> lineLength = computeLineLengths(lineConcept);
+        for(Circulation circulation : vehicleSchedule.getCirculations()){
 			for(VehicleTour vehicleTour : circulation.getVehicleTourList()){
+			    numberOfUsedVehicles += 1;
 				//Store the first and last trip for special consideration later on
 				List<Trip> tripList = vehicleTour.getTripList();
 				Trip firstTrip = tripList.get(0);
@@ -89,32 +52,31 @@ public class VehicleScheduleEvaluator {
 				int currentStopId = -1;
 				for(Trip trip : tripList){
 					if (currentTime > trip.getStartTime()) {
-						logger.log(LogLevel.WARN, "Moved backwards in time, trip " + trip + " starts before the last " +
+						logger.warn("Moved backwards in time, trip " + trip + " starts before the last " +
 								"trip ended!");
 						feasibility = false;
 					}
 					if (currentStopId != -1 && trip.getStartStopId() != currentStopId) {
-						logger.log(LogLevel.WARN, "The last trip ended at " + currentStopId + " but the current trip " +
+						logger.warn("The last trip ended at " + currentStopId + " but the current trip " +
 								trip + " starts at a different stop!");
 						feasibility = false;
 					}
 					if (trip.getTripType() == TripType.TRIP && !trips.remove(trip)) {
-						logger.log(LogLevel.WARN, "Could not find trip " + trip + " from the vehicle schedule in the" +
+						logger.warn("Could not find trip " + trip + " from the vehicle schedule in the" +
 								" list of read trips. Please check your Trip file!");
 						feasibility = false;
 					}
-					//First handle the case we have the first or the last trip
+					//First handle the case where we have the first or the last trip
 					if(trip.equals(firstTrip)){
-						//Should we consider a depot?
-						if(depotIndex != -1){
+						if(parameters.useDepot()){
 							int firstStopIdInVehicleTour = trip.getTripType() == TripType.TRIP ? trip.getStartStopId() :
 									trip.getEndStopId();
-							if(firstStopIdInVehicleTour != depotIndex){
+							if(firstStopIdInVehicleTour != parameters.getDepotIndex()){
 								//We do not start in the depot, we need to get there
 								numberOfEmptyTripsDepot += 1;
-								emptyTripDistanceDepot += shortestPathLengths.get(new Pair<>(depotIndex,
+								emptyTripDistanceDepot += shortestPathLengths.get(new Pair<>(parameters.getDepotIndex(),
 										firstStopIdInVehicleTour)).getSecondElement();
-								emptyTripDurationDepot += shortestPathLengths.get(new Pair<>(depotIndex,
+								emptyTripDurationDepot += shortestPathLengths.get(new Pair<>(parameters.getDepotIndex(),
 										firstStopIdInVehicleTour)).getFirstElement();
 							}
 						}
@@ -126,16 +88,16 @@ public class VehicleScheduleEvaluator {
 					}
 					else if(trip.equals(lastTrip)){
 						//Should we consider a depot?
-						if(depotIndex != -1){
+						if(parameters.getDepotIndex() != -1){
 							int lastStopIdInVehicleTour = trip.getTripType() == TripType.TRIP ? trip.getEndStopId() :
 									trip.getStartStopId();
-							if(lastStopIdInVehicleTour != depotIndex){
+							if(lastStopIdInVehicleTour != parameters.getDepotIndex()){
 								//We do not end in the depot, we need to get there
 								numberOfEmptyTripsDepot += 1;
 								emptyTripDistanceDepot += shortestPathLengths.get(new Pair<>(lastStopIdInVehicleTour,
-										depotIndex)).getSecondElement();
+										parameters.getDepotIndex())).getSecondElement();
 								emptyTripDurationDepot += shortestPathLengths.get(new Pair<>(lastStopIdInVehicleTour,
-										depotIndex)).getFirstElement();
+										parameters.getDepotIndex())).getFirstElement();
 							}
 						}
 						if(trip.getTripType() == TripType.EMPTY){
@@ -158,16 +120,15 @@ public class VehicleScheduleEvaluator {
 							minTripDuration = 0;
 						}
 						else {
-							//Convert trip duration to minutes, from seconds
-							tripDuration = (trip.getEndTime() - trip.getStartTime()) / (double) secondsPerMinute;
+							tripDuration = trip.getEndTime() - trip.getStartTime();
 							tripLength = shortestPathLengths.get(new Pair<>(trip.getStartStopId(), trip.getEndStopId
 									())).getSecondElement();
 							minTripDuration = shortestPathLengths.get(new Pair<>(trip.getStartStopId(), trip
-									.getEndStopId())).getFirstElement() + turnOverTime;
+									.getEndStopId())).getFirstElement() + parameters.getTurnoverTime();
 						}
 					}
 					else {
-						tripDuration = (trip.getEndTime() - trip.getStartTime()) / (double) secondsPerMinute;
+						tripDuration = trip.getEndTime() - trip.getStartTime();
 						minTripDuration = shortestPathLengths.get(new Pair<>(trip.getStartStopId(), trip
 								.getEndStopId())).getFirstElement();
 						try {
@@ -185,9 +146,13 @@ public class VehicleScheduleEvaluator {
 						//Check if the empty trip is possible, i.e., if the trip duration is enough to cover the
 						// distance of the trip
 						if(tripDuration < minTripDuration){
-							logger.log(LogLevel.WARN, "Found a trip with insufficient time, " + trip + " has a " +
+							logger.warn("Found a trip with insufficient time, " + trip + " has a " +
 									"duration of " + tripDuration + " min, but has a minimal duration of " +
 									minTripDuration + "min.");
+							logger.warn("Goes from " + trip.getStartStopId() + " to " + trip.getEndStopId());
+							logger.warn("Distance is " + shortestPathLengths.get(new Pair<>(trip.getStartStopId(), trip
+                                .getEndStopId())).getFirstElement());
+							logger.warn("Turnaround time is " + parameters.getTurnoverTime());
 							feasibility = false;
 						}
 						if(tripLength > 0){
@@ -209,21 +174,22 @@ public class VehicleScheduleEvaluator {
 		}
 		double emptyDuration = emptyTripDurationDepot + emptyTripDurationWithoutDepot + sumWaitingTimeInStation;
 		double emptyLength = emptyTripDistanceDepot + emptyTripDistanceWithoutDepot;
-		double emptyCosts = costPerVehicle * numberOfUsedVehicles + costFactorEmptyDuration * emptyDuration +
-				costFactorEmptyLength * emptyLength;
-		double costs = emptyCosts + costFactorFullDuration * fullTripDuration + costFactorFullLength * fullTripDistance;
+		double emptyCosts = parameters.getCostPerVehicle() * numberOfUsedVehicles + parameters.getCostFactorEmptyDuration() * emptyDuration +
+				parameters.getCostFactorEmptyLength() * emptyLength;
+		double costs = emptyCosts + parameters.getCostFactorFullDuration() * fullTripDuration + parameters.getCostFactorFullLength() * fullTripDistance;
 		// Are there still uncovered trips left?
 		if (trips.size() > 0) {
-			logger.log(LogLevel.WARN, "There were uncovered trips:");
+			logger.warn("There were uncovered trips:");
 			for (Trip trip : trips) {
-				logger.log(LogLevel.WARN, trip.toString());
+				logger.warn(trip.toString());
 			}
 			feasibility = false;
 		}
 		//Write the found values to the statistic
+        Statistic statistic = new Statistic();
 		statistic.put("vs_cost", costs);
 		statistic.put("vs_empty_cost", emptyCosts);
-		statistic.put("vs_circulations", numberOfCirculations);
+		statistic.put("vs_circulations", vehicleSchedule.getCirculations().size());
 		statistic.put("vs_vehicles", numberOfUsedVehicles);
 		statistic.put("vs_empty_distance", emptyTripDistanceWithoutDepot);
 		statistic.put("vs_empty_distance_with_depot", emptyLength);
@@ -238,32 +204,36 @@ public class VehicleScheduleEvaluator {
 		statistic.put("vs_full_distance", fullTripDistance);
 		statistic.put("vs_full_duration", fullTripDuration);
 		statistic.put("vs_feasible", feasibility);
-		logger.log(LogLevel.INFO, "Finished evaluation");
+		return statistic;
 	}
 
-	public static void evaluateVehicleSchedule(VehicleSchedule vehicleSchedule, Collection<Trip> trips,
-	                                           Graph<Stop, Link> ptn, LinePool lineConcept, Config config){
-		evaluateVehicleSchedule(vehicleSchedule, trips, ptn, lineConcept, Statistic.getDefaultStatistic(), config);
-	}
+    private static HashMap<Integer, Double> computeLineLengths(LinePool lineConcept) {
+        HashMap<Integer, Double> lineLength = new HashMap<>();
+        for(Line line : lineConcept.getLines()){
+            if(line.getFrequency() > 0){
+                double sumOfLength = 0;
+                for(Link link : line.getLinePath().getEdges()){
+                    sumOfLength += link.getLength();
+                }
+                lineLength.put(line.getId(), sumOfLength);
+            }
+        }
+        return lineLength;
+    }
 
-	public static void evaluateVehicleSchedule(VehicleSchedule vehicleSchedule, Collection<Trip> trips,
-	                                           Graph<Stop, Link> ptn, LinePool lineConcept, Statistic statistic){
-		evaluateVehicleSchedule(vehicleSchedule, trips, ptn, lineConcept, statistic, Config.getDefaultConfig());
-	}
-
-	public static void evaluateVehicleSchedule(VehicleSchedule vehicleSchedule, Collection<Trip> trips,
-	                                           Graph<Stop, Link> ptn, LinePool lineConcept){
-		evaluateVehicleSchedule(vehicleSchedule, trips, ptn, lineConcept, Statistic.getDefaultStatistic(), Config
-				.getDefaultConfig());
-	}
-
-	/**
-	 * Get the time in minutes that a vehicle with the given speed needs to travel a distance of given length
-	 * @param length the length to convert, in kilometers
-	 * @param vehicleSpeed the speed of the vehicle
-	 * @return the time in minutes
-	 */
-	private static double getTimeInMinutes(double length, double vehicleSpeed){
-		return length / vehicleSpeed * minutesPerHour;
-	}
+    private static HashMap<Pair<Integer, Integer>, Pair<Double, Double>> computeStationDistances(Graph<Stop, Link> ptn, Parameters parameters) {
+        HashMap<Pair<Integer, Integer>, Pair<Double, Double>> shortestPathLengths = new HashMap<>();
+        Function<Link, Double> lengthFunction = l -> (double) l.getLowerBound() * SECONDS_PER_MINUTE / parameters.getTimeUnitsPerMinute();
+        for(Stop startStop : ptn.getNodes()){
+            Dijkstra<Stop, Link, Graph<Stop, Link>> dijkstra = new Dijkstra<>(ptn, startStop, lengthFunction);
+            dijkstra.computeShortestPaths();
+            for(Stop endStop : ptn.getNodes()){
+                double pathLength = startStop.equals(endStop) ? 0 : dijkstra.getPath(endStop).getEdges().stream()
+                        .mapToDouble(Link::getLength).sum();
+                shortestPathLengths.put(new Pair<>(startStop.getId(), endStop.getId()), new Pair<>(dijkstra
+                        .getDistance(endStop), pathLength));
+            }
+        }
+        return shortestPathLengths;
+    }
 }

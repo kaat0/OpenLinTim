@@ -37,32 +37,38 @@ void evaluation::init(std::string activityfile, std::string eventfile,
     }
     // read in OD Matrix
     ODReader odr(&tempod, odfile);
-    odr.read();
-    od = tempod.toFullOD();
+    try {
+        odr.read();
+        od = tempod.toFullOD();
+        routingEAN = RoutingGraph(EAN);
+        // add nodes in EAN for routing from station to station
+        routingEAN.station_nodes.resize(od.getSize());
+        for (int i = 0; i < od.getSize(); i++){
+            int id = routingEAN.getNumberOfNodes() + 1;
+            PeriodicEvent p(id, i+1,ARRIVAL,-1,-1, -1, FORWARDS, 0);
+            EvalEvent e(p, true );
+            routingEAN.addNode(e);
+            routingEAN.station_nodes[i] = routingEAN.getNode(id);
+        }
+        //connect stations to all arrival/departure events at this station
+        for (EvalEvent &e: routingEAN.getNodes()){
+            if (e.getArtificial()) continue;
+            int id = routingEAN.getNumberOfEdges()+1;
+            if (e.getType() == ARRIVAL){
+                EvalActivity a(id, 0, routingEAN.getNode(e.getId()), routingEAN.station_nodes[e.getStopId()-1]);
+                routingEAN.addEdge(a);
+            }
+            else{ // DEPARTURE
+                EvalActivity a(id, 0, routingEAN.station_nodes[e.getStopId()-1],  routingEAN.getNode(e.getId()));
+                routingEAN.addEdge(a);
+            }
+        }
+    } catch(const InputFileException& e) {
+        // We do not have a od matrix, therefore we will not route in this evaluation
+        std::cout << "Did not find OD matrix, skip all passenger routing" << std::endl;
+    }
 
-    routingEAN = RoutingGraph(EAN);
-    // add nodes in EAN for routing from station to station
-    routingEAN.station_nodes.resize(od.getSize());
-    for (int i = 0; i < od.getSize(); i++){
-        int id = routingEAN.getNumberOfNodes() + 1;
-        PeriodicEvent p(id, i+1,ARRIVAL,-1,-1, -1, FORWARDS, 0);
-        EvalEvent e(p, true );
-        routingEAN.addNode(e);
-        routingEAN.station_nodes[i] = routingEAN.getNode(id);
-    }
-    //connect stations to all arrival/departure events at this station
-    for (EvalEvent &e: routingEAN.getNodes()){
-        if (e.getArtificial()) continue;
-        int id = routingEAN.getNumberOfEdges()+1;
-        if (e.getType() == ARRIVAL){
-            EvalActivity a(id, 0, routingEAN.getNode(e.getId()), routingEAN.station_nodes[e.getStopId()-1]);
-            routingEAN.addEdge(a);
-        }
-        else{ // DEPARTURE
-            EvalActivity a(id, 0, routingEAN.station_nodes[e.getStopId()-1],  routingEAN.getNode(e.getId()));
-            routingEAN.addEdge(a);
-        }
-    }
+
 }
 
 // calls the evaluation functions
@@ -80,7 +86,6 @@ void evaluation::evaluate(){
 		average_wait_slack_result = average_type_slack(WAIT);
 		number_of_transfers_result = number_of_transfers();
 	}
-
     sum_od_pairs_result = sum_od_pairs();
     perceived_traveling_time_result = perceived_traveling_time();
 
@@ -236,11 +241,13 @@ double evaluation::perceived_traveling_time()
 void evaluation::results_to_statistic(Statistic &stat)
 {
     stat.setBooleanValue("tim_feasible", feasible_result);
-    stat.setDoubleValue("tim_time_average", sum_od_pairs_result); // former tim_sum_od_pairs
-    stat.setDoubleValue("tim_perceived_time_average", perceived_traveling_time_result);
     stat.setIntegerValue("tim_obj_ptt1", weighted_times_result); // former tim_weighted_times
     stat.setIntegerValue("tim_obj_slack_average", average_slack_result); // former tim_weighted_slack
-
+    if (routingEAN.getEdges().size() > 0) {
+        // Only add these values if we routed beforehand
+        stat.setDoubleValue("tim_perceived_time_average", perceived_traveling_time_result);
+        stat.setDoubleValue("tim_time_average", sum_od_pairs_result); // former tim_sum_od_pairs
+    }
     if(eval_extended){
 		stat.setDoubleValue("tim_obj_slack_drive_average", average_drive_slack_result); // former tim_weighted_change_slack
 		stat.setDoubleValue("tim_obj_slack_wait_average", average_wait_slack_result); // former tim_average_headway_slack

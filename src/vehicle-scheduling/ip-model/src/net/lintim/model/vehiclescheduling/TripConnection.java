@@ -8,9 +8,9 @@ import net.lintim.model.Edge;
 public class TripConnection implements Edge<TripNode> {
 
 	private int id;
-	private TripNode sourceTrip;
-	private TripNode targetTrip;
-	private double cost;
+	private final TripNode sourceTrip;
+	private final TripNode targetTrip;
+	private final double cost;
 
 	/**
 	 * Create a new trip connection.

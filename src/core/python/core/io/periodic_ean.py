@@ -9,10 +9,10 @@ from core.exceptions.graph_exceptions import (GraphEdgeIdMultiplyAssignedExcepti
                                               GraphNodeIdMultiplyAssignedException)
 from core.io.csv import CsvReader, CsvWriter
 from core.model.graph import Graph
-from core.model.impl.dict_graph import DictGraph
+from core.model.impl.simple_dict_graph import SimpleDictGraph
 from core.model.periodic_ean import PeriodicEvent, PeriodicActivity, EventType, LineDirection, ActivityType, \
     PeriodicTimetable
-from core.util.config import Config, default_config
+from core.util.config import Config
 
 
 class PeriodicEANReader:
@@ -241,7 +241,7 @@ class PeriodicEANReader:
         :return: the ean with the added data.
         """
         if not periodic_ean:
-            periodic_ean = DictGraph()
+            periodic_ean = SimpleDictGraph()
         if read_events and not event_file_name:
             event_file_name = config.getStringValue("default_events_periodic_file")
         if read_activities and not activity_file_name:

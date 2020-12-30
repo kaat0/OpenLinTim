@@ -6,7 +6,7 @@ import java.util.*;
 public class EvaluateSL {
 	
 	private static boolean ptn_only=true;
-	private static boolean extended=false;
+	private static boolean sl_extended =false;
 	private static Config config;
 	private static Statistic statistic;
 	private static String statistic_file_name;
@@ -84,7 +84,7 @@ public class EvaluateSL {
 
 		statistic_file_name = config.getStringValue("default_statistic_file");
 		
-		extended=config.getBooleanValue("sl_eval_extended");
+		sl_extended =config.getBooleanValue("sl_eval_extended");
 		
 		if(!ptn_only){
 			radius=config.getDoubleValue("sl_radius");
@@ -187,7 +187,7 @@ public class EvaluateSL {
 		number_relevant_demand_points = numberRelevantDemandPoints(existing_ptn, demand, radius, distance);
 		feasible_sl = (number_relevant_demand_points==numberCoveredDemandPoints(current_ptn, demand, radius, distance));
 		
-		if(extended){
+		if(sl_extended){
 			
 			max_distance=0;
 			double min_distance;
@@ -229,12 +229,12 @@ public class EvaluateSL {
 			statistic.setBooleanValue("ptn_feasible_sl", feasible_sl);
 			statistic.setDoubleValue("ptn_travel_time_realistic", travel_time_realistic);
 			statistic.setDoubleValue("ptn_travel_time_const", travel_time_const);
-		}
-		
-		//extended
-		if(extended){
-			statistic.setDoubleValue("ptn_max_distance", max_distance);
-			statistic.setIntegerValue("ptn_candidates", number_candidates);
+
+			//sl_extended
+			if(sl_extended){
+				statistic.setDoubleValue("ptn_max_distance", max_distance);
+				statistic.setIntegerValue("ptn_candidates", number_candidates);
+			}
 		}
 		
 		statistic.writeStatistic(statistic_file);

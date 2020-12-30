@@ -12,7 +12,7 @@ import java.util.Set;
 
 /**
  * Implementation of initialization code for the direct traveller model in line planning. Will use
- * {@link net.lintim.algorithm.lineplanning.DirectGurobi#solveLinePlanningDirect(Graph, OD, LinePool, Config, int)} for
+ * {@link net.lintim.algorithm.lineplanning.DirectGurobi#solveLinePlanningDirect(Graph, OD, LinePool, int, DirectParameters)} for
  * the actual computation. This class is only the entry point and responsible for all the setup, e.g. reading and
  * writing.
  */
@@ -30,9 +30,8 @@ public class Direct {
 		if (args.length != 1) {
 			throw new ConfigNoFileNameGivenException();
 		}
-		new ConfigReader.Builder(args[0]).build().read();
-		int commonFrequencyDivisor = Config.getIntegerValueStatic("lc_common_frequency_divisor");
-		int periodLength = Config.getIntegerValueStatic("period_length");
+		Config config = new ConfigReader.Builder(args[0]).build().read();
+		DirectParameters parameters = new DirectParameters(config);
 		logger.info("Finished reading configuration");
 		logger.info("Begin reading input data");
 
@@ -43,13 +42,12 @@ public class Direct {
 		logger.info("Begin execution of line planning direct model");
 		// Solve the problem for all possible system frequencies and determine the best
 		Set<Integer> possibleSystemFrequencies = LinePlanningHelper.determinePossibleSystemFrequencies
-				(commonFrequencyDivisor, periodLength);
+				(parameters.getCommonFrequencyDivisor(), parameters.getPeriodLength());
 		boolean solutionFound = false;
 		double bestObjective = Double.NEGATIVE_INFINITY;
 		HashMap<Integer, Integer> bestFrequencies = null;
 		for(int commonFrequency : possibleSystemFrequencies) {
-			DirectSolutionDescriptor solutionWrapper = DirectGurobi.solveLinePlanningDirect(ptn, od, linePool,
-                Config.getDefaultConfig(), commonFrequency);
+			DirectSolutionDescriptor solutionWrapper = DirectGurobi.solveLinePlanningDirect(ptn, od, linePool, commonFrequency, parameters);
 			if(solutionWrapper.isFeasible()) {
 				solutionFound = true;
 				if(solutionWrapper.getObjectiveValue() > bestObjective) {

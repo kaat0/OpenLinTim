@@ -43,7 +43,7 @@ class CycleTimPassGenericModel(TimPassGenericModel):
                     lb += activity.get_lower_bound()
                 else:
                     ub -= activity.get_lower_bound()
-                    lb -= activity.get_lower_bound()
+                    lb -= activity.get_upper_bound()
             ub = math.floor(ub / (self._parameters.period_length * 1.0))
             lb = math.ceil(lb / (self._parameters.period_length * 1.0))
             self._modulo_parameter[non_tree_activity] = self._m.addVariable(lb, ub, VariableType.INTEGER, 0,

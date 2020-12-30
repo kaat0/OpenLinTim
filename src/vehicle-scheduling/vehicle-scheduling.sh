@@ -8,9 +8,9 @@ vs_model=`"${CONFIGCMD[@]}" -s vs_model -u`
 echo "${vs_model}"
 if [[ ${vs_model} = "MDM1" || ${vs_model} = "MDM2" || ${vs_model} = "ASSIGNMENT_MODEL" || ${vs_model} = "TRANSPORTATION_MODEL" || ${vs_model} = "NETWORK_FLOW_MODEL" || ${vs_model} = "CANAL_MODEL" ]]; then
 	ant -q -f ${PROGRAMPATH}/canal-model/build.xml
-	time java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -classpath ${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/canal-model net.lintim.algorithm.vehiclescheduling.FlowsAndTransfers basis/Config.cnf
+	time java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -classpath ${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/canal-model/build net.lintim.algorithm.vehiclescheduling.FlowsAndTransfers basis/Config.cnf
 	time ${PROGRAMPATH}/canal-model/calculate.sh
-	time java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -classpath ${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/canal-model net.lintim.algorithm.vehiclescheduling.CalculateMappingsAndVS basis/Config.cnf
+	time java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -classpath ${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/canal-model/build net.lintim.algorithm.vehiclescheduling.CalculateMappingsAndVS basis/Config.cnf
 elif [[ ${vs_model} = "LINE_BASED" ]]; then
 	bash ./${PROGRAMPATH}/Line-Based/run.sh
 elif [[ ${vs_model} = "SIMPLE" ]]; then

@@ -1,5 +1,6 @@
 package net.lintim.io;
 
+import net.lintim.exception.InputFileException;
 import net.lintim.exception.OutputFileException;
 import net.lintim.util.Config;
 import net.lintim.util.Statistic;
@@ -17,11 +18,13 @@ import java.util.function.Function;
 public class StatisticWriter {
     private final String fileName;
     private final Statistic statistic;
+    private final boolean append;
 
     private StatisticWriter(Builder builder) {
         this.statistic = builder.statistic == null ? Statistic.getDefaultStatistic() : builder.statistic;
         this.fileName = "".equals(builder.fileName) ? builder.config.getStringValue("default_statistic_file") :
             builder.fileName;
+        this.append = builder.append;
     }
 
     /**
@@ -29,15 +32,35 @@ public class StatisticWriter {
      * with.
      */
     public void write() {
+        Statistic toWrite = statistic;
+        if (append) {
+            toWrite = getAppendedStatistic();
+        }
         CsvWriter writer = new CsvWriter(fileName);
         Function<Map.Entry<String, String>, String[]> outputFunction = (Map.Entry<String, String> entry) -> new
             String[]{entry.getKey(), CsvWriter.shortenDecimalValueIfItsDecimal(entry.getValue())};
         try {
-            writer.writeCollection(statistic.getData().entrySet(), outputFunction, Comparator.comparing(Map
-                .Entry::getKey));
+            writer.writeCollection(toWrite.getData().entrySet(), outputFunction, Map.Entry.comparingByKey());
             writer.close();
         } catch (IOException e) {
             throw new OutputFileException(fileName);
+        }
+    }
+
+    /**
+     * Read the current statistic from disc and append all the values in the current statistic. Values in the
+     * old statistic that are also present in the current statistic will be overwritten.
+     * @return the combined statistic.
+     */
+    private Statistic getAppendedStatistic() {
+        try {
+            Statistic discStatistic = new StatisticReader.Builder().setStatistic(new Statistic()).setFileName(fileName).build().read();
+            for (Map.Entry<String, String> newEntry: statistic.getData().entrySet()) {
+                discStatistic.put(newEntry.getKey(), newEntry.getValue());
+            }
+            return discStatistic;
+        } catch (InputFileException e) {
+            return statistic;
         }
     }
 
@@ -54,12 +77,16 @@ public class StatisticWriter {
         private String fileName = "";
         private Statistic statistic = Statistic.getDefaultStatistic();
         private Config config = Config.getDefaultConfig();
+        private boolean append = true;
 
         /**
          * Create a default builder object. Possible parameters for this class are (with the default in parentheses):
          * <ul>
          *     <li>
          *          statistic ({@link Statistic#getDefaultStatistic()}) - the statistic to write
+         *     </li>
+         *     <li>
+         *         append (true) - whether to append to or to overwrite the current statistic on disc (if present)
          *     </li>
          *     <li>
          *          config ({@link Config#getDefaultConfig()}) - the config to read the file name from.
@@ -101,6 +128,11 @@ public class StatisticWriter {
          */
         public Builder setConfig(Config config) {
             this.config = config;
+            return this;
+        }
+
+        public Builder setAppend(boolean append) {
+            this.append = append;
             return this;
         }
 

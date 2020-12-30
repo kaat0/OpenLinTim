@@ -20,11 +20,14 @@ public abstract class PespSolver {
 	 * @param timetable the timetable to store the results in. Note that the times of the ean will be set as well.
 	 * @param timeLimit the timelimit for the computation. Set to negative values to disable.
 	 * @param mipGap the desired mip gap
+	 * @param solutionLimit limit for found solutions
+	 * @param bestBoundStop value to terminate when bound reached this value
 	 * @return whether a feasible solution was found
 	 */
-	public abstract boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean,
-	                                                  PeriodicTimetable<PeriodicEvent> timetable,
-	                                                  double changePenalty, int timeLimit, double mipGap);
+	public abstract boolean solveTimetablingPespModel(Graph<PeriodicEvent, PeriodicActivity> ean, PeriodicTimetable<PeriodicEvent> timetable,
+																					 boolean solverOutput, int threadLimit, boolean useOldSolution,
+	                                         double changePenalty, int timeLimit, double mipGap,
+																					 int solutionLimit, double bestBoundStop, int mipFocus);
 
 	/**
 	 * Get a pesp solver of the given type

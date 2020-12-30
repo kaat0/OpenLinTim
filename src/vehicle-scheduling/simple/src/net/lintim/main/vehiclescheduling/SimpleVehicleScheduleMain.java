@@ -8,10 +8,9 @@ import net.lintim.io.VehicleScheduleWriter;
 import net.lintim.model.Trip;
 import net.lintim.model.VehicleSchedule;
 import net.lintim.util.Config;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.util.Collection;
-import java.util.logging.Logger;
 
 /**
  * Create a simple vehicle schedule, i.e., a vehicle schedule containing only circulations serving one line. A
@@ -19,23 +18,25 @@ import java.util.logging.Logger;
  */
 public class SimpleVehicleScheduleMain {
 
+    private static final Logger logger = new Logger(SimpleVehicleScheduleMain.class.getCanonicalName());
+
 	public static void main(String[] args) {
-		Logger logger = Logger.getLogger("net.lintim.main.vehiclescheduling");
-		logger.log(LogLevel.INFO, "Begin reading configuration");
+		logger.info("Begin reading configuration");
 		if(args.length < 1){
 			throw new ConfigNoFileNameGivenException();
 		}
-		new ConfigReader.Builder(args[0]).build().read();
-		int turnOverTime = Config.getIntegerValueStatic("vs_turn_over_time");
-		logger.log(LogLevel.INFO, "Finished reading configuration");
-		logger.log(LogLevel.INFO, "Begin reading input data");
+		Config config = new ConfigReader.Builder(args[0]).build().read();
+		// Convert turn over time from time units to seconds
+		int turnOverTime = config.getIntegerValue("vs_turn_over_time") / config.getIntegerValue("time_units_per_minute") * 60;
+		logger.info("Finished reading configuration");
+		logger.info("Begin reading input data");
 		Collection<Trip> trips = new TripReader.Builder().build().read();
-		logger.log(LogLevel.INFO, "Finished reading input data");
-		logger.log(LogLevel.INFO, "Begin simple vehicle schedule computation");
+		logger.info("Finished reading input data");
+		logger.info("Begin simple vehicle schedule computation");
 		VehicleSchedule vehicleSchedule = SimpleVehicleSchedule.createSimpleVehicleSchedule(trips, turnOverTime);
-		logger.log(LogLevel.INFO, "Finished simple vehicle schedule computation");
-		logger.log(LogLevel.INFO, "Writing output data");
+		logger.info("Finished simple vehicle schedule computation");
+		logger.info("Writing output data");
 		new VehicleScheduleWriter.Builder(vehicleSchedule).build().write();
-		logger.log(LogLevel.INFO, "Finished writing output data");
+		logger.info("Finished writing output data");
 	}
 }

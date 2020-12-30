@@ -28,6 +28,10 @@ public:
 
          try{
              file.open(file_name.c_str());
+             if (!file) {
+                 std::cout << "File " << file_name << " does not exist" << std::endl << std::flush;
+                 throw InputFileException(file_name);
+             }
              std::string line;
              int lineIndex = 0;
              while(std::getline(file, line, '\n')){

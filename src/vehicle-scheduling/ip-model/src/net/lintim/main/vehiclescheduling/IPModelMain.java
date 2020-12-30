@@ -9,43 +9,43 @@ import net.lintim.io.VehicleScheduleWriter;
 import net.lintim.model.*;
 import net.lintim.util.Config;
 import net.lintim.util.LogLevel;
-import net.lintim.util.SolverType;
+import net.lintim.util.Logger;
+import net.lintim.util.vehiclescheduling.Parameters;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 
 /**
  * Main class for computing a vehicle schedule using an IP solver
  */
 public class IPModelMain {
-	private static Logger logger = Logger.getLogger("net.lintim.main.vehiclescheduling.IPModelMain");
+	private static final Logger logger = new Logger(IPModelMain.class.getCanonicalName());
 
-	public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException,
+	public static void main(String[] args) throws IllegalAccessException, InstantiationException,
 			ClassNotFoundException {
-		logger.log(LogLevel.INFO, "Begin reading configuration");
+		logger.info("Begin reading configuration");
 		if (args.length < 1) {
 			throw new ConfigNoFileNameGivenException();
 		}
-		new ConfigReader.Builder(args[0]).build().read();
-		SolverType solverType = Config.getSolverTypeStatic("vs_solver");
-		logger.log(LogLevel.INFO, "Finished reading configuration");
-		logger.log(LogLevel.INFO, "Begin reading input data");
+		Config config = new ConfigReader.Builder(args[0]).build().read();
+        Parameters parameters = new Parameters(config);
+		logger.info("Finished reading configuration");
+		logger.info("Begin reading input data");
 		Graph<Stop, Link> ptn = new PTNReader.Builder().build().read();
 		Collection<Trip> trips = new TripReader.Builder().build().read();
-		logger.log(LogLevel.INFO, "Finished reading input data");
-		logger.log(LogLevel.INFO, "Begin ip vehicle schedule computation");
-		IPModelSolver solver = IPModelSolver.getVehicleSchedulingIpSolver(solverType);
-		VehicleSchedule vehicleSchedule = solver.solveVehicleSchedulingIPModel(ptn, trips, Config.getDefaultConfig());
-		logger.log(LogLevel.INFO, "Finished ip vehicle schedule computation");
+		logger.info("Finished reading input data");
+		logger.info("Begin ip vehicle schedule computation");
+		IPModelSolver solver = IPModelSolver.getVehicleSchedulingIpSolver(parameters.getSolverType());
+		VehicleSchedule vehicleSchedule = solver.solveVehicleSchedulingIPModel(ptn, trips, parameters);
+		logger.info("Finished ip vehicle schedule computation");
 		if(vehicleSchedule != null) {
-			logger.log(LogLevel.INFO, "Writing output data");
+			logger.info("Writing output data");
 			new VehicleScheduleWriter.Builder(vehicleSchedule).build().write();
-			logger.log(LogLevel.INFO, "Finished writing output data");
+			logger.info("Finished writing output data");
 		}
 		else {
-			logger.log(LogLevel.WARN, "Finish program without writing output");
+			logger.info("Finish program without writing output");
 		}
 	}
 }
