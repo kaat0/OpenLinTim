@@ -1,37 +1,24 @@
 <?xml version="1.0"?>
 <project name="LinTim" default="build-all" basedir=".">
-	<property name="enable_debug" value="false"/>
-	<property name="enable_optimize" value="true"/>
+    <include file="../../base.xml"/>
 	
 	<target name="build-config">
 		<javac srcdir="../config"
-		       destdir="../config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+		       destdir="../config" />
 	</target>
 	<target name="build-javalib-Tools">
 		<javac srcdir="../dm-helper/Tools"
-		       destdir="../dm-helper/Tools"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+		       destdir="../dm-helper/Tools" />
 	</target>
 	<target name="build-javalib-EAN" depends="build-config,build-javalib-Tools">
 		<javac srcdir="../dm-helper/EAN"
 		       destdir="../dm-helper/EAN"
-		       classpath="../config:../dm-helper/Tools"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+		       classpath="../config:../dm-helper/Tools" />
 	</target>
 	<target name="build-circulations-to-ean" depends="build-config,build-javalib-Tools,build-javalib-EAN">
 		<javac srcdir="."
 		       destdir="."
-		       classpath="../config:../dm-helper/Tools:../dm-helper/EAN"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+		       classpath="../config:../dm-helper/Tools:../dm-helper/EAN" />
 	</target>
 	
 	

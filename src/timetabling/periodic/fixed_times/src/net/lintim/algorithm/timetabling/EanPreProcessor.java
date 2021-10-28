@@ -3,8 +3,7 @@ package net.lintim.algorithm.timetabling;
 import net.lintim.model.*;
 import net.lintim.util.*;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Class for preprocessing an ean for timetabling with fixed times. A new fixed event will be added, which is
@@ -43,7 +42,10 @@ public class EanPreProcessor {
 				LineDirection.FORWARDS, 0);
 		ean.addNode(fixedEvent);
 		int nextEdgeId = GraphHelper.getMaxEdgeId(ean) + 1;
-		for (Map.Entry<PeriodicEvent, Pair<Integer, Integer>> timeBoundEntry : eventTimeBounds.entrySet()) {
+		List<Map.Entry<PeriodicEvent, Pair<Integer, Integer>>> timeBoundEntries =
+				new ArrayList<>(eventTimeBounds.entrySet());
+		timeBoundEntries.sort(Comparator.comparingInt(e -> e.getKey().getId()));
+		for (Map.Entry<PeriodicEvent, Pair<Integer, Integer>> timeBoundEntry : timeBoundEntries) {
 			ean.addEdge(new PeriodicActivity(nextEdgeId, ActivityType.SYNC, fixedEvent, timeBoundEntry.getKey(),
 					timeBoundEntry.getValue().getFirstElement(), timeBoundEntry.getValue().getSecondElement(), 0));
 			nextEdgeId += 1;
@@ -74,6 +76,9 @@ public class EanPreProcessor {
     }
 
 	private void updateActivity(PeriodicActivity activity) {
+		if(activity.getType() == ActivityType.CHANGE) {
+			return;
+		}
 		Pair<Integer, Integer> eventTimeBound = getTimeBoundFromEvents(activity);
         setNewBounds(activity, eventTimeBound);
 	}

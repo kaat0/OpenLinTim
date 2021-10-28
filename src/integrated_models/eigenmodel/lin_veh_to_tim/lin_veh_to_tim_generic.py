@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Union
 
+from core.exceptions.algorithm_dijkstra import AlgorithmStoppingCriterionException
 from core.solver.generic_solver_interface import IntAttribute, Model, Variable, VariableType, LinearExpression, \
     OptimizationSense, ConstraintSense, Status, DoubleAttribute
 from ean_data import EanEvent, EanActivity, Ean, AperiodicEan
@@ -176,14 +177,17 @@ class LinVehToTimGenericModel:
     def solve(self):
         logger.debug("Start optimization")
         self._m.solve()
-        self.is_feasible = self._m.getStatus() == Status.FEASIBLE or self._m.getStatus() == Status.OPTIMAL
+        self.is_feasible = self._m.getIntAttribute(IntAttribute.NUM_SOLUTIONS) > 0
         if not self.is_feasible:
             logger.debug("No feasible solution found")
-            if self._parameters.show_solver_output:
+            if self._m.getStatus() == Status.INFEASIBLE:
                 self._m.computeIIS("LinVehToTim.ilp")
+            raise AlgorithmStoppingCriterionException("Lin Veh To Tim")
+        if self._m.getStatus() == Status.OPTIMAL:
+            logger.debug("Optimal solution found")
         else:
             logger.debug("Feasible solution found")
-            logger.debug(f"Objective: {self._m.getDoubleAttribute(DoubleAttribute.OBJ_VAL)}")
+        logger.debug(f"Objective: {self._m.getDoubleAttribute(DoubleAttribute.OBJ_VAL)}")
         logger.debug("End optimization")
 
     def write_output(self):

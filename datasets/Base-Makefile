@@ -38,10 +38,10 @@ CORE_DIR=${SRC_DIR}/core
 # -----------------------------------------------------------------------------
 
 sl-stop-location:
-	bash ../../src/stop-location/stop-location.sh basis/Config.cnf
+	bash ../../src/stop-location/stop-location.sh ${FILENAME_CONFIG}
 
 sl-evaluate:
-	bash ../../src/stop-location/stop-location-evaluation.sh basis/Config.cnf false
+	bash ../../src/stop-location/stop-location-evaluation.sh ${FILENAME_CONFIG} false
 
 # -----------------------------------------------------------------------------
 # === Public Transportation Network ===========================================
@@ -50,7 +50,7 @@ ptn-draw:
 	bash ../../src/tools/ptn-draw/ptn-draw.sh ${FILENAME_CONFIG}
 
 ptn-evaluate:
-	bash ../../src/stop-location/stop-location-evaluation.sh basis/Config.cnf true
+	bash ../../src/stop-location/stop-location-evaluation.sh ${FILENAME_CONFIG} true
 
 ptn-directify:
 	rsync -r --delete --exclude .svn "`pwd`"/* "`pwd`".directed
@@ -64,40 +64,49 @@ ptn-directify:
 ptn-headways:
 	bash ${SRC_DIR}/tools/create_headways/create_headways.sh ${FILENAME_CONFIG}
 
+ptn-regenerate-load:
+	bash ${SRC_DIR}/tools/ptn-load-generator/ptn-load-generators.sh ${FILENAME_CONFIG}
+	
+ptn-preprocess-walking:
+	bash ${SRC_DIR}/tools/walking-preprocessor/run.sh ${FILENAME_CONFIG}
+
 # only to be called through drectify-ptn; will modify the ptn without warning
 _directify-ptn:
-	bash ../../src/essentials/javatools/runner.sh LineConceptDirectification basis/Config.cnf
+	bash ../../src/essentials/javatools/runner.sh ${FILENAME_CONFIG} LineConceptDirectification
 # -----------------------------------------------------------------------------
 # === Origin Destination Matrix ===============================================
 # -----------------------------------------------------------------------------
 od-create:
-	bash ../../src/essentials/create-od/create-od.sh basis/Config.cnf
+	bash ../../src/essentials/create-od/create-od.sh ${FILENAME_CONFIG}
 
 od-evaluate:
-	bash ../../src/essentials/javatools/runner.sh OriginDestinationMatrixEvaluation basis/Config.cnf
+	bash ../../src/essentials/javatools/runner.sh ${FILENAME_CONFIG} OriginDestinationMatrixEvaluation
 
 od-fill-od:
-	bash ../../src/essentials/fill-od/fill-od.sh basis/Config.cnf
+	bash ../../src/essentials/fill-od/fill-od.sh ${FILENAME_CONFIG}
+
+od-distribute-from-nodes:
+	bash ../../src/essentials/create-od/from-nodes/run.sh ${FILENAME_CONFIG}
 
 # -----------------------------------------------------------------------------
 # === Line Pool ===============================================================
 # -----------------------------------------------------------------------------
 
 lpool-line-pool:
-	bash ../../src/linepool/linepool.sh basis/Config.cnf
+	bash ../../src/linepool/linepool.sh ${FILENAME_CONFIG}
 
 lpool-line-pool-draw:
-	bash ../../src/linepool/draw-linepool.sh basis/Config.cnf
+	bash ../../src/linepool/draw-linepool.sh ${FILENAME_CONFIG}
 	neato -n -Tpng graphics/pool-graph.dot -o graphics/pool-graph.png
 	neato -n -Tps graphics/pool-graph.dot -o graphics/pool-graph.ps
 
 lpool-line-pool-cost:
-	bash ../../src/linepool/write-cost-file.sh basis/Config.cnf
+	bash ../../src/linepool/write-cost-file.sh ${FILENAME_CONFIG}
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 lpool-line-pool-evaluate:
-	bash ../../src/essentials/javatools/runner.sh LinePoolEvaluation basis/Config.cnf
+	bash ../../src/essentials/javatools/runner.sh ${FILENAME_CONFIG} LinePoolEvaluation
 
 # -----------------------------------------------------------------------------
 # === Line Concept ============================================================
@@ -106,39 +115,31 @@ lpool-line-pool-evaluate:
 lc-line-concept:
 	${SRC_DIR}/line-planning/line-planning.sh ${FILENAME_CONFIG}
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-ptn-regenerate-load:
-	bash ${SRC_DIR}/tools/ptn-load-generator/ptn-load-generators.sh
-
 lc-line-concept-draw:
-	bash ../../src/linepool/draw-linepool.sh basis/Config.cnf true
+	bash ../../src/linepool/draw-linepool.sh ${FILENAME_CONFIG} true
 	neato -n -Tpng graphics/Line-graph.dot -o graphics/Line-graph.png
 	neato -n -Tps graphics/Line-graph.dot -o graphics/Line-graph.ps
 
 lc-line-concept-evaluate:
 	make -C ${SRC_DIR}/line-planning/evaluation
 	${SRC_DIR}/line-planning/evaluation/evaluation
-	bash ../../src/essentials/javatools/runner.sh LineConceptEvaluation basis/Config.cnf
-
-lc-read-fixed-lines-from-visum:
-	bash ../../src/tools/visum-transformer/read-net/read_fixed_lines.sh ${FILENAME_CONFIG}
+	bash ../../src/essentials/javatools/runner.sh ${FILENAME_CONFIG} LineConceptEvaluation
 
 # -----------------------------------------------------------------------------
 # === Event Activity Network ==================================================
 # -----------------------------------------------------------------------------
 ean:
 	echo "use_buffered_activities; false" >> basis/After-Config.cnf
-	bash ../../src/essentials/javatools/runner.sh ptn2ean basis/Config.cnf
+	bash ../../src/essentials/javatools/runner.sh ${FILENAME_CONFIG} ptn2ean
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ean-reroute-passengers:
-	bash ../../src/essentials/javatools/runner.sh ReroutePassengers basis/Config.cnf
+	bash ${SRC_DIR}/timetabling/periodic/reroute-passengers.sh ${FILENAME_CONFIG}
 
 ean-buffer-activities:
 	echo "use_buffered_activities; false" >> basis/After-Config.cnf
-	bash ../../src/tools/robust-activities/runner.sh BufferActivities basis/Config.cnf
+	bash ../../src/tools/robust-activities/runner.sh ${FILENAME_CONFIG} BufferActivities
 	echo "use_buffered_activities; true" >> basis/After-Config.cnf
 
 ean-evaluate:
@@ -160,8 +161,7 @@ tim-timetable-draw:
 	bash ${SRC_DIR}/tools/plot/ean/periodic-ean-draw.sh ${FILENAME_CONFIG}
 
 tim-timetable-evaluate:
-	${SRC_DIR}/timetabling/timetable-evaluation.sh
-
+	${SRC_DIR}/timetabling/timetable-evaluation.sh ${FILENAME_CONFIG}
 
 tim-line-rearrange:
 	cd ${SRC_DIR}/tools/line_rearrange/build && cmake ..
@@ -173,12 +173,6 @@ tim-line-rearrange-tests:
 	cd ${SRC_DIR}/tools/line_rearrange/build && cmake ..
 	make -C ${SRC_DIR}/tools/line_rearrange/build
 	${SRC_DIR}/tools/line_rearrange/build/tests/runTests
-
-tim-read-fixed-times-from-visum:
-	bash ../../src/tools/visum-transformer/read-net/read_fixed_times.sh ${FILENAME_CONFIG}
-
-tim-transform-to-visum:
-	bash ${SRC_DIR}/tools/transform-timetable-to-visum/run.sh
 
 # -----------------------------------------------------------------------------
 # === Rollout =================================================================
@@ -200,12 +194,12 @@ ro-trips-evaluate:
 # -----------------------------------------------------------------------------
 
 dm-disposition-timetable:
-	../../src/delay-management/disposition-timetable.sh basis/Config.cnf
+	../../src/delay-management/disposition-timetable.sh ${FILENAME_CONFIG}
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 dm-delays:
-	${SRC_DIR}/delay-management/delays-generator.sh basis/Config.cnf
+	${SRC_DIR}/delay-management/delays-generator.sh ${FILENAME_CONFIG}
 
 dm-disposition-timetable-draw:
 	bash ${SRC_DIR}/tools/plot/ean/aperiodic-ean-draw.sh ${FILENAME_CONFIG}
@@ -227,7 +221,7 @@ dm-robustness-check:
 # -----------------------------------------------------------------------------
 
 vs-vehicle-schedules:
-	../../src/vehicle-scheduling/vehicle-scheduling.sh basis/Config.cnf
+	../../src/vehicle-scheduling/vehicle-scheduling.sh ${FILENAME_CONFIG}
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -251,11 +245,57 @@ int-tim-veh:
 	bash ${SRC_DIR}/integrated_models/tim_veh/run.sh ${FILENAME_CONFIG}
 
 # -----------------------------------------------------------------------------
-# === Eigenmodel =============================================================
+# === Eigenmodel ==============================================================
 # -----------------------------------------------------------------------------
 
 em-lin-veh-to-tim:
 	bash ${SRC_DIR}/integrated_models/eigenmodel/lin_veh_to_tim/run.sh ${FILENAME_CONFIG}
+
+
+# -----------------------------------------------------------------------------
+# === VISUM Transformation ====================================================
+# -----------------------------------------------------------------------------
+
+config-fill-config-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_config/read_config.sh ${FILENAME_CONFIG}
+
+ptn-read-infrastructure-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_infrastructure/read_infrastructure.sh ${FILENAME_CONFIG}
+
+ptn-read-restricted-turns-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_restricted_turns/read_restricted_turns.sh ${FILENAME_CONFIG}
+
+ptn-read-ptn-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_ptn/read_ptn.sh ${FILENAME_CONFIG}
+
+ptn-find-terminals-and-change-stations-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_system_routes/find_terminals_and_change_stations.sh ${FILENAME_CONFIG}
+
+ptn-read-system-routes-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_system_routes/read_system_routes.sh ${FILENAME_CONFIG}
+
+od-read-stop-od-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_demand/read_stop_demand.sh ${FILENAME_CONFIG}
+
+od-read-node-od-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_demand/read_node_demand.sh ${FILENAME_CONFIG}
+
+lc-read-stops-and-lines-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_lines_and_stops/read_lines_and_stops.sh ${FILENAME_CONFIG}
+
+lc-read-fixed-lines-from-visum:
+	bash ../../src/tools/visum-transformer/fixed_lines/read_fixed_lines.sh ${FILENAME_CONFIG}
+
+tim-read-fixed-times-from-visum:
+	bash ../../src/tools/visum-transformer/fixed_times/read_fixed_times.sh ${FILENAME_CONFIG}
+
+tim-read-timetable-from-visum:
+	bash ${SRC_DIR}/tools/visum-transformer/read_timetable/read_timetable.sh ${FILENAME_CONFIG}
+
+
+tim-transform-to-visum:
+	bash ${SRC_DIR}/tools/transform-timetable-to-visum/run.sh ${FILENAME_CONFIG}
+
 
 # =============================================================================
 # =============================================================================
@@ -278,9 +318,9 @@ kill-solver:
 clone:
 	rsync -r --delete --exclude .svn "`pwd`"/* "`pwd`".clone
 
-# Currently out of order due to possible loops in lines
-#cut-stations:
-#	sh ../../src/essentials/javatools/runner.sh CutStations basis/Config.cnf
+.PHONY: gtfs
+gtfs:
+	bash ${SRC_DIR}/tools/gtfs-exporter/run.sh ${FILENAME_CONFIG}
 
 # -----------------------------------------------------------------------------
 # === GUI =====================================================================

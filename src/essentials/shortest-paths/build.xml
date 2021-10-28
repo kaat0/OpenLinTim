@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
 <project name="config" default="build" basedir=".">
+    <include file="../../base.xml"/>
   <target name="build">
    <javac srcdir="src"
-   	   classpath="../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
-           debug="true"
-           optimize="true" />
+   	   classpath="${jgrapht-jar}:${jheap-jar}" />
   </target>
 </project>

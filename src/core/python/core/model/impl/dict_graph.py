@@ -94,7 +94,8 @@ class DictGraph(Graph):
         index = indices_map.get(element)
         if index is None:
             return False
-        element_list[index] = None
+        element_list.remove(element)
+        # element_list[index] = None
         del indices_map[element]
         return True
 

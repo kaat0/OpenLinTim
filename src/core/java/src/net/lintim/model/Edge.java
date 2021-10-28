@@ -1,5 +1,7 @@
 package net.lintim.model;
 
+import net.lintim.exception.LinTimException;
+
 /**
  * The template for an edge object for a graph structure. Used in the directed and undirected case.
  */
@@ -40,4 +42,16 @@ public interface Edge<N extends Node> {
      * @return whether the edge is directed
      */
     boolean isDirected();
+
+    default N getOtherSide(N oneSide) {
+        if (getLeftNode().equals(oneSide)) {
+            return getRightNode();
+        }
+        else if (getRightNode().equals(oneSide)) {
+            return getLeftNode();
+        }
+        else {
+            throw new LinTimException("Found invalid method call, " + oneSide + " is not part of " + this);
+        }
+    }
 }

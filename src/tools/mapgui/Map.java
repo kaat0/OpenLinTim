@@ -10,6 +10,8 @@ import de.fhpotsdam.unfolding.providers.OpenStreetMap;
 import de.fhpotsdam.unfolding.utils.DebugDisplay;
 import de.fhpotsdam.unfolding.utils.ScreenPosition;
 import g4p_controls.*;
+import net.lintim.io.ConfigReader;
+import net.lintim.util.Config;
 import org.apache.log4j.Logger;
 import processing.core.PApplet;
 import processing.core.PFont;
@@ -91,10 +93,9 @@ public class Map extends PApplet{
 		this.width = width;
 		this.height = height;
 		try{
-		File config_file = new File(dataPath);
 
         System.err.print("Loading Configuration... ");
-        Config config = new Config(config_file);
+        Config config = new ConfigReader.Builder(dataPath).build().read();
         System.err.println("done!");
 
 		System.err.print("Loading Input Data...");

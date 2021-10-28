@@ -206,7 +206,7 @@ public class LineConceptEvaluation {
                         var_dist);
             System.err.println(var_dist);
             
-            System.err.print("    Line-Concept Minimum Edges: ");
+            System.err.print("    Line-Concept Variance Edges: ");
             Double var_edges =
                     LineCollectionEvaluator.varianceEdges(lc);
                 statistic.setDoubleValue("lc_var_edges",

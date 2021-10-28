@@ -22,15 +22,15 @@ elif [[ ${lc_model} == cost_greedy_1 ]] || [[ ${lc_model} == cost_greedy_2 ]]; t
 
 elif [[ ${lc_model} == cost ]] && ( [[ ${lc_respect_fixed_lines} == true ]] || [[ ${lc_common_frequency_divisor} != 1 ]] ); then
     ant -q -f ${PROGRAMPATH}/cost-model-extended/build.xml
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}:${PROGRAMPATH}/cost-model-extended/build:${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.ExtendedCost basis/Config.cnf
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-extended/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.ExtendedCost basis/Config.cnf
 
 elif [[ ${lc_model} == cost ]]; then
   ant -q -f ${PROGRAMPATH}/cost-model/build.xml
-  java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp "${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar" net.lintim.main.lineplanning.Cost basis/Config.cnf
+  java "${JFLAGS[@]}" -cp "${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar" net.lintim.main.lineplanning.Cost basis/Config.cnf
 
 elif [[ ${lc_model} == cost_restricting_frequencies ]]; then
 	ant -q -f ${PROGRAMPATH}/cost-model-restricting-frequencies/build.xml
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-restricting-frequencies/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.CostRestrictingFrequencies basis/Config.cnf
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-restricting-frequencies/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.CostRestrictingFrequencies basis/Config.cnf
 
 elif [[ ${lc_model} == game ]]; then
 	make -C ${PROGRAMPATH} || exit 1
@@ -40,44 +40,39 @@ elif [[ ${lc_model} == game ]]; then
 		exit 1;
 	fi
 
-	${PROGRAMPATH}/cost-model/Conv_Game &&
-	echo "exec ${PROGRAMPATH}/cost-model/line_game.mos lc_minimal_global_frequency=${lc_minimal_global_frequency}" | mosel -s &&
-	${PROGRAMPATH}/cost-model/SolConv || exit 1
-	rm -f line-planning/xpresssol
-	rm -f line-planning/Moseldaten
-
-	cd ${OLDPWD}
+	${PROGRAMPATH}/game/Conv_Game &&
+	echo "exec ${PROGRAMPATH}/game/line_game.mos lc_minimal_global_frequency=${lc_minimal_global_frequency}" | mosel -s &&
+	${PROGRAMPATH}/game/SolConv || exit 1
+	#rm -f line-planning/xpresssol
+	#rm -f line-planning/Moseldaten
 
 elif [[ ${lc_model} == direct ]]; then
 	ant -q -f ${PROGRAMPATH}/direct-travelers/build.xml build-direct-travelers
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.Direct basis/Config.cnf
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.Direct $1
 
 elif [[ ${lc_model} == direct_restricting_frequencies ]]; then
 	ant -q -f ${PROGRAMPATH}/direct-travelers-restricting-frequencies/build.xml
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers-restricting-frequencies/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.DirectRestrictingFrequencies basis/Config.cnf
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers-restricting-frequencies/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar net.lintim.main.lineplanning.DirectRestrictingFrequencies $1
 
 elif [[ ${lc_model} == direct_relaxation ]]; then
 	ant -q -f ${PROGRAMPATH}/direct-travelers-relaxation/build.xml build-direct-travelers-relaxation
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers-relaxation${PATHSEP}${PROGRAMPATH}/../essentials/config Direct
-elif [[ ${lc_model} == direct ]] || [[ ${lc_model} == direct_relaxation ]]; then
-	ant -q -f ${PROGRAMPATH}/direct-travellers/build.xml build-direct-travellers
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config Direct
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/direct-travelers-relaxation/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar Direct $1
 
 elif [[ ${lc_model} == mult-cost-direct || ${lc_model} == mult-cost-direct-relax ]]; then
 	ant -q -f ${PROGRAMPATH}/cost-model-direct-travellers/build.xml build-cost-model-direct-travellers
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-direct-travellers${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar CostDirect basis/Config.cnf
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/cost-model-direct-travellers/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar CostDirect $1
 
 elif [[ ${lc_model} == traveling-time-cg ]]; then
-	ant -q -f ${PROGRAMPATH}/traveling-time/column-generation-approach/build.xml build-traveling-time
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/traveling-time/column-generation-approach${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar Run
+	ant -q -f ${PROGRAMPATH}/traveling-time/column-generation-approach/build.xml
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/traveling-time/column-generation-approach/build${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.5.0.jar${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jheaps-0.13.jar Run $1
 
 elif [[ ${lc_model} == minchanges_ip ]]; then
 	ant -q -f ${PROGRAMPATH}/min-changes/build.xml build-min-changes
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../essentials/shortest-paths/src${PATHSEP}${PROGRAMPATH}/../../libs/k-shortest-paths/build${PATHSEP}${PROGRAMPATH}/direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesIP "basis/Config.cnf"
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.5.0.jar${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jheaps-0.13.jar${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesIP $1
 
 elif [[ ${lc_model} == minchanges_cg ]]; then
 	ant -q -f ${PROGRAMPATH}/min-changes/build.xml build-min-changes
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../essentials/shortest-paths/src${PATHSEP}${PROGRAMPATH}/../../libs/k-shortest-paths/build${PATHSEP}${PROGRAMPATH}/direct-travellers${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesColGen "basis/Config.cnf"
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/min-changes/build${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.5.0.jar${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jheaps-0.13.jar${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../essentials/sl-helper/PTNTools MinChangesColGen $1
 
 else
 	echo "Error: Invalid lc_model argument: ${lc_model}"

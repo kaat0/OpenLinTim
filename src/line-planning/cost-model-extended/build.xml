@@ -55,7 +55,7 @@
     <!-- Solver specific build targets, will only be used if the respective solvers are installed -->
     <target name="build-with-xpress" depends="init" if="${xpress.installed}">
         <echo>Xpress installed</echo>
-        <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
+        <javac includeantruntime="true" debug="true" destdir="${build-dir}" source="${source}" target="${target}">
             <src path="${src-dir}"/>
             <classpath refid="lintim-lineplanning-cost-extended.classpath"/>
             <exclude name="net/lintim/algorithm/lineplanning/ExtendedCostGurobi.java" />
@@ -63,7 +63,7 @@
     </target>
     <target name="build-with-gurobi" depends="init" if="${gurobi.installed}">
         <echo>Gurobi installed</echo>
-        <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
+        <javac includeantruntime="true" debug="true" destdir="${build-dir}" source="${source}" target="${target}">
             <src path="${src-dir}"/>
             <classpath refid="lintim-lineplanning-cost-extended.classpath"/>
             <exclude name="net/lintim/algorithm/lineplanning/ExtendedCostXpress.java" />

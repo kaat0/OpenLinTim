@@ -9,6 +9,8 @@ import net.lintim.exception.DataInconsistentException;
 import net.lintim.generator.PeriodicEventActivityNetworkGenerator;
 import net.lintim.generator.PeriodicPassengerDistributionGenerator;
 import net.lintim.generator.PeriodicPassengerDistributionGenerator.ModelInitialDurationAssumption;
+import net.lintim.io.InfrastructureReader;
+import net.lintim.io.StationLimitReader;
 import net.lintim.model.*;
 import net.lintim.model.EventActivityNetwork.ModelChange;
 import net.lintim.model.EventActivityNetwork.ModelFrequency;
@@ -16,6 +18,7 @@ import net.lintim.model.EventActivityNetwork.ModelHeadway;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -91,6 +94,18 @@ public class ptn2ean {
                 new PublicTransportationNetwork(config);
             PublicTransportationNetworkCSV.fromFile(ptn, stationsFile,
                     linksFile);
+            boolean readWalking = config.getBooleanValue("ean_use_walking");
+            Graph<InfrastructureNode, WalkingEdge> walkingGraph = null;
+            if (readWalking) {
+                walkingGraph = new InfrastructureReader.Builder().readInfrastructureEdges(false)
+                    .setMaxWalkingTime(config.getDoubleValue("sl_max_walking_time"))
+                    .setDirectedWalking(config.getBooleanValue("sl_walking_is_directed"))
+                    .setNodeFileName(config.getStringValue("filename_node_file"))
+                    .setWalkingEdgeFileName(config.getStringValue("filename_walking_edge_file"))
+                    .setConversionFactorCoordinates(config.getDoubleValue("gen_conversion_coordinates"))
+                    .setConversionFactorLength(config.getDoubleValue("gen_conversion_length"))
+                    .build().read().getSecondElement();
+            }
             System.err.println("done!");
 
             System.err.print("Loading Initial Headway Data... ");
@@ -145,12 +160,17 @@ public class ptn2ean {
                     targetModelFrequency, targetModelChange, targetModelHeadway);
             ean.setPeriodLength(config.getDoubleValue("period_length"));
 
+            Map<Integer, StationLimit> stationLimits = null;
+            if (config.getBooleanValue("ean_individual_station_limits")) {
+                stationLimits = new StationLimitReader.Builder().setFileName(config.getStringValue("filename_station_limit_file")).build().read();
+            }
+
             state.setValue("ean_model_frequency", targetModelFrequency.toString());
             state.setValue("ean_model_change", targetModelChange.toString());
             state.setValue("ean_model_headway", targetModelHeadway.toString());
-
             PeriodicEventActivityNetworkGenerator peangen
-            = new PeriodicEventActivityNetworkGenerator(ean, null, config);
+            = new PeriodicEventActivityNetworkGenerator(ean, null, walkingGraph, stationLimits, config);
+
             System.err.print("  Line Concept Representation... ");
             peangen.generateLineConceptRepresentation();
             System.err.println("done!");
@@ -194,12 +214,12 @@ public class ptn2ean {
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 // - - Evaluate Initial Duration Assumption  - - - - - - - - - -
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                
+
                 /**
                 Below statements are commented out because we do not want to have statistic resulting from a computational step.
-                Execute "make eval-ean" to obtain a statistics regarding the EAN!               
+                Execute "make eval-ean" to obtain a statistics regarding the EAN!
                 **/
-               
+
                //Double initialAverageTravelingTime =
                //    EventActivityNetworkEvaluator.initialAverageTravelingTime(ean);
                // Double initialWeightedSlackTime =

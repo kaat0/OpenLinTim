@@ -24,16 +24,16 @@ public class ShortestPathsTest {
             File nodesFile = new File(args[0]);
             File edgesFile = new File(args[1]);
 
-            ArrayList<Integer> nodes = new ArrayList<Integer>();
-            ArrayList<Integer> edges = new ArrayList<Integer>();
+            ArrayList<Integer> nodes = new ArrayList<>();
+            ArrayList<Integer> edges = new ArrayList<>();
 
             ShortestPathsGraph<Integer, Integer> sp =
-                new ShortestPathsGraph<Integer, Integer>();
+                new ShortestPathsGraph<>();
 
             BufferedReader rd = new BufferedReader(new FileReader(nodesFile));
 
             String line;
-            Integer lineCounter = 1;
+            int lineCounter = 1;
 
             while ((line = rd.readLine()) != null) {
 
@@ -111,10 +111,7 @@ public class ShortestPathsTest {
             fw1.close();
             fw2.close();
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        } catch (GraphMalformedException e) {
+        } catch (IOException | GraphMalformedException e) {
             e.printStackTrace();
             System.exit(1);
         }

@@ -1,7 +1,11 @@
+from typing import List
+
 from core.exceptions.input_exceptions import (InputFormatException,
                                               InputTypeInconsistencyException)
 from core.model.graph import Graph
 from core.model.impl.fullOD import FullOD
+from core.model.impl.mapOD import MapOD
+from core.model.infrastructure import InfrastructureNode
 from core.model.od import OD, ODPair
 from core.io.csv import CsvReader, CsvWriter
 from core.model.ptn import Stop, Link
@@ -53,16 +57,42 @@ class ODReader:
         self.od.setValue(origin, destination, passengers)
 
     @staticmethod
-    def read(od: OD, size: int, file_name: str = "", config: Config = Config.getDefaultConfig()) -> OD:
-        if not od and not size:
-            raise ValueError("For od reading, we need and od matrix or a size!")
-        if not od:
+    def read(od: OD, size: int = None, file_name: str = "", config: Config = Config.getDefaultConfig()) -> OD:
+        """
+        Read the given file into an od object. If parameters are not given but needed,
+        the respective values will be read from the given config.
+        :param od: the od to fill. If not given, an empty MapOD will be used. If a size is given, a FullOD of the
+        corresponding size will be used
+        :param size: the size of the FullOD to use (if no od is given directly)
+        :param file_name: the file name to read the od matrix from
+        :param config: the config to read the parameters from that are not given
+        :return the read of matrix
+        """
+        if not od and size:
             od = FullOD(size)
+        if not od:
+            od = MapOD()
         if not file_name:
             file_name = config.getStringValue("default_od_file")
         reader = ODReader(file_name, od)
         CsvReader.readCsv(file_name, reader.process_od_line)
         return od
+
+    @staticmethod
+    def readNodeOd(od: OD, size: int = None, file_name: str = "", config: Config = Config.getDefaultConfig()) -> OD:
+        """
+        Read the given file into an od object. If parameters are not given but needed,
+        the respective values will be read from the given config.
+        :param od: the od to fill. If not given, an empty MapOD will be used. If a size is given, a FullOD of the
+        corresponding size will be used
+        :param size: the size of the FullOD to use (if no od is given directly)
+        :param file_name: the file name to read the od matrix from
+        :param config: the config to read the parameters from that are not given
+        :return the read of matrix
+        """
+        if not file_name:
+            file_name = config.getStringValue("filename_od_nodes_file")
+        return ODReader.read(od, size, file_name, config)
 
 
 class ODWriter:
@@ -95,4 +125,22 @@ class ODWriter:
         for origin in ptn.getNodes():
             for destination in ptn.getNodes():
                 od_pairs.append(ODPair(origin.getId(), destination.getId(), od.getValue(origin.getId(), destination.getId())))
+        CsvWriter.writeListStatic(file_name, od_pairs, ODPair.toCsvStrings, header=header)
+
+    @staticmethod
+    def writeNodeOd(od: OD, file_name: str="", header: str="",
+                    config: Config = Config.getDefaultConfig()):
+        """
+        Write the given od matrix to the file specified or the corresponding file name from the config. Will write
+        only the od pairs with positive demand
+        :param od: the od object to write
+        :param file_name: the file to write the od data to
+        :param header: the header to use
+        :param config: the config to read parameters from that are needed but not given
+        """
+        if not file_name:
+            file_name = config.getStringValue("filename_od_nodes_file")
+        if not header:
+            header = config.getStringValue("od_nodes_header")
+        od_pairs = od.getODPairs()
         CsvWriter.writeListStatic(file_name, od_pairs, ODPair.toCsvStrings, header=header)

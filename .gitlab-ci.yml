@@ -3,4 +3,4 @@ run_tests:
         - web
         - schedules
     script:
-        - bash ci/run_tests_using_nix.sh
+        - bash ci/run_all_tests.sh

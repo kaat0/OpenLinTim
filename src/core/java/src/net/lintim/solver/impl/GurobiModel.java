@@ -171,6 +171,8 @@ public class GurobiModel implements Model {
                     return model.get(GRB.IntAttr.NumBinVars);
                 case NUM_INT_VARIABLES:
                     return model.get(GRB.IntAttr.NumIntVars);
+                case NUM_SOLUTIONS:
+                    return model.get(GRB.IntAttr.SolCount);
                 default:
                     throw new SolverAttributeNotImplementedException(SolverType.GUROBI, attribute.name());
             }

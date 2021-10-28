@@ -2,8 +2,8 @@ package net.lintim.graph;
 
 
 import net.lintim.util.BiLinkedHashMap;
-import org.jgrapht.util.FibonacciHeap;
-import org.jgrapht.util.FibonacciHeapNode;
+import org.jheaps.AddressableHeap;
+import org.jheaps.tree.FibonacciHeap;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -46,7 +46,7 @@ public class ShortestPathsGraph<V, E> {
         EdgeStruct predecessor;
         Double distance;
         TreeSet<NodeStruct> treeMapQueueBucket;
-        FibonacciHeapNode<NodeStruct> fibonacciHeapNode;
+        AddressableHeap.Handle<Double, NodeStruct> fibonacciHeapNode;
         LinkedHashSet<EdgeStruct> outgoingEdges = new LinkedHashSet<EdgeStruct>();
         LinkedHashSet<EdgeStruct> incomingEdges = new LinkedHashSet<EdgeStruct>();
 
@@ -230,24 +230,22 @@ public class ShortestPathsGraph<V, E> {
             throw new GraphMalformedException("graph has negative edge weights");
         }
 
-        FibonacciHeap<NodeStruct> heap = new FibonacciHeap<NodeStruct>();
+        FibonacciHeap<Double, NodeStruct> heap = new FibonacciHeap<>();
 
         for(Entry<V, NodeStruct> e1 : graph.entrySet()){
             V node = e1.getKey();
             NodeStruct nodeStruct = e1.getValue();
             nodeStruct.predecessor = null;
 
-            FibonacciHeapNode<NodeStruct> heapNode = null;
+            AddressableHeap.Handle<Double, NodeStruct> heapNode = null;
 
             if(sourceVertex.equals(node)){
                 nodeStruct.distance = 0.0;
-                heapNode = new FibonacciHeapNode<NodeStruct>(nodeStruct);
-                heap.insert(heapNode, 0.0);
+                heapNode = heap.insert(0., nodeStruct);
             }
             else{
                 nodeStruct.distance = Double.POSITIVE_INFINITY;
-                heapNode = new FibonacciHeapNode<NodeStruct>(nodeStruct);
-                heap.insert(heapNode, Double.POSITIVE_INFINITY);
+                heapNode = heap.insert(Double.POSITIVE_INFINITY, nodeStruct);
             }
 
             nodeStruct.fibonacciHeapNode = heapNode;
@@ -256,9 +254,9 @@ public class ShortestPathsGraph<V, E> {
 
         while(!heap.isEmpty()){
 
-            FibonacciHeapNode<NodeStruct> minimalHeapNode = heap.removeMin();
+            AddressableHeap.Handle<Double, NodeStruct> minimalHeapNode = heap.deleteMin();
             Double minimum = minimalHeapNode.getKey();
-            NodeStruct minimumStruct = minimalHeapNode.getData();
+            NodeStruct minimumStruct = minimalHeapNode.getValue();
 
             for(EdgeStruct e : minimumStruct.outgoingEdges){
 
@@ -268,7 +266,7 @@ public class ShortestPathsGraph<V, E> {
                 if(newDistance < targetNodeStruct.distance){
                     targetNodeStruct.distance = newDistance;
                     targetNodeStruct.predecessor = e;
-                    heap.decreaseKey(targetNodeStruct.fibonacciHeapNode, newDistance);
+                    targetNodeStruct.fibonacciHeapNode.decreaseKey(newDistance);
                 }
             }
         }

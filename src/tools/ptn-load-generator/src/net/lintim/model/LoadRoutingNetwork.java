@@ -3,14 +3,15 @@ package net.lintim.model;
 import net.lintim.algorithm.Dijkstra;
 import net.lintim.exception.ConfigTypeMismatchException;
 import net.lintim.exception.LinTimException;
-import net.lintim.main.tools.PTNLoadGeneratorMain;
 import net.lintim.model.impl.ArrayListGraph;
 import net.lintim.model.impl.LinkedListPath;
 import net.lintim.util.Config;
 import net.lintim.util.GraphHelper;
 import net.lintim.util.Pair;
+import net.lintim.util.tools.LoadGenerationParameters;
 import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.KShortestPaths;
+import org.jgrapht.alg.interfaces.KShortestPathAlgorithm;
+import org.jgrapht.alg.shortestpath.YenKShortestPath;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
 import java.util.Collection;
@@ -18,26 +19,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  */
 public class LoadRoutingNetwork {
 
-    private static Logger logger = Logger.getLogger("net.lintim.model.LoadRoutingNetwork");
-
-    private OD od;
-    private Graph<Stop, Link> basePtn;
+    private final OD od;
+    private final Graph<Stop, Link> basePtn;
     private Graph<Stop, Link> directedPtn = null;
     private Graph<ChangeAndGoNode, ChangeAndGoEdge> cg = null;
     private HashMap<Pair<Integer, Integer>, Integer> cgNodeLookUpMap;
     private HashMap<Integer, Integer> ptnEdgeLookUpMap;
-    private SimpleDirectedWeightedGraph<ChangeAndGoNode, ChangeAndGoEdge> cgJgraphTGraph = new
+    private final SimpleDirectedWeightedGraph<ChangeAndGoNode, ChangeAndGoEdge> cgJgraphTGraph = new
         SimpleDirectedWeightedGraph<>(ChangeAndGoEdge.class);
-    private SimpleDirectedWeightedGraph<Stop, Link> ptnJgraphTGraph = new
+    private final SimpleDirectedWeightedGraph<Stop, Link> ptnJgraphTGraph = new
         SimpleDirectedWeightedGraph<>(Link.class);
-    private boolean useCg;
     private Function<Link, Double> ptnTravelTimeFunction;
     private Function<ChangeAndGoEdge, Double> cgTravelTimeFunction;
     private Function<Link, Double> ptnEdgeObjectiveFunction;
@@ -45,41 +42,33 @@ public class LoadRoutingNetwork {
     private double waitTime;
     private HashMap<Pair<Integer, Integer>, HashMap<Integer, Path<ChangeAndGoNode, ChangeAndGoEdge>>> currentCgPaths;
     private HashMap<Pair<Integer, Integer>, HashMap<Integer, Path<Stop, Link>>> currentPtnPaths;
-    private double beta;
-    private int capacity;
-    private LinePool linePool;
-    private int changePenalty;
-    private double changeTime;
+    private final LinePool linePool;
+    private final double changeTime;
+    private final Map<Integer, Map<Pair<Integer, Integer>, Double>> additionalLoad;
+    private final LoadGenerationParameters parameters;
 
     /**
      * Create a new routing network
      * @param basePtn the baseline ptn
      * @param od the od matrix
      * @param linePool the linepool. If no change&go-network should be used, this may be null
-     * @param eanModelWeightDrive the travel time model for the ptn edges
-     * @param objectiveType the type of load generator to use
-     * @param costFactor the cost factor
-     * @param useCg whether to use a change&go-network
-     * @param beta the distribution factor, if multiple shortest paths are used
-     * @param capacity the capacity of a vehicle
-     * @param changePenalty the length of a transfer edge in the change&go-network
+     * @param additionalLoad the additional load. May be null if not used
+     * @param parameters the parameters of the network
      */
-    public LoadRoutingNetwork(Graph<Stop, Link> basePtn, OD od, LinePool linePool, String eanModelWeightDrive,
-                              String eanModelWeightWait, PTNLoadGeneratorMain.PTNLoadGeneratorType
-                              objectiveType, double costFactor, boolean useCg, double beta, int capacity, int
-                                  changePenalty, int minChangeTime, int maxChangeTime, double minChangeTimeFactor) {
+    public LoadRoutingNetwork(Graph<Stop, Link> basePtn, OD od, LinePool linePool,
+                              Map<Integer, Map<Pair<Integer, Integer>, Double>> additionalLoad,
+                              LoadGenerationParameters parameters) {
         this.basePtn = basePtn;
         this.od = od;
         this.linePool = linePool;
-        this.useCg = useCg;
-        this.capacity = capacity;
-        this.beta = beta;
-        this.changePenalty = changePenalty;
-        this.changeTime = Math.min(minChangeTimeFactor * minChangeTime, maxChangeTime);
+        this.changeTime = Math.min(parameters.getMinChangeTimeFactor() * parameters.getMinChangeTime(),
+            parameters.getMaxChangeTime());
+        this.additionalLoad = additionalLoad;
+        this.parameters = parameters;
 
-        setTravelTimeFunction(eanModelWeightDrive, eanModelWeightWait);
-        setObjectiveFunction(objectiveType, costFactor);
-        if (useCg) {
+        setTravelTimeFunction(parameters.getModelWeightDrive(), parameters.getModelWeightWait());
+        setObjectiveFunction(parameters.getLoadGeneratorType(), parameters.getCostFactor());
+        if (parameters.useCg()) {
             initializeCgUsage();
         }
         else {
@@ -89,14 +78,12 @@ public class LoadRoutingNetwork {
 
     /**
      * Compute a new shortest path for all passengers. All paths will be updated.
-     * @param K determine which k-shortest paths should be computed. Passengers will be distributed according to a
-     *          logit model with the initialized beta, if there are multiple paths
      */
-    public void computeNewShortestPaths(int K) {
-        if (useCg) {
-            computeNewShortestPathsCg(K);
+    public void computeNewShortestPaths() {
+        if (parameters.useCg()) {
+            computeNewShortestPathsCg();
         } else {
-            computeNewShortestPathsPtn(K);
+            computeNewShortestPathsPtn();
         }
     }
 
@@ -104,12 +91,10 @@ public class LoadRoutingNetwork {
      * Reroute all passengers to new shortest paths. Will use the rerouted reduction objective function, i.e., all
      * edges with existing load on the corresponding original ptn edge have the travel time as an edge length and all
      * other edges may not be used
-     * @param K determine which k-shortest paths should be computed. Passengers will be distributed according to a
-     *          logit model with the initialized beta, if there are multiple paths
      */
-    public void computeNewShortestPathRerouteReduction(int K) {
+    public void computeNewShortestPathRerouteReduction() {
         // Reset the objective function to only use used ptn edges
-        if (useCg) {
+        if (parameters.useCg()) {
             cgEdgeObjectiveFunction = cgEdge -> {
                 int correspondingPtnLinkId = cgEdge.getCorrespondingPtnLinkId();
                 if(correspondingPtnLinkId == ChangeAndGoEdge.CHANGE_LINK || basePtn.getEdge(correspondingPtnLinkId)
@@ -123,7 +108,7 @@ public class LoadRoutingNetwork {
             ptnEdgeObjectiveFunction = link -> basePtn.getEdge(ptnEdgeLookUpMap.get(link.getId())).getLoad() > 0 ? ptnTravelTimeFunction
                 .apply(link) : Double.POSITIVE_INFINITY;
         }
-        computeNewShortestPaths(K);
+        computeNewShortestPaths();
     }
 
     /**
@@ -135,7 +120,7 @@ public class LoadRoutingNetwork {
      *                    to ensure that the old shortest path of this passenger is handled correctly
      */
     public void computeNewShortestPaths(Stop origin, Stop destination, int passenger) {
-        if (useCg) {
+        if (parameters.useCg()) {
             computeNewShortestPathsCg(origin, destination, passenger);
         } else {
             computeNewShortestPathsPtn(origin, destination, passenger);
@@ -161,8 +146,8 @@ public class LoadRoutingNetwork {
                 throw new ConfigTypeMismatchException("ean_model_weight_drive", "String", Config.getStringValueStatic
                     ("ean_model_weight_drive"));
         }
-        int minWaitingTime = Config.getIntegerValueStatic("ean_default_minimal_waiting_time");
-        int maxWaitingTime = Config.getIntegerValueStatic("ean_default_maximal_waiting_time");
+        int minWaitingTime = parameters.getMinWaitTime();
+        int maxWaitingTime = parameters.getMaxWaitTime();
         switch (eanModelWeightWait) {
             case "MINIMAL_WAITING_TIME":
                 waitTime = minWaitingTime;
@@ -181,12 +166,12 @@ public class LoadRoutingNetwork {
                     ("ean_model_weight_wait"));
         }
         ptnTravelTimeFunction = link -> driveTimeFunction.apply(link) + waitTime;
-        if (useCg) {
+        if (parameters.useCg()) {
             cgTravelTimeFunction = ChangeAndGoEdge::getLength;
         }
     }
 
-    private void setObjectiveFunction(PTNLoadGeneratorMain.PTNLoadGeneratorType objectiveType, double costFactor) {
+    private void setObjectiveFunction(LoadGenerationParameters.LoadGeneratorType objectiveType, double costFactor) {
         switch (objectiveType) {
             case SHORTEST_PATH:
                 setShortestPathFunction();
@@ -226,12 +211,12 @@ public class LoadRoutingNetwork {
     private void setRewardFunction(double rewardFactor) {
         cgEdgeObjectiveFunction = cgEdge -> {
             double length = cgTravelTimeFunction.apply(cgEdge) *
-                (1 - rewardFactor * (cgEdge.getLoad() % capacity) / capacity);
+                (1 - rewardFactor * (cgEdge.getLoad() % parameters.getCapacity()) / parameters.getCapacity());
             return length > 0 ? length : 0;
         };
         ptnEdgeObjectiveFunction = link -> {
             double length = ptnTravelTimeFunction.apply(link) *
-                (1 - rewardFactor * (link.getLoad() % capacity) / capacity);
+                (1 - rewardFactor * (link.getLoad() % parameters.getCapacity()) / parameters.getCapacity());
             return length > 0 ? length : 0;
         };
     }
@@ -243,7 +228,7 @@ public class LoadRoutingNetwork {
     }
 
     private void initialiseJGraphT() {
-        if (useCg) {
+        if (parameters.useCg()) {
             for(ChangeAndGoNode node : cg.getNodes()) {
                 cgJgraphTGraph.addVertex(node);
             }
@@ -264,7 +249,7 @@ public class LoadRoutingNetwork {
     }
 
     private void updateJGraphT() {
-        if (useCg) {
+        if (parameters.useCg()) {
             for(ChangeAndGoEdge edge : cg.getEdges()){
                 cgJgraphTGraph.setEdgeWeight(edge, cgEdgeObjectiveFunction.apply(edge));
             }
@@ -328,7 +313,7 @@ public class LoadRoutingNetwork {
         // We connect every line node with the corresponding stop node. Therefore changing a line is equivalent to
         // alighting one vehicle and boarding another. The complete change penalty will be added on the alighting
         // edge. On this edge, we additionally subtract the waiting penalty.
-        if (changePenalty + changeTime <= waitTime) {
+        if (parameters.getChangePenalty() + changeTime <= waitTime) {
             throw new LinTimException("Cannot handle the situation where the change penalty + min change time is not " +
                 "bigger than the wait time!");
         }
@@ -347,9 +332,8 @@ public class LoadRoutingNetwork {
                 ChangeAndGoEdge boardingEdge = new ChangeAndGoEdge(nextId++, baseNode, sourceNode, 0,
                     ChangeAndGoEdge.CHANGE_LINK);
                 cg.addEdge(boardingEdge);
-                ChangeAndGoEdge alightingEdge = new ChangeAndGoEdge(nextId++, sourceNode, baseNode, changePenalty +
-                    changeTime - waitTime,
-                    ChangeAndGoEdge.CHANGE_LINK);
+                ChangeAndGoEdge alightingEdge = new ChangeAndGoEdge(nextId++, sourceNode, baseNode,
+                    parameters.getChangePenalty() + changeTime - waitTime, ChangeAndGoEdge.CHANGE_LINK);
                 cg.addEdge(alightingEdge);
             }
         }
@@ -388,19 +372,19 @@ public class LoadRoutingNetwork {
     }
 
     private boolean jgraphTIsInitialized() {
-        return useCg ? cgJgraphTGraph.vertexSet().size() > 0 : ptnJgraphTGraph.vertexSet().size() > 0;
+        return parameters.useCg() ? cgJgraphTGraph.vertexSet().size() > 0 : ptnJgraphTGraph.vertexSet().size() > 0;
     }
 
 
-    private void computeNewShortestPathsCg(int K) {
+    private void computeNewShortestPathsCg() {
         HashMap<Pair<ChangeAndGoNode, ChangeAndGoNode>, HashMap<Path<ChangeAndGoNode, ChangeAndGoEdge>, Double>>
             shortestPaths;
         Collection<ChangeAndGoNode> origins = cg.getNodes().stream().filter(node -> node.getLineId() ==
             ChangeAndGoNode.START).collect(Collectors.toList());
         Collection<ChangeAndGoNode> destinations = cg.getNodes().stream().filter(node -> node.getLineId() ==
             ChangeAndGoNode.START).collect(Collectors.toList());
-        if (K > 1) {
-            shortestPaths = computeNewKShortestPaths(K, cgJgraphTGraph, origins, destinations);
+        if (parameters.getNumberShortestPaths() > 1) {
+            shortestPaths = computeNewKShortestPaths(cgJgraphTGraph, origins, destinations);
         } else {
             shortestPaths = computeNewShortestPaths(cg, cgEdgeObjectiveFunction, origins, destinations);
         }
@@ -408,10 +392,10 @@ public class LoadRoutingNetwork {
         distributeLoad();
     }
 
-    private void computeNewShortestPathsPtn(int K) {
+    private void computeNewShortestPathsPtn() {
         HashMap<Pair<Stop, Stop>, HashMap<Path<Stop, Link>, Double>> shortestPaths;
-        if (K > 1) {
-            shortestPaths = computeNewKShortestPaths(K, ptnJgraphTGraph, directedPtn.getNodes(), directedPtn.getNodes());
+        if (parameters.getNumberShortestPaths() > 1) {
+            shortestPaths = computeNewKShortestPaths(ptnJgraphTGraph, directedPtn.getNodes(), directedPtn.getNodes());
         } else {
             shortestPaths = computeNewShortestPaths(directedPtn, ptnEdgeObjectiveFunction, directedPtn.getNodes(), directedPtn.getNodes());
         }
@@ -473,7 +457,7 @@ public class LoadRoutingNetwork {
     }
 
     private <N extends Node, E extends Edge<N>> HashMap<Pair<N, N>, HashMap<Path<N, E>, Double>>
-    computeNewKShortestPaths(int K, SimpleDirectedWeightedGraph<N, E> spGraph, Collection<N> origins,
+    computeNewKShortestPaths(SimpleDirectedWeightedGraph<N, E> spGraph, Collection<N> origins,
                              Collection<N> destinations) {
         if (!jgraphTIsInitialized()) {
             initialiseJGraphT();
@@ -481,14 +465,15 @@ public class LoadRoutingNetwork {
             updateJGraphT();
         }
         HashMap<Pair<N, N>, HashMap<Path<N, E>, Double>> shortestPaths = new HashMap<>();
-        KShortestPaths<N, E> spAlgo = new KShortestPaths<>(spGraph, K);
+        KShortestPathAlgorithm<N, E> spAlgo = new YenKShortestPath<>(spGraph);
         for (N origin : origins) {
             for (N destination : destinations) {
                 if (origin.equals(destination)) {
                     continue;
                 }
-                List<GraphPath<N, E>> paths = spAlgo.getPaths(origin, destination);
-                shortestPaths.put(new Pair<>(origin, destination), distributePassengers(paths, beta));
+                List<GraphPath<N, E>> paths = spAlgo.getPaths(origin, destination, parameters.getNumberShortestPaths());
+                shortestPaths.put(new Pair<>(origin, destination), distributePassengers(paths,
+                    parameters.getDistributionFactor()));
             }
         }
         return shortestPaths;
@@ -538,7 +523,7 @@ public class LoadRoutingNetwork {
     }
 
     public void distributeLoad(){
-        if (useCg) {
+        if (parameters.useCg()) {
             distributeLoadToPtnFromCg();
         }
         else {
@@ -567,6 +552,14 @@ public class LoadRoutingNetwork {
         if (basePtn.isDirected()) {
             // Just use the loads of the routing ptn
             basePtn.getEdges().forEach(link -> link.setLoad(directedPtn.getEdge(link.getId()).getLoad()));
+            // Add additional load, if present
+            if (additionalLoad != null) {
+                for (Map.Entry<Integer, Map<Pair<Integer, Integer>, Double>> loadEntry: additionalLoad.entrySet()) {
+                    Link link = basePtn.getEdge(loadEntry.getKey());
+                    link.setLoad(link.getLoad() + loadEntry.getValue().values().stream().findAny().orElseThrow(()
+                        -> new RuntimeException("Invalid formatted additional load for link"+ link.getId())));
+                }
+            }
         } else {
             for (Link undirectedLink : basePtn.getEdges()) {
                 Function<Link, Boolean> isForwardLink = link -> link.getLeftNode().equals(undirectedLink.getLeftNode
@@ -575,7 +568,17 @@ public class LoadRoutingNetwork {
                     ()) && link.getLeftNode().equals(undirectedLink.getRightNode());
                 Link forwardLink = directedPtn.getEdge(isForwardLink, true);
                 Link backwardLink = directedPtn.getEdge(isBackwardLink, true);
-                undirectedLink.setLoad(Math.max(forwardLink.getLoad(), backwardLink.getLoad()));
+                double forwardLoad = forwardLink.getLoad();
+                double backwardLoad = backwardLink.getLoad();
+                if (additionalLoad != null && additionalLoad.containsKey(undirectedLink.getId())) {
+                    forwardLoad += additionalLoad.get(undirectedLink.getId())
+                        .getOrDefault(new Pair<>(undirectedLink.getLeftNode().getId(),
+                            undirectedLink.getRightNode().getId()), 0.);
+                    backwardLoad += additionalLoad.get(undirectedLink.getId())
+                        .getOrDefault(new Pair<>(undirectedLink.getRightNode().getId(),
+                            undirectedLink.getLeftNode().getId()), 0.);
+                }
+                undirectedLink.setLoad(Math.max(forwardLoad, backwardLoad));
             }
         }
     }
@@ -606,11 +609,19 @@ public class LoadRoutingNetwork {
                 .getCorrespondingPtnLinkId() == link.getId()).collect(Collectors.toList());
             double forwardWeight = correspondingCgEdges.stream().filter(edge -> edge.getLeftNode().getStopId() ==
                 link.getLeftNode().getId()).mapToDouble(ChangeAndGoEdge::getLoad).sum();
+            if (additionalLoad != null && additionalLoad.containsKey(link.getId())) {
+                forwardWeight += additionalLoad.get(link.getId())
+                    .getOrDefault(new Pair<>(link.getLeftNode().getId(), link.getRightNode().getId()), 0.);
+            }
             if (basePtn.isDirected()) {
                 link.setLoad(forwardWeight);
             } else {
                 double backwardWeight = correspondingCgEdges.stream().filter(edge -> edge.getLeftNode().getStopId()
                     == link.getRightNode().getId()).mapToDouble(ChangeAndGoEdge::getLoad).sum();
+                if (additionalLoad != null && additionalLoad.containsKey(link.getId())) {
+                    backwardWeight += additionalLoad.get(link.getId())
+                        .getOrDefault(new Pair<>(link.getRightNode().getId(), link.getLeftNode().getId()), 0.);
+                }
                 link.setLoad(Math.max(forwardWeight, backwardWeight));
             }
         }

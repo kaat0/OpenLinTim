@@ -1,17 +1,16 @@
 import os
 import sys
 
+
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        raise RuntimeError("Program needs two parameters, the two statistic files to compare. It will be checked "
-                           "whether the first file is contained in the second.")
-    if os.path.getsize(sys.argv[1]) == 0:
-        exit(0)
-    with open(sys.argv[1]) as expected_statistic_file:
-        with open(sys.argv[2]) as current_statistic_file:
+
+def compare_statistic(expected_file: str, current_file: str) -> bool:
+    if os.path.getsize(expected_file) == 0:
+        return True
+    with open(expected_file) as expected_statistic_file:
+        with open(current_file) as current_statistic_file:
             expected_statistic_lines = expected_statistic_file.readlines()
             expected_statistic = {}
             for expected_statistic_line in expected_statistic_lines:
@@ -44,7 +43,7 @@ if __name__ == '__main__':
                                 # difference!
                                 print("Values for {} do not coincide (expected: {}, found: {})"
                                       .format(values[0], expected_value, found_value))
-                                exit(1)
+                                return False
                             # We could cast as float and the values are close enough. Therefore we can check the next
                             # statistic line
                             expected_statistic.pop(values[0])
@@ -54,7 +53,7 @@ if __name__ == '__main__':
                             # difference!
                             print("Values for {} do not coincide (expected: {}, found: {})"
                                   .format(values[0], expected_value, found_value))
-                            exit(1)
+                            return False
                     else:
                         expected_statistic.pop(values[0])
             # Check if there are still values in the expected statistic. If that is the case, they were not in the
@@ -63,6 +62,17 @@ if __name__ == '__main__':
                 print("Expected statistic entries that are not in the found statistic:")
                 for key, value in expected_statistic.items():
                     print("Key: {}, Value: {}".format(key, value))
-                exit(1)
+                return False
             print("Statistic comparison successful")
+            return True
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        raise RuntimeError("Program needs two parameters, the two statistic files to compare. It will be checked "
+                           "whether the first file is contained in the second.")
+    success = compare_statistic(sys.argv[0], sys.argv[1])
+    if not success:
+        exit(1)
+
 

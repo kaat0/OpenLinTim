@@ -5,11 +5,16 @@ PROGRAMPATH=`dirname $0`
 source ${PROGRAMPATH}/../base.sh
 
 TIM_CONCEPT=`"${CONFIGCMD[@]}" -s tim_concept -u`
+USE_WALKING=`"${CONFIGCMD[@]}" -s tim_eval_walking -u`
 
 if [[ ${TIM_CONCEPT} == "periodic" ]]; then
 	echo "Periodic Evaluation"
-  	make -C ${PROGRAMPATH}/periodic/evaluation
+	make -C ${PROGRAMPATH}/periodic/evaluation
 	${PROGRAMPATH}/periodic/evaluation/evaluation || exit 1
+	if [[ ${USE_WALKING} == "true" ]];then
+		echo "Use walking"
+		bash ${PROGRAMPATH}/periodic/evaluation/walking/eval.sh $1
+	fi
 
 elif [[ ${TIM_CONCEPT} == "aperiodic" ]]; then\
 	echo "Aperiodic Evaluation"

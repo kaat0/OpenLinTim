@@ -12,47 +12,44 @@ import net.lintim.model.LinePool;
 import net.lintim.model.Link;
 import net.lintim.model.Stop;
 import net.lintim.util.Config;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 import net.lintim.util.SolverType;
+import net.lintim.util.lineplanning.Parameters;
 
-import java.util.logging.Logger;
 
 /**
  * Main class to solve the cost model with restricted frequencies of line planning.
  */
 public class CostRestrictingFrequencies {
-    public static void main(String args[]) throws ClassNotFoundException, IllegalAccessException,
-        InstantiationException {
-        Logger logger = Logger.getLogger(CostRestrictingFrequencies.class.getCanonicalName());
-        logger.log(LogLevel.INFO, "Begin reading configuration");
+
+    private static final Logger logger = new Logger(CostRestrictingFrequencies.class);
+
+    public static void main(String[] args) {
+        logger.info("Begin reading configuration");
         if (args.length != 1) {
             throw new ConfigNoFileNameGivenException();
         }
-        new ConfigReader.Builder(args[0]).build().read();
-        int timeLimit = Config.getIntegerValueStatic("lc_timelimit");
-        int numberOfPossibleFrequencies = Config.getIntegerValueStatic("lc_number_of_possible_frequencies");
-        int maximalFrequency = Config.getIntegerValueStatic("lc_maximal_frequency");
-        SolverType solverType = Config.getSolverTypeStatic("lc_solver");
-        logger.log(LogLevel.INFO, "Finished reading configuration");
+        Config config = new ConfigReader.Builder(args[0]).build().read();
+        Parameters parameters = new Parameters(config);
+        logger.info("Finished reading configuration");
 
-        logger.log(LogLevel.INFO, "Begin reading input data");
+        logger.info("Begin reading input data");
         Graph<Stop, Link> ptn = new PTNReader.Builder().readLoads(true).build().read();
         LinePool linePool = new LineReader.Builder(ptn).build().read();
-        logger.log(LogLevel.INFO, "Finished reading input data");
+        logger.info("Finished reading input data");
 
-        logger.log(LogLevel.INFO, "Begin execution of line planning cost model restricting frequencies");
-        CostRestrictingFrequenciesSolver solver = CostRestrictingFrequenciesSolver.getSolver(solverType);
-        boolean feasibleSolutionFound = solver.solveLinePlanningCost(ptn, linePool, timeLimit,
-            numberOfPossibleFrequencies, maximalFrequency);
+        logger.info("Begin execution of line planning cost model restricting frequencies");
+        CostRestrictingFrequenciesSolver solver = CostRestrictingFrequenciesSolver.getSolver(parameters.getSolverType());
+        boolean feasibleSolutionFound = solver.solveLinePlanningCost(ptn, linePool, parameters);
 
-        logger.log(LogLevel.INFO, "Finished execution of line planning cost model restricting frequencies");
+        logger.info("Finished execution of line planning cost model restricting frequencies");
 
         if (!feasibleSolutionFound) {
             throw new AlgorithmStoppingCriterionException("cost model line planning");
         }
 
-        logger.log(LogLevel.INFO, "Begin writing output data");
+        logger.info("Begin writing output data");
         new LineWriter.Builder(linePool).build().write();
-        logger.log(LogLevel.INFO, "Finished writing output data");
+        logger.info("Finished writing output data");
     }
 }

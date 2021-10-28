@@ -47,7 +47,7 @@ public:
         lpr.read();
         // ean
         PeriodicEANReader pEANr = PeriodicEANReader(&tempEAN,
-            config.getStringValue("default_activities_periodic_unbuffered_file"),
+            config.getStringValue("default_activities_periodic_file"),
             config.getStringValue("default_events_periodic_file"));
         pEANr.read();
     }
@@ -78,6 +78,13 @@ public:
 
         // split line into directed lines. The linepool now consists of directed lines
         for (RpttsEvent re: EAN.getNodes()){
+            if (re.getType() == FIX) {
+                Line l = Line(2 * max_line_id + 1, true);
+                l.setFrequency(1);
+                lp.addLine(l);
+                EAN.getNode(re.getId())->setLineId(l.getId());
+                continue;
+            }
             if (re.getPrevEvent() != NULL || re.getLineId() == -1 || lp.getLine(re.getLineId())->getFrequency() == 0)  continue;
             if (re.getStopId() != ((lp.getLine(re.getLineId()))->getLinePath()).getNodes().front().getId()) continue;
             // this is start of a new line
@@ -146,8 +153,19 @@ public:
                 m.setLeftId(a.getLeftNode()->getLineClusterId());
                 m.setRightId(a.getRightNode()->getLineClusterId());
                 int additional_diff = time_diff[{m.getLeftId(), line_to_cluster[{a.getLeftNode()->getLineId(), a.getLeftNode()->getLineFrequencyRepetition()}]}];
-                m.setStartDifference(a.getLowerBound()+additional_diff);
-                time_diff[{m.getLeftId(), m.getRightId()}] = a.getLowerBound() + additional_diff;
+                int offset = additional_diff;
+                int l_dur = a.getLeftNode()->getDurationToStart() + a.getLowerBound();
+                int u_dur = a.getLeftNode()->getDurationToStart() + a.getUpperBound();
+                l_dur = (l_dur % time_period + time_period) % time_period;
+                u_dur = (u_dur % time_period + time_period) % time_period;
+                if (l_dur > 0){
+                    if (l_dur <= time_period/2 && (u_dur >= time_period/2 || u_dur < l_dur)){
+                        offset += time_period/2;
+                    }
+                }
+                // else offset += 0
+                m.setStartDifference(offset);
+                time_diff[{m.getLeftId(), m.getRightId()}] = offset;
                 time_diff[{m.getRightId(), m.getLeftId()}] = -time_diff[{m.getLeftId(), m.getRightId()}];
                 m.setMinVal(0);
                 applyMergeRequest(m);
@@ -253,7 +271,13 @@ public:
             tempEAN.getNode(re.getId())->setTime(tt);
         }
         PeriodicTimetableWriter pTTw;
-
+        for (PeriodicActivity a: tempEAN.getEdges()){
+            int dur = (a.getRightNode()->getTime() - a.getLeftNode()->getTime() + 100*time_period - a.getLowerBound()) % time_period + a.getLowerBound();
+            if (dur < a.getLowerBound() || dur > a.getUpperBound()){
+                std::cout << "infeasible activity " << a.getId() << std::endl;
+                std::cout << "Duration is " << dur << ", lower bound " << a.getLowerBound() << ", upper bound " << a.getUpperBound() << std::endl;
+            }
+        }
         pTTw.writeTimetable(tempEAN, config);
 
         std::cout << obj_val << std::endl;

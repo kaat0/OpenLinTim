@@ -40,12 +40,12 @@ public class EanPostprocessor {
 	 * @param eventTimeBounds the time bounds on the events
 	 * @return whether all events lie within their bounds
 	 */
-	public static boolean checkTimeBounds(Map<PeriodicEvent, Pair<Integer, Integer>> eventTimeBounds) {
+	public static boolean checkTimeBounds(Map<PeriodicEvent, Pair<Integer, Integer>> eventTimeBounds, int periodLength) {
 		boolean feasible = true;
 		for (Map.Entry<PeriodicEvent, Pair<Integer, Integer>> eventBoundEntry : eventTimeBounds.entrySet()) {
-			int time = eventBoundEntry.getKey().getTime();
-			int lowerBound = eventBoundEntry.getValue().getFirstElement();
-			int upperBound = eventBoundEntry.getValue().getSecondElement();
+			int time = eventBoundEntry.getKey().getTime() % periodLength;
+			int lowerBound = eventBoundEntry.getValue().getFirstElement() % periodLength;
+			int upperBound = eventBoundEntry.getValue().getSecondElement() % periodLength;
 			if (lowerBound > time || time > upperBound) {
 				feasible = false;
 				logInfeasibleEvent(eventBoundEntry);

@@ -24,6 +24,8 @@ public interface Constraint {
      */
     public double getRhs();
 
+    public void setRhs(double value);
+
     /**
      * Possible senses for a constraint, i.e., whether the expression should be less or equal, equal, or greater or
      * equal than the right hand side.

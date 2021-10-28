@@ -204,6 +204,23 @@ class PeriodicActivity(Edge[PeriodicEvent]):
                 ((endTime - startTime) % periodLength + periodLength) %
                 periodLength <= self.getUpperBound())
 
+    def getDuration(self, period_length: int) -> int:
+        """
+        Get the duration of the activity. This will compute the length of the acitivity, the difference between the
+        target and the source event, but respect the crossing of a time period. I.e., this method will return the
+        smallest non-negative integer, such that
+        - duration >= lower_bound
+        - duration mod period_length == (end_time - start_time) mod period_length
+        :param period_length: the period length
+        :return: the duration of the activity
+        """
+        start_time = self.getLeftNode().getTime()
+        end_time = self.getRightNode().getTime()
+        duration = end_time - start_time
+        while duration < self.lowerBound:
+            duration += period_length
+        return duration
+
     def getId(self) -> int:
         return self.activityId
 
@@ -248,6 +265,12 @@ class PeriodicActivity(Edge[PeriodicEvent]):
         """
         return self.numberOfPassengers
 
+    def setNumberOfPassengers(self, number_of_passengers: float) -> None:
+        """
+        Set the number of passengers using the activity
+        """
+        self.numberOfPassengers = number_of_passengers
+
     def toCsvStrings(self) -> [str]:
         """
         Return a string list, representing the activity for a LinTim csv file
@@ -288,7 +311,6 @@ class PeriodicActivity(Edge[PeriodicEvent]):
         result = 31 * result + hash(self.targetEvent)
         result = 31 * result + hash(self.lowerBound)
         result = 31 * result + hash(self.upperBound)
-        result = 31 * result + hash(self.numberOfPassengers)
         return result
 
 

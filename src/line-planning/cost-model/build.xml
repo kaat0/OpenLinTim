@@ -1,34 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <project basedir="." default="build" name="lintim-lineplanning-cost">
-    <property name="target" value="1.8"/>
-    <property name="source" value="1.8"/>
+    <include file="../../base.xml"/>
     <property name="build-dir" value="build" />
     <property name="src-dir" value="src" />
     <property name="doc-dir" value="docs" />
-    <property name="core-folder" value="../../core/java" />
     <property name="jar-file" value="cost-model.jar" />
     <path id="lintim-lineplanning-cost.classpath">
         <pathelement location="."/>
-        <pathelement location="${core-folder}/lintim-core.jar"/>
+        <pathelement location="${core-jar}"/>
     </path>
-    <!-- Conditions for the possible solvers -->
-    <condition property="xpress.installed" id="xpress.installed">
-        <available classname="com.dashoptimization.XPRS" />
-    </condition>
-    <condition property="gurobi.installed" id="gurobi.installed">
-        <available classname="gurobi.GRBEnv" />
-    </condition>
-    <condition property="no-solver.installed" id="no-solver.installed">
-        <and>
-            <not>
-                <available classname="gurobi.GRBEnv" />
-            </not>
-            <not>
-                <available classname="com.dashoptimization.XPRS" />
-            </not>
-        </and>
-    </condition>
     <!-- Clean -->
     <target name="clean">
         <delete>
@@ -44,12 +25,9 @@
         <mkdir dir="${doc-dir}"/>
     </target>
     <!-- Build tasks -->
-    <target depends="build-dependencies,build-solver-independent,build-xpress,build-gurobi" name="build"/>
-    <target name="build-dependencies">
-        <ant target="build" dir="${core-folder}" inheritAll="false"/>
-    </target>
+    <target depends="base-lintim.build-core,build-solver-independent,build-xpress,build-gurobi" name="build"/>
     <target name="build-solver-independent" depends="init">
-        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}" source="${source}" target="${target}">
+        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}">
             <classpath refid="lintim-lineplanning-cost.classpath"/>
             <exclude name="net/lintim/algorithm/lineplanning/CostGurobi.java"/>
             <exclude name="net/lintim/algorithm/lineplanning/CostXpress.java"/>
@@ -57,14 +35,14 @@
     </target>
     <target name="build-xpress" if="${xpress.installed}" depends="init">
         <echo>Xpress installed</echo>
-        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}" source="${source}" target="${target}">
+        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}">
             <classpath refid="lintim-lineplanning-cost.classpath"/>
             <include name="net/lintim/algorithm/lineplanning/CostXpress.java"/>
         </javac>
     </target>
     <target name="build-gurobi" if="${gurobi.installed}" depends="init">
         <echo>Gurobi installed</echo>
-        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}" source="${source}" target="${target}">
+        <javac includeantruntime="true" debug="true" srcdir="${src-dir}" destdir="${build-dir}">
             <classpath refid="lintim-lineplanning-cost.classpath"/>
             <include name="net/lintim/algorithm/lineplanning/CostGurobi.java"/>
         </javac>

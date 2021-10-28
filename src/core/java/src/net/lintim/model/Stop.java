@@ -1,5 +1,7 @@
 package net.lintim.model;
 
+import net.lintim.io.CsvWriter;
+
 import java.util.Arrays;
 
 /**
@@ -137,8 +139,8 @@ public class Stop implements Node {
 	        String.valueOf(getId()),
             getShortName(),
             getLongName(),
-            String.valueOf(getxCoordinate()),
-            String.valueOf(getyCoordinate())
+            CsvWriter.shortenDecimalValueForOutput(getxCoordinate()),
+            CsvWriter.shortenDecimalValueForOutput(getyCoordinate())
         };
     }
 }

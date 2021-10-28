@@ -34,6 +34,8 @@ evaluation
 !evaluation/
 shortest_paths_cc
 shortest_paths_sh
+# The copied source file of ip-based dm. This is only a copy that should never be committed
+src/delay-management/ip-based/Solve/Solve.java
 
 # LinTim specific data files #
 ##############################
@@ -52,9 +54,12 @@ Activities-periodic.giv
 Events-periodic.giv
 Timetable-periodic.tim
 Timetable-visum.tim
+Timetable-visum-nodes.tim
+perceived_travel_time_output.tim
 Activities-expanded.giv
 Events-expanded.giv
 Timetable-expanded.tim
+Timetable-disposition.tim
 Trips.giv
 end-events-of-trips.giv
 Station_Distances.vs
@@ -65,6 +70,8 @@ Vehicle_Schedules.vs
 Vehicles.vs
 data_vehicle_flow
 statistic.sta
+objectives.sta
+solver_statistic.sta
 Evaluation.txt
 Line-Concept.lin
 Delays-Events.giv

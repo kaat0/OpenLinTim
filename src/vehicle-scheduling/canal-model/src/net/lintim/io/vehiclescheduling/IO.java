@@ -1,21 +1,25 @@
 package net.lintim.io.vehiclescheduling;
 
-import net.lintim.main.vehiclescheduling.VS;
+import net.lintim.algorithm.vehiclescheduling.VS;
 import net.lintim.model.vehiclescheduling.*;
 import net.lintim.util.Config;
+import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
 
 import java.io.*;
 import java.util.*;
 
-public class IO
-{
+public class IO {
+    private static Logger logger = new Logger(IO.class);
+
     // default names for output files which later get input files
     private static final String vehicleFlowFileName = "vehicle-scheduling/Vehicle_Flow.vs";
 
     // default names for output files which are only generated when "vs_verbose" is true
     private static final String canalNetworkFileName = "vehicle-scheduling/Canal_Network.vs";
 
-        private IO() {}  // class only contains static methods
+    private IO() {
+    }  // class only contains static methods
 
     // default names for output files which later get input files
     // WARNING: this file is hardcoded in the .mos files.
@@ -50,36 +54,43 @@ public class IO
     private static String edgesFileName = null;
     // default names for output files
     private static String vehicleSchedulesFileName = null;
+    // Solver parameters
+    private static int timelimit;
+    private static double mipGap;
+    private static int threadLimit;
+    private static boolean outputSolverMessages;
+    private static boolean writeLpFile;
 
-      /** gets the informations about the trips.
-      * Proceeding: It reads the informations out of the file "tripsFileName"
-       * @return trips an ArrayList, which contains the trip, each trip is represented by
-      * 		<ul>
-      * 		<li> ID: unique ID for the trip
-      * 		<li> startID: the ID of the starting event
-      * 		<li> endID: the ID of the ending event
-      * 		<li> startStation: the ID of the first station of the trip
-      * 		<li> endStation: the ID of the last station of a trip
-      * 		<li> startTime: the time (in seconds), when the vehicle departs at the first station
-      * 		<li> endTime: the time (in seconds), when the vehicle arrives at the last station
-      *	 	</ul>
-       */
-        public static ArrayList<Trip> readTrips() throws IOException{
+    /**
+     * gets the informations about the trips.
+     * Proceeding: It reads the informations out of the file "tripsFileName"
+     *
+     * @return trips an ArrayList, which contains the trip, each trip is represented by
+     * <ul>
+     * <li> ID: unique ID for the trip
+     * <li> startID: the ID of the starting event
+     * <li> endID: the ID of the ending event
+     * <li> startStation: the ID of the first station of the trip
+     * <li> endStation: the ID of the last station of a trip
+     * <li> startTime: the time (in seconds), when the vehicle departs at the first station
+     * <li> endTime: the time (in seconds), when the vehicle arrives at the last station
+     * 	</ul>
+     */
+    public static ArrayList<Trip> readTrips() throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(tripsFileName));
         String line;
         ArrayList<Trip> trips = new ArrayList<>();
 
-        while ((line = reader.readLine()) != null)
-        {
+        while ((line = reader.readLine()) != null) {
 
-        if(line.isEmpty() || line.charAt(0) == '#'){
-          continue;
-        }
+            if (line.isEmpty() || line.charAt(0) == '#') {
+                continue;
+            }
 
-        int ID = trips.size()+1;
+            int ID = trips.size() + 1;
 
-        String[] entries = line.split(";");
+            String[] entries = line.split(";");
             int startID = Integer.parseInt(entries[0].trim());
             int periodicStartID = Integer.parseInt(entries[1].trim());
             int startStation = Integer.parseInt(entries[2].trim());
@@ -90,37 +101,37 @@ public class IO
             int endTime = Integer.parseInt(entries[7].trim());
             int lineID = Integer.parseInt(entries[8].trim());
 
-                Trip trip = new Trip(ID, startID, endID, startStation, endStation, startTime, endTime, lineID, periodicStartID, periodicEndID);
-                trips.add(trip);
+            Trip trip = new Trip(ID, startID, endID, startStation, endStation, startTime, endTime, lineID, periodicStartID, periodicEndID);
+            trips.add(trip);
 
-    }
-          reader.close();
-
-    return trips;
         }
+        reader.close();
+
+        return trips;
+    }
 
     /**
      * gets the informations about the trips. Proceeding: It reads the
      * informations out of the file "tripsFileName"
      *
      * @return trips an ArrayList, which contains the trip, each trip is
-     *         represented by
-     *         <ul>
-     *         <li>ID: unique ID for the trip
-     *         <li>startID: the ID of the starting event
-     *         <li>endID: the ID of the ending event
-     *         <li>startStation: the ID of the first station of the trip
-     *         <li>endStation: the ID of the last station of a trip
-     *         <li>startTime: the time (in seconds), when the vehicle departs at
-     *         the first station
-     *         <li>endTime: the time (in seconds), when the vehicle arrives at
-     *         the last station
-     *         </ul>
+     * represented by
+     * <ul>
+     * <li>ID: unique ID for the trip
+     * <li>startID: the ID of the starting event
+     * <li>endID: the ID of the ending event
+     * <li>startStation: the ID of the first station of the trip
+     * <li>endStation: the ID of the last station of a trip
+     * <li>startTime: the time (in seconds), when the vehicle departs at
+     * the first station
+     * <li>endTime: the time (in seconds), when the vehicle arrives at
+     * the last station
+     * </ul>
      */
     public static ArrayList<CTrip> readCTrips() throws IOException {
 
         BufferedReader reader = new BufferedReader(
-                new FileReader(tripsFileName));
+            new FileReader(tripsFileName));
         String line;
         ArrayList<CTrip> trips = new ArrayList<>();
 
@@ -144,8 +155,8 @@ public class IO
             int lineID = Integer.parseInt(entries[8].trim());
 
             CTrip trip = new CTrip(ID, startID, endID, startStation,
-                    endStation, startTime, endTime, lineID, periodicStartID,
-                    periodicEndID);
+                endStation, startTime, endTime, lineID, periodicStartID,
+                periodicEndID);
             trips.add(trip);
 
         }
@@ -158,12 +169,12 @@ public class IO
      * read the canal events contained in the calculated vehicle flow.
      *
      * @return events, an ArrayList<Integer>, which contains the id's of the
-     *          occuring events
+     * occuring events
      */
     public static ArrayList<Integer> readVehicleFlowCanals() throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(
-                vehicleFlowFileName));
+            vehicleFlowFileName));
 
         String line;
         ArrayList<Integer> events = new ArrayList<>();
@@ -193,28 +204,28 @@ public class IO
      * read the transfers of the calculated vehicle flow.
      *
      * @return transfers, an ArrayList<CTransfer>, which contains the
-     *          transfers, each transfer is represented by
-     *          <ul>
-     *          <li>ID: unique ID for the transfer
-     *          <li>startEvent: format ID; time; type
-     *          <li>endEvent: format ID; time; type
-     *          <li>costs: integer, which represents the costs of the transfer
-     *          <li>timeCycleJump: a boolean, which is true, if the transfer
-     *          contains a time cycle jump (a time cycle jump occurs, when a
-     *          vehicle pauses between two trips untill the next time cycle,
-     *          e.g. over night).
-     *          <li>type: String, which could be "TRIP", "EMPTY", "PARKING" and
-     *          "MAINTAINING"
-     *          </ul>
+     * transfers, each transfer is represented by
+     * <ul>
+     * <li>ID: unique ID for the transfer
+     * <li>startEvent: format ID; time; type
+     * <li>endEvent: format ID; time; type
+     * <li>costs: integer, which represents the costs of the transfer
+     * <li>timeCycleJump: a boolean, which is true, if the transfer
+     * contains a time cycle jump (a time cycle jump occurs, when a
+     * vehicle pauses between two trips untill the next time cycle,
+     * e.g. over night).
+     * <li>type: String, which could be "TRIP", "EMPTY", "PARKING" and
+     * "MAINTAINING"
+     * </ul>
      */
     public static ArrayList<CTransfer> readVehicleFlowTransfers()
-            throws IOException {
+        throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(
-                vehicleFlowFileName));
+            vehicleFlowFileName));
         String line;
         ArrayList<CTransfer> transfers = new ArrayList<>();
-		System.out.println("Transfers read from VFFN " + vehicleFlowFileName);
+        logger.debug("Transfers read from VFFN " + vehicleFlowFileName);
 
         while ((line = reader.readLine()) != null) {
 
@@ -239,11 +250,11 @@ public class IO
             String type = entries[9].trim();
 
             Event startEvent = new Event(startEventID, startEventTime,
-                    startEventType);
+                startEventType);
             Event endEvent = new Event(endEventID, endEventTime, endEventType);
 
             CTransfer transfer = new CTransfer(ID, startEvent, endEvent, costs,
-                    type, timeCycleJump);
+                type, timeCycleJump);
 
             transfers.add(transfer);
 
@@ -253,27 +264,29 @@ public class IO
         return transfers;
     }
 
-    /** read the calculated transfers subject to the used model.
-      * Models:
-      * <ul>
-      * <li> model = 0: Model MDM1 (Minimal Decomposition Model, type 1)
+    /**
+     * read the calculated transfers subject to the used model.
+     * Models:
+     * <ul>
+     * <li> model = 0: Model MDM1 (Minimal Decomposition Model, type 1)
      * <li> model = 1: Model MDM2 (Minimal Decomposition Model, type 2)
      * <li> model = 2: Model AM (Assignment Model)
      * <li> model = 3: Model TM (Transportation Model)
      * <li> model = 4: Model NM (Network Flow Model)
      * </ul>
+     *
      * @return transfers, an ArrayList<Transfer>, which contains the transfers, each transfer is represented by
-      * 		<ul>
-      * 		<li> ID: unique ID for the trip
-      * 		<li> firstTripID: the ID of the first trip
-      * 		<li> secondTripID: the ID of the second trip
-      * 		<li> timeCycleJump: a boolean, which is only used for the assignment model.
-      * 				    It is true, if the transfer contains a time cycle jump
-      * 				    (a time cycle jump occurs, when a vehicle pauses between two trips
-      * 				    untill the next time cycle, e.g. over night).
-      *	 	</ul>
+     * <ul>
+     * <li> ID: unique ID for the trip
+     * <li> firstTripID: the ID of the first trip
+     * <li> secondTripID: the ID of the second trip
+     * <li> timeCycleJump: a boolean, which is only used for the assignment model.
+     * 		    It is true, if the transfer contains a time cycle jump
+     * 		    (a time cycle jump occurs, when a vehicle pauses between two trips
+     * 		    untill the next time cycle, e.g. over night).
+     * 	</ul>
      */
-        public static ArrayList<Transfer> readTransfers() throws IOException{
+    public static ArrayList<Transfer> readTransfers() throws IOException {
 
         Map<String, Integer> models = new HashMap<>();
         models.put("MDM1", 0);
@@ -282,43 +295,42 @@ public class IO
         models.put("TRANSPORTATION_MODEL", 3);
         models.put("NETWORK_FLOW_MODEL", 4);
 
-        if (! models.containsKey(modelName)) {
-            System.out.println("The value of the parameter vs_model in the file basis/Config.cnf has to be one of the following:");
-            System.out.println("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL");
+        if (!models.containsKey(modelName)) {
+            logger.error("The value of the parameter vs_model in the config file for this algorithm has to be one of " +
+                "the following:");
+            logger.error("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL");
             return null;
         }
-		System.out.println("Transfers read from " + transfersFileName);
+        logger.debug("Transfers read from " + transfersFileName);
         BufferedReader reader = new BufferedReader(new FileReader(transfersFileName));
         String line;
         ArrayList<Transfer> transfers = new ArrayList<>();
 
-        while ((line = reader.readLine()) != null)
-        {
+        while ((line = reader.readLine()) != null) {
 
-            if(line.isEmpty() || line.charAt(0) == '#'){
-              continue;
+            if (line.isEmpty() || line.charAt(0) == '#') {
+                continue;
             }
 
             String[] entries = line.split(";");
             int firstTripID = Integer.parseInt(entries[0].trim());
             int secondTripID = Integer.parseInt(entries[1].trim());
 
-            if(models.get(modelName) == 2){
+            if (models.get(modelName) == 2) {
                 boolean timeCycleJump = Boolean.parseBoolean(entries[3].trim());
                 Transfer transfer = new Transfer(firstTripID, secondTripID, timeCycleJump);
                 transfers.add(transfer);
 
-            }
-            else{
+            } else {
                 Transfer transfer = new Transfer(firstTripID, secondTripID);
                 transfers.add(transfer);
             }
 
         }
-             reader.close();
+        reader.close();
 
         return transfers;
-        }
+    }
 
     /**
      * Reads the stops for the network and save them in {@link #stops}.
@@ -327,7 +339,7 @@ public class IO
     public static void readStops() throws IOException {
 
         BufferedReader reader = new BufferedReader(
-                new FileReader(stopsFileName));
+            new FileReader(stopsFileName));
         String line;
 
         while ((line = reader.readLine()) != null) {
@@ -345,31 +357,31 @@ public class IO
 
     }
 
-    /** read the edges of the network.
-      * Proceeding: reads the informations out of the file "Edges.giv"
+    /**
+     * read the edges of the network.
+     * Proceeding: reads the informations out of the file "Edges.giv"
      */
-        public static void readEdges() throws IOException{
+    public static void readEdges() throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(edgesFileName));
         String line;
 
-        while ((line = reader.readLine()) != null)
-        {
+        while ((line = reader.readLine()) != null) {
 
-            if(line.isEmpty() || line.charAt(0) == '#'){
-              continue;
+            if (line.isEmpty() || line.charAt(0) == '#') {
+                continue;
             }
 
 
             String[] entries = line.split(";");
-                int leftStopID = Integer.parseInt(entries[1].trim());
-                int rightStopID = Integer.parseInt(entries[2].trim());
-                int lowerBound = Integer.parseInt(entries[4].trim());
+            int leftStopID = Integer.parseInt(entries[1].trim());
+            int rightStopID = Integer.parseInt(entries[2].trim());
+            int lowerBound = Integer.parseInt(entries[4].trim());
 
-    //		double length_in_seconds = length * (3600/speed) * 0.001; // The vehicle has speed "speed" in km/h => speed * (1000/3600) m/s
-    //							                   // 	=> length in seconds = length in meter * (3600/1000) * (1/speed) s/m = length in meter * (3600/speed) * (1/1000) (s/m)
+            //		double length_in_seconds = length * (3600/speed) * 0.001; // The vehicle has speed "speed" in km/h => speed * (1000/3600) m/s
+            //							                   // 	=> length in seconds = length in meter * (3600/1000) * (1/speed) s/m = length in meter * (3600/speed) * (1/1000) (s/m)
             Edge edge = new Edge(leftStopID, rightStopID,
-                    lowerBound*60/timeUnitsPerMinute);
+                lowerBound * 60 / timeUnitsPerMinute);
 
 //                Edge edge = new Edge(edgeID, leftStopID, rightStopID,
 //                		(int) (length_in_seconds * 100));
@@ -378,22 +390,22 @@ public class IO
             edges.add(edge);
 
         }
-          reader.close();
+        reader.close();
 
-        }
+    }
 
     /**
      * read the events of the network. Proceeding: reads the informations out of
      * the file "Events-expanded.giv"
      *
      * @return events, an ArrayList<Event>, which contains the events of the
-     *         network, each event is represented by an unique ID (Integer), the
-     *         time (double), the type (String)
+     * network, each event is represented by an unique ID (Integer), the
+     * time (double), the type (String)
      */
     public static ArrayList<Event> readEvents() throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(
-                eventsFileName));
+            eventsFileName));
 
         String line;
         ArrayList<Event> events = new ArrayList<>();
@@ -414,12 +426,11 @@ public class IO
             } else if (type.equals("\"arrival\"")) {
                 type = Event.TYPE_END;
             } else {
-                System.out
-                        .println("In the file "
-                                + eventsFileName
-                                + " exists an event which has the type "
-                                + type
-                                + ", but only the types \"departure\" and \"arrival\" are allowed.");
+                logger.error("In the file "
+                    + eventsFileName
+                    + " exists an event which has the type "
+                    + type
+                    + ", but only the types \"departure\" and \"arrival\" are allowed.");
             }
 
             Event event = new Event(eventID, time, type);
@@ -431,7 +442,7 @@ public class IO
         return events;
     }
 
-    public static void calculateMoselInput() throws IOException{
+    public static void calculateMoselInput() throws IOException {
         Map<String, Integer> models = new HashMap<>();
         models.put("MDM1", 0);
         models.put("MDM2", 1);
@@ -440,37 +451,46 @@ public class IO
         models.put("NETWORK_FLOW_MODEL", 4);
         models.put("CANAL_MODEL", 5);
 
-        if (! models.containsKey(modelName)) {
-            System.out.println("The value of the parameter vs_model in the file basis/Config.cnf has to be one of the following:");
-            System.out.println("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL, CANAL_MODEL");
+        if (!models.containsKey(modelName)) {
+            logger.error("The value of the parameter vs_model in the config file for this algorithm has to be one of " +
+                "the following:");
+            logger.error("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL");
             return;
         }
 
-        if(modelName.toUpperCase().equals("CANAL_MODEL")){
+        if (modelName.toUpperCase().equals("CANAL_MODEL")) {
             CanalNetwork network = calculateCanalNetwork();
             IO.calculateMoselInputVehicleFlow(network);
             IO.printCanalNetwork(network);
-        }
-
-        else{
+        } else {
             ArrayList<Trip> trips;
             trips = readTrips();
             int[][] CompMatrix = VS.calculateCompatibilityMatrix(trips,
-                    distances, turnOverTime);
+                distances, turnOverTime);
 
-            switch(models.get(modelName)){
-                case 0: calculateMoselInputForMDM1(trips); break;
-                case 1: calculateMoselInputForMDM2(trips); break;
-                case 2: calculateMoselInputForAM(trips, CompMatrix); break;
-                case 3: calculateMoselInputForTM(trips, CompMatrix); break;
-                case 4: calculateMoselInputForNM(trips, CompMatrix); break;
+            switch (models.get(modelName)) {
+                case 0:
+                    calculateMoselInputForMDM1(trips);
+                    break;
+                case 1:
+                    calculateMoselInputForMDM2(trips);
+                    break;
+                case 2:
+                    calculateMoselInputForAM(trips, CompMatrix);
+                    break;
+                case 3:
+                    calculateMoselInputForTM(trips, CompMatrix);
+                    break;
+                case 4:
+                    calculateMoselInputForNM(trips, CompMatrix);
+                    break;
             }
         }
 
 
     }
 
-    public static void calculateMoselInputVehicleFlow(CanalNetwork network) throws IOException{
+    public static void calculateMoselInputVehicleFlow(CanalNetwork network) throws IOException {
         String moselVFInputFileName = "../../src/vehicle-scheduling/canal-model/data_vehicle_flow";
         File file = new File(moselVFInputFileName);
 
@@ -481,7 +501,12 @@ public class IO
         pstream.println("NumberOfTransfers: " + network.getTransfers().size());
         pstream.println("NumberOfCanalEvents: " + network.getTotalNumberOfCanalEvents());
         pstream.println("NumberOfCanals: " + network.getCanals().length);
-        pstream.println("NumberOfLineTransfers: " + (2*network.getTrips().size()));
+        pstream.println("NumberOfLineTransfers: " + (2 * network.getTrips().size()));
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
 
         pstream.println("! Costs of a single vehicle:");
         pstream.println("cv: " + vehicleCosts);
@@ -491,10 +516,10 @@ public class IO
         ArrayList<CTransfer> transfers = network.getTransfers();
 
         StringBuilder transferString = new StringBuilder("C: [ ");
-            for (CTransfer cTransfer : transfers) {
-                transferString.append(cTransfer.getCosts());
-                transferString.append(" ");
-            }
+        for (CTransfer cTransfer : transfers) {
+            transferString.append(cTransfer.getCosts());
+            transferString.append(" ");
+        }
         transferString.append("]");
         pstream.println(transferString.toString());
 
@@ -502,11 +527,11 @@ public class IO
 
         StringBuilder eventTypeString = new StringBuilder("EventType: [");
         int eventIndex = 1;
-        for(Canal canal: network.getCanals()) {
-            if(canal == null) continue;
-            for(CEvent event: canal.getEvents()) {
+        for (Canal canal : network.getCanals()) {
+            if (canal == null) continue;
+            for (CEvent event : canal.getEvents()) {
                 event.setMoselIndex(Integer.toString(eventIndex++));
-                eventTypeString.append(event.getType().equals(Event.TYPE_START) ? " 0": " 1");
+                eventTypeString.append(event.getType().equals(Event.TYPE_START) ? " 0" : " 1");
             }
         }
         eventTypeString.append(" ]");
@@ -515,9 +540,9 @@ public class IO
         pstream.println("! Array of the Event Indizes, ordered by the order of the given canals and the order of the events in this canals");
 
         StringBuilder canalEventJavaIndizesString = new StringBuilder("CanalEventJavaIndizes: [ ");
-        for(Canal canal: network.getCanals()) {
-            if(canal == null) continue;
-            for(CEvent event: canal.getEvents()) {
+        for (Canal canal : network.getCanals()) {
+            if (canal == null) continue;
+            for (CEvent event : canal.getEvents()) {
                 canalEventJavaIndizesString.append(event.getID());
                 canalEventJavaIndizesString.append(" ");
             }
@@ -530,9 +555,9 @@ public class IO
         StringBuilder previousEventString = new StringBuilder(network.getCanals().length * 32);
         previousEventString.append("PreviousEvent: [ ");
 
-        for(Canal canal: network.getCanals()) {
-            if(canal == null) continue;
-            for(CEvent event: canal.getEvents()) {
+        for (Canal canal : network.getCanals()) {
+            if (canal == null) continue;
+            for (CEvent event : canal.getEvents()) {
                 previousEventString.append(" ");
                 previousEventString.append(canal.getPreviousEvent(event).getMoselIndex());
             }
@@ -542,9 +567,9 @@ public class IO
 
         pstream.println("! Transfer associated with each event");
         StringBuilder associatedTransferString = new StringBuilder("AssociatedTransfer: [ ");
-        for(Canal canal: network.getCanals()) {
-            if(canal == null) continue;
-            for(CEvent event: canal.getEvents()) {
+        for (Canal canal : network.getCanals()) {
+            if (canal == null) continue;
+            for (CEvent event : canal.getEvents()) {
                 associatedTransferString.append(" ");
                 associatedTransferString.append(event.getJourney().getIDString());
             }
@@ -554,21 +579,21 @@ public class IO
 
         pstream.println("! Array of the indizes, which belong to the last event of the canals (length = number of the canals)");
         pstream.println("Jump: [ ");
-        for(Canal canal: network.getCanals()) {
-            if(canal == null || canal.getEvents().size() <= 0){
+        for (Canal canal : network.getCanals()) {
+            if (canal == null || canal.getEvents().size() <= 0) {
                 pstream.print(" -1");
-            } else{
-                pstream.print(" " + canal.getEvents().get(canal.getEvents().size()-1).getMoselIndex());
+            } else {
+                pstream.print(" " + canal.getEvents().get(canal.getEvents().size() - 1).getMoselIndex());
             }
         }
         pstream.println("]");
 
         pstream.println("! Array of booleans, which states if a canal with the associated index exists");
         pstream.println("CanalExists: [ ");
-        for(Canal canal: network.getCanals()) {
-            if(canal == null || canal.getEvents().size() <= 0){
+        for (Canal canal : network.getCanals()) {
+            if (canal == null || canal.getEvents().size() <= 0) {
                 pstream.print(" " + false);
-            } else{
+            } else {
                 pstream.print(" " + true);
             }
         }
@@ -576,7 +601,7 @@ public class IO
 
         pstream.println("! Array of booleans, which states if a transfer has a time cycle jump");
         StringBuilder TransferWithTimeCycleJumpString = new StringBuilder("TransfersWithTimeCycleJump: [");
-        for(CTransfer transfer: transfers){
+        for (CTransfer transfer : transfers) {
             TransferWithTimeCycleJumpString.append(" ");
             TransferWithTimeCycleJumpString.append(transfer.getTimeCycleJump());
         }
@@ -588,7 +613,7 @@ public class IO
         Set<Integer> startIDs = new HashSet<>();
         pstream.println("! Array of the indizes of the first event of a transfer");
         StringBuilder TransferStartEventString = new StringBuilder("TransferStartEvent: [");
-        for(CTransfer transfer: transfers){
+        for (CTransfer transfer : transfers) {
             TransferStartEventString.append(" ");
             TransferStartEventString.append(transfer.getStartEvent().getID());
             startIDs.add(transfer.getStartEvent().getID());
@@ -598,10 +623,10 @@ public class IO
 
         pstream.println("! Array of the indizes of the first event of a transfer");
         StringBuilder TransferEndEventString = new StringBuilder("TransferEndEvent: [");
-        for(CTransfer transfer: transfers){
+        for (CTransfer transfer : transfers) {
             TransferEndEventString.append(" ");
             TransferEndEventString.append(transfer.getEndEvent().getID());
-            if(startIDs.contains(transfer.getEndEvent().getID())) {
+            if (startIDs.contains(transfer.getEndEvent().getID())) {
                 throw new Error("ID " + transfer.getEndEvent().getID() + " used as both start and end");
             }
         }
@@ -610,7 +635,7 @@ public class IO
 
         pstream.println("! Array of the types of the transfers");
         StringBuilder TransferTypeString = new StringBuilder("TransferType: [");
-        for(CTransfer transfer: transfers){
+        for (CTransfer transfer : transfers) {
             TransferTypeString.append(" ");
             TransferTypeString.append(transfer.getType());
         }
@@ -619,11 +644,11 @@ public class IO
 
         ArrayList<Event> givenEvents = IO.readEvents();
         int numberOfGivenEvents = givenEvents.size();
-        pstream.println("NumberOfEvents: " + (numberOfGivenEvents + transfers.size()*2));
+        pstream.println("NumberOfEvents: " + (numberOfGivenEvents + transfers.size() * 2));
 
         pstream.println("! Array of the times of the events");
         StringBuilder EventTimeString = new StringBuilder("TimeOfEvents: [");
-        int[] timeOfTransfers = new int[numberOfGivenEvents +transfers.size()*2];
+        int[] timeOfTransfers = new int[numberOfGivenEvents + transfers.size() * 2];
         Arrays.fill(timeOfTransfers, -1);
         for (CTransfer transfer : transfers) {
             timeOfTransfers[transfer.getStartEvent().getID() - 1] = transfer.getStartEvent().getTime();
@@ -638,21 +663,23 @@ public class IO
 
     }
 
-    /** calculate the mosel-input for the model MDM1.
+    /**
+     * calculate the mosel-input for the model MDM1.
      * Output-File: data_mdm1 in the folder src/vehicle-scheduling/canal-model
      * format:
-     * 	   C: [ .... ], where the "...." represents the cost-matrix for the model MDM1 (line by line)
-     * 	   NumberOfTrips: trips.size()
+     * C: [ .... ], where the "...." represents the cost-matrix for the model MDM1 (line by line)
+     * NumberOfTrips: trips.size()
+     * <p>
+     * this means: C[i][j] = 1 		if i=j=0
+     * C[i][j] = 0 		if either i=0 or j=0
+     * C[i][j] = 0 		if trips i and j are compatible
+     * C[i][j] = -\infty 	else
+     * <p>
+     * remark: in this function, it is used "-1000" instead of -\infty
      *
-     * 	   this means: C[i][j] = 1 		if i=j=0
-     * 	   	       C[i][j] = 0 		if either i=0 or j=0
-     * 	   	       C[i][j] = 0 		if trips i and j are compatible
-     * 	   	       C[i][j] = -\infty 	else
-     *
-     * 	  remark: in this function, it is used "-1000" instead of -\infty
      * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips()}
      */
-    public static void calculateMoselInputForMDM1(ArrayList<Trip> trips) throws FileNotFoundException{
+    public static void calculateMoselInputForMDM1(ArrayList<Trip> trips) throws FileNotFoundException {
         String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_mdm1";
         File file = new File(moselInputFileName);
 
@@ -660,36 +687,34 @@ public class IO
 
         pstream.print("C: [");
 
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; j <= trips.size(); j++){
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; j <= trips.size(); j++) {
 
-                if(i == 0){
-                    if(j == 0){
-                        pstream.print(" 1,");
-                    } else if(j < trips.size()){
-                        pstream.print(" 0,");
-                    } else{
-                        pstream.println(" 0");
-                    }
-                }
-                else if(j == 0){
-                    pstream.print(" 0,");
-                }
-                else if((trips.get(i-1).getEndStation() == trips.get(j-1).getStartStation()) && (trips.get(i-1).getEndTime() + turnOverTime
-                    <= trips.get(j-1).getStartTime())){
-                    if(j < trips.size()){
-                        pstream.print(" 0,");
-                    } else if(i == trips.size()){
+                if (i == 0) {
+                    if (j == 0) {
+                        pstream.print(" 1");
+                    } else if (j < trips.size()) {
                         pstream.print(" 0");
-                    } else{
+                    } else {
                         pstream.println(" 0");
                     }
-                } else{
-                    if(j < trips.size()){
-                        pstream.print(" -1000,");
-                    } else if(i == trips.size()){
+                } else if (j == 0) {
+                    pstream.print(" 0");
+                } else if ((trips.get(i - 1).getEndStation() == trips.get(j - 1).getStartStation()) && (trips.get(i - 1).getEndTime() + turnOverTime
+                    <= trips.get(j - 1).getStartTime())) {
+                    if (j < trips.size()) {
+                        pstream.print(" 0");
+                    } else if (i == trips.size()) {
+                        pstream.print(" 0");
+                    } else {
+                        pstream.println(" 0");
+                    }
+                } else {
+                    if (j < trips.size()) {
                         pstream.print(" -1000");
-                    } else{
+                    } else if (i == trips.size()) {
+                        pstream.print(" -1000");
+                    } else {
                         pstream.println(" -1000");
                     }
 
@@ -703,44 +728,51 @@ public class IO
         pstream.println("! The '-1000' is at the places, where rather should be minus infinity.");
         pstream.println();
         pstream.println("NumberOfTrips: " + trips.size());
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
     }
 
-    /** calculate the mosel-input for the model MDM2.
+    /**
+     * calculate the mosel-input for the model MDM2.
      * Output-File: data_mdm2 in the folder src/vehicle-scheduling/canal-model
      * format:
-     * 	   C: [ .... ], where the "...." represents the cost-matrix for the model MDM2 (line by line)
-     * 	   NumberOfTrips: trips.size()
+     * C: [ .... ], where the "...." represents the cost-matrix for the model MDM2 (line by line)
+     * NumberOfTrips: trips.size()
+     * <p>
+     * this means: C[i][j] = 1 		if trips i and j are compatible
+     * C[i][j] = -\infty 	else
+     * <p>
+     * remark: in this function, it is used "-1000" instead of -\infty
      *
-     * 	   this means: C[i][j] = 1 		if trips i and j are compatible
-     * 	   	       C[i][j] = -\infty 	else
-     *
-     *	  remark: in this function, it is used "-1000" instead of -\infty
      * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips()}
      */
-    public static void calculateMoselInputForMDM2(ArrayList<Trip> trips) throws FileNotFoundException{
-            String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_mdm2";
+    public static void calculateMoselInputForMDM2(ArrayList<Trip> trips) throws FileNotFoundException {
+        String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_mdm2";
         File file = new File(moselInputFileName);
 
         PrintStream pstream = new PrintStream(file);
 
         pstream.print("C: [");
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if((trips.get(i).getEndStation() == trips.get(j).getStartStation()) && (trips.get(i).getEndTime() + turnOverTime <= trips.get(j).getStartTime())){
-                    if(j < trips.size()-1){
-                        pstream.print(" 1,");
-                    } else if(i == trips.size()-1){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if ((trips.get(i).getEndStation() == trips.get(j).getStartStation()) && (trips.get(i).getEndTime() + turnOverTime <= trips.get(j).getStartTime())) {
+                    if (j < trips.size() - 1) {
                         pstream.print(" 1");
-                    } else{
+                    } else if (i == trips.size() - 1) {
+                        pstream.print(" 1");
+                    } else {
                         pstream.println(" 1");
                     }
-                } else{
-                    if(j < trips.size()-1){
-                        pstream.print(" -1000,");
-                    } else if(i == trips.size()-1){
+                } else {
+                    if (j < trips.size() - 1) {
                         pstream.print(" -1000");
-                    } else{
+                    } else if (i == trips.size() - 1) {
+                        pstream.print(" -1000");
+                    } else {
                         pstream.println(" -1000");
                     }
 
@@ -755,33 +787,40 @@ public class IO
         pstream.println("! The '-1000' is at the places, where rather should be minus infinity.");
         pstream.println();
         pstream.println("NumberOfTrips: " + trips.size());
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
     }
 
-    /** calculate the mosel-input for the model AM.
+    /**
+     * calculate the mosel-input for the model AM.
      * Output-File: data_am in the folder src/vehicle-scheduling/canal-model
      * format:
-     * 	   A: [ .... ], where the "...." represents the compatibility matrix (line by line)
-     * 	   U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
-     * 	   cv: vehicleCosts
-     * 	   NumberOfTrips: trips.size()
+     * A: [ .... ], where the "...." represents the compatibility matrix (line by line)
+     * U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
+     * cv: vehicleCosts
+     * NumberOfTrips: trips.size()
+     * <p>
+     * this means: A[i][j] = 0 	if trips i and j are compatible
+     * A[i][j] = 1	else
+     * <p>
+     * U[i][j] = costs for the transfer from trip i to trip j (pure transfer costs)
+     * = costs for the trip from the end-station of trip i to the start-station of trip j
+     * <p>
+     * vehicleCosts = costs of a single vehicle
+     * <p>
+     * remarks: 1. till now, we use the real distances between to trips
+     * 2. for two incompatible trips i and j, there should be added the distance from trip i to the depot and from the depot to trip j
+     * 3. the costs should be reconsidered
+     * FIXME!!!!!
      *
-     * 	   this means: A[i][j] = 0 	if trips i and j are compatible
-     * 	   	       A[i][j] = 1	else
-     *
-     *	   	       U[i][j] = costs for the transfer from trip i to trip j (pure transfer costs)
-     * 	   		       = costs for the trip from the end-station of trip i to the start-station of trip j
-     *
-     * 	 	       vehicleCosts = costs of a single vehicle
-     *
-     * 	  remarks: 1. till now, we use the real distances between to trips
-     * 	  	   2. for two incompatible trips i and j, there should be added the distance from trip i to the depot and from the depot to trip j
-     * 	  	   3. the costs should be reconsidered
-     * 	  	   FIXME!!!!!
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * @param trips      an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param CompMatrix Compatibility Matrix, calculated in the function {@link VS#calculateCompatibilityMatrix}
      */
-    public static void calculateMoselInputForAM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException{
-            String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_am";
+    public static void calculateMoselInputForAM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException {
+        String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_am";
         File file = new File(moselInputFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -790,19 +829,17 @@ public class IO
 
         pstream.print("A: [ ");
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(j != trips.size()-1){
-                    pstream.print(CompMatrix[i][j] + ", ");
-                }
-                else{
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (j != trips.size() - 1) {
+                    pstream.print(CompMatrix[i][j] + " ");
+                } else {
                     pstream.print(CompMatrix[i][j]);
                 }
             }
-            if(i != trips.size()-1){
+            if (i != trips.size() - 1) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -812,19 +849,17 @@ public class IO
 
         pstream.print("U: [ ");
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(j != trips.size()-1){
-                    pstream.print(distances[trips.get(i).getEndStation()-1][trips.get(j).getStartStation()-1] + ", ");
-                }
-                else{
-                    pstream.print(distances[trips.get(i).getEndStation()-1][trips.get(j).getStartStation()-1]);
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (j != trips.size() - 1) {
+                    pstream.print(distances[trips.get(i).getEndStation() - 1][trips.get(j).getStartStation() - 1] + " ");
+                } else {
+                    pstream.print(distances[trips.get(i).getEndStation() - 1][trips.get(j).getStartStation() - 1]);
                 }
             }
-            if(i != trips.size()-1){
+            if (i != trips.size() - 1) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -834,29 +869,36 @@ public class IO
         pstream.println("cv: " + vehicleCosts);
         pstream.println();
         pstream.println("NumberOfTrips: " + trips.size());
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
     }
 
-    /** calculate the mosel-input for the model TM.
+    /**
+     * calculate the mosel-input for the model TM.
      * Output-File: data_tm in the folder src/vehicle-scheduling/canal-model
      * format:
-     * 	   A: [ .... ], where the "...." represents the compatibility matrix (line by line)
-     * 	   U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
-     * 	   s: [ .... ], where the "...." represents an array with the penalty costs, if a trip isn't served (one value for each trip)
-     * 	   cv: vehicleCosts
-     * 	   NumberOfTrips: trips.size()
+     * A: [ .... ], where the "...." represents the compatibility matrix (line by line)
+     * U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
+     * s: [ .... ], where the "...." represents an array with the penalty costs, if a trip isn't served (one value for each trip)
+     * cv: vehicleCosts
+     * NumberOfTrips: trips.size()
+     * <p>
+     * this means: A[i][j] = 0 	if trips i and j are compatible
+     * A[i][j] = 1	else
+     * <p>
+     * U[i][j] = costs for the transfer from trip i to trip j (pure transfer costs)
+     * = costs for the trip from the end-station of trip i to the start-station of trip j
+     * <p>
+     * vehicleCosts = costs of a single vehicle
      *
-     * 	   this means: A[i][j] = 0 	if trips i and j are compatible
-     * 	   	       A[i][j] = 1	else
-     *
-     * 	   	       U[i][j] = costs for the transfer from trip i to trip j (pure transfer costs)
-     * 	   		       = costs for the trip from the end-station of trip i to the start-station of trip j
-     *
-     * 	 	       vehicleCosts = costs of a single vehicle
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * @param trips      an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param CompMatrix Compatibility Matrix, calculated in the function {@link VS#calculateCompatibilityMatrix}
      */
-    public static void calculateMoselInputForTM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException{
-            String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_tm";
+    public static void calculateMoselInputForTM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException {
+        String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_tm";
         File file = new File(moselInputFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -865,19 +907,17 @@ public class IO
 
         pstream.print("A: [ ");
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(j != trips.size()-1){
-                    pstream.print(CompMatrix[i][j] + ", ");
-                }
-                else{
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (j != trips.size() - 1) {
+                    pstream.print(CompMatrix[i][j] + " ");
+                } else {
                     pstream.print(CompMatrix[i][j]);
                 }
             }
-            if(i != trips.size()-1){
+            if (i != trips.size() - 1) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -887,19 +927,17 @@ public class IO
 
         pstream.print("U: [ ");
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(j != trips.size()-1){
-                    pstream.print(distances[trips.get(i).getEndStation()-1][trips.get(j).getStartStation()-1] + ", ");
-                }
-                else{
-                    pstream.print(distances[trips.get(i).getEndStation()-1][trips.get(j).getStartStation()-1]);
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (j != trips.size() - 1) {
+                    pstream.print(distances[trips.get(i).getEndStation() - 1][trips.get(j).getStartStation() - 1] + " ");
+                } else {
+                    pstream.print(distances[trips.get(i).getEndStation() - 1][trips.get(j).getStartStation() - 1]);
                 }
             }
-            if(i != trips.size()-1){
+            if (i != trips.size() - 1) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -908,7 +946,7 @@ public class IO
 
         pstream.println("! Penalty costs for not serving a trip:");
         pstream.print("s: [ ");
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             pstream.print(penCosts + " ");
         }
         pstream.println("]");
@@ -916,29 +954,36 @@ public class IO
         pstream.println("cv: " + vehicleCosts);
         pstream.println();
         pstream.println("NumberOfTrips: " + trips.size());
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
     }
 
-    /** calculate the mosel-input for the model NM.
+    /**
+     * calculate the mosel-input for the model NM.
      * Output-File: data_tm in the folder src/vehicle-scheduling/canal-model
      * format:
-     * 	   A: [ .... ], where the "...." represents the compatibility matrix (line by line)
-     * 	   U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
-     * 	   cv: vehicleCosts
-     * 	   NumberOfTrips: trips.size()
+     * A: [ .... ], where the "...." represents the compatibility matrix (line by line)
+     * U: [ .... ], where the "...." represents the matrix with the transfer costs (line by line)
+     * cv: vehicleCosts
+     * NumberOfTrips: trips.size()
+     * <p>
+     * this means: A[i][j] = 0 	if trips i and j are compatible, i,j=trips.size() stands for the depot and is compatible with all trips
+     * A[i][j] = 1	else, if i,j != trips.size()
+     * A[i][j] = 0	if i=j=trips.size()
+     * <p>
+     * U[i][j] = costs for the transfer from trip i/the depot to trip j/the depot (pure transfer costs)
+     * = costs for the trip from the end-station of trip i/the depot to the start-station of trip j/the depot
+     * <p>
+     * vehicleCosts = costs of a single vehicle
      *
-     * 	   this means: A[i][j] = 0 	if trips i and j are compatible, i,j=trips.size() stands for the depot and is compatible with all trips
-     * 	   	       A[i][j] = 1	else, if i,j != trips.size()
-     * 	   	       A[i][j] = 0	if i=j=trips.size()
-     *
-     * 	   	       U[i][j] = costs for the transfer from trip i/the depot to trip j/the depot (pure transfer costs)
-     * 	   		       = costs for the trip from the end-station of trip i/the depot to the start-station of trip j/the depot
-     *
-     * 	 	       vehicleCosts = costs of a single vehicle
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * @param trips      an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param CompMatrix Compatibility Matrix, calculated in the function {@link VS#calculateCompatibilityMatrix}
      */
-    public static void calculateMoselInputForNM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException{
-            String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_nm";
+    public static void calculateMoselInputForNM(ArrayList<Trip> trips, int[][] CompMatrix) throws FileNotFoundException {
+        String moselInputFileName = "../../src/vehicle-scheduling/canal-model/data_nm";
         File file = new File(moselInputFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -948,32 +993,28 @@ public class IO
 
         pstream.print("A: [ ");
 
-        for(int i = 0; i <= trips.size(); i++){
-            if(i != trips.size()){
-                for(int j = 0; j <= trips.size(); j++){
-                    if(j != trips.size()){
+        for (int i = 0; i <= trips.size(); i++) {
+            if (i != trips.size()) {
+                for (int j = 0; j <= trips.size(); j++) {
+                    if (j != trips.size()) {
                         pstream.print(CompMatrix[i][j] + ", ");
-                    }
-                    else{
+                    } else {
                         pstream.print("0");
                     }
                 }
-            }
-            else{
-                for(int j = 0; j <= trips.size(); j++){
-                    if(j != trips.size()){
-                        pstream.print("0, ");
-                    }
-                    else{
+            } else {
+                for (int j = 0; j <= trips.size(); j++) {
+                    if (j != trips.size()) {
+                        pstream.print("0 ");
+                    } else {
                         pstream.print("0");
                     }
                 }
             }
 
-            if(i != trips.size()){
+            if (i != trips.size()) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -983,32 +1024,28 @@ public class IO
 
         pstream.print("U: [ ");
 
-        for(int i = 0; i <= trips.size(); i++){
-            if(i != trips.size()){
-                for(int j = 0; j <= trips.size(); j++){
-                    if(j != trips.size()){
-                        pstream.print(distances[trips.get(i).getEndStation()-1][trips.get(j).getStartStation()-1] + ", ");
-                    }
-                    else{
-                        pstream.print(distances[trips.get(i).getEndStation()-1][depot]);
+        for (int i = 0; i <= trips.size(); i++) {
+            if (i != trips.size()) {
+                for (int j = 0; j <= trips.size(); j++) {
+                    if (j != trips.size()) {
+                        pstream.print(distances[trips.get(i).getEndStation() - 1][trips.get(j).getStartStation() - 1] + " ");
+                    } else {
+                        pstream.print(distances[trips.get(i).getEndStation() - 1][depot]);
                     }
                 }
-            }
-            else{
-                for(int j = 0; j <= trips.size(); j++){
-                    if(j != trips.size()){
-                        pstream.print(distances[depot][trips.get(j).getStartStation()-1] + ", ");
-                    }
-                    else{
+            } else {
+                for (int j = 0; j <= trips.size(); j++) {
+                    if (j != trips.size()) {
+                        pstream.print(distances[depot][trips.get(j).getStartStation() - 1] + " ");
+                    } else {
                         pstream.print(vehicleCosts); // the transfer within the depot gets the costs of a single vehicle
                     }
                 }
             }
 
-            if(i != trips.size()){
+            if (i != trips.size()) {
                 pstream.println();
-            }
-            else{
+            } else {
                 pstream.println(" ]");
             }
         }
@@ -1018,9 +1055,14 @@ public class IO
         pstream.println("cv: " + vehicleCosts);
         pstream.println();
         pstream.println("NumberOfTrips: " + trips.size());
+        pstream.println("timelimit: " + timelimit);
+        pstream.println("threads: " + threadLimit);
+        pstream.println("outputMessages: " + outputSolverMessages);
+        pstream.println("mipGap: " + mipGap);
+        pstream.println("writeLpFile: " + writeLpFile);
     }
 
-    public static void calculateVSFile(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws IOException{
+    public static void calculateVSFile(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws IOException {
         Map<String, Integer> models = new HashMap<>();
         models.put("MDM1", 0);
         models.put("MDM2", 1);
@@ -1028,29 +1070,42 @@ public class IO
         models.put("TRANSPORTATION_MODEL", 3);
         models.put("NETWORK_FLOW_MODEL", 4);
 
-        if (! models.containsKey(modelName)) {
-            System.out.println("The value of the parameter vs_model in the file basis/Config.cnf has to be one of the following:");
-            System.out.println("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL");
+        if (!models.containsKey(modelName)) {
+            logger.error("The value of the parameter vs_model in the config file for this algorithm has to be one of " +
+                "the following:");
+            logger.error("MDM1, MDM2, ASSIGNMENT_MODEL, TRANSPORTATION_MODEL, NETWORK_FLOW_MODEL");
             return;
         }
 
-        switch(models.get(modelName)){
-            case 0:	calculateVSFileMDM1(trips, transfers); break;
-            case 1: calculateVSFileMDM2(trips, transfers); break;
-            case 2: calculateVSFileAM(trips, transfers);  break;
-            case 3: calculateVSFileTM(trips, transfers); break;
-            case 4: calculateVSFileNM(trips, transfers); break;
+        switch (models.get(modelName)) {
+            case 0:
+                calculateVSFileMDM1(trips, transfers);
+                break;
+            case 1:
+                calculateVSFileMDM2(trips, transfers);
+                break;
+            case 2:
+                calculateVSFileAM(trips, transfers);
+                break;
+            case 3:
+                calculateVSFileTM(trips, transfers);
+                break;
+            case 4:
+                calculateVSFileNM(trips, transfers);
+                break;
         }
     }
 
-    /** calculate the output-file vehicle-scheduling/Vehicle_Schedules_MDM1.
+    /**
+     * calculate the output-file vehicle-scheduling/Vehicle_Schedules_MDM1.
      * Every line stands for one single vehicle and lists the assigned trips in the right order,
-     * 	format: vehicleID; tripsID's seperated by ";"
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * format: vehicleID; tripsID's seperated by ";"
+     *
+     * @param trips     an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param transfers an ArrayList of the transfers, each transfer is represented like in the function
-     * {@link #readTransfers}
+     *                  {@link #readTransfers}
      */
-    public static void calculateVSFileMDM1(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException{
+    public static void calculateVSFileMDM1(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException {
         File file = new File(vehicleSchedulesFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -1065,11 +1120,11 @@ public class IO
         pstream.println("#");
         pstream.println("# Every line stands for one single trip performed by a vehicle.");
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
-        boolean[][] transfersMatrix = new boolean[trips.size()+1][trips.size()+1];
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; i <= trips.size(); i++){
+        boolean[][] transfersMatrix = new boolean[trips.size() + 1][trips.size() + 1];
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; i <= trips.size(); i++) {
                 transfersMatrix[i][j] = false;
             }
         }
@@ -1081,9 +1136,9 @@ public class IO
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 1; i <= trips.size(); i++){
-            beginningTrip[i-1] = true;
-            for(int j = 1; j <= trips.size(); j++){
+        for (int i = 1; i <= trips.size(); i++) {
+            beginningTrip[i - 1] = true;
+            for (int j = 1; j <= trips.size(); j++) {
                 if (transfersMatrix[j][i]) {
                     beginningTrip[i - 1] = false;
                     break;
@@ -1093,20 +1148,20 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             nextTripInCirculation[i] = -1;
         }
 
-        for(int i = 1; i <= trips.size(); i++){
-            for(int j = 1; j <= trips.size(); j++){
-                if(transfersMatrix[i][j]){
-                    nextTripInCirculation[i-1] = j;
+        for (int i = 1; i <= trips.size(); i++) {
+            for (int j = 1; j <= trips.size(); j++) {
+                if (transfersMatrix[i][j]) {
+                    nextTripInCirculation[i - 1] = j;
                 }
             }
         }
@@ -1116,44 +1171,44 @@ public class IO
         int tripNumberOfVehicle = 1;
 
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
             pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + "-1" + "; " + "-1"
-                    + "; " + "-1" + "; " + "0" + "; " +  trips.get(i-1).getStartID() + "; " + trips.get(i-1).getPeriodicStartID()
-                    + "; " + trips.get(i-1).getStartStation() + "; " + trips.get(i-1).getStartTime() + "; " + "-1");
+                + "; " + "-1" + "; " + "0" + "; " + trips.get(i - 1).getStartID() + "; " + trips.get(i - 1).getPeriodicStartID()
+                + "; " + trips.get(i - 1).getStartStation() + "; " + trips.get(i - 1).getStartTime() + "; " + "-1");
             tripNumberOfVehicle++;
 
 
-            while(!tripPrinted[currentTripID-1]){
-                Trip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                Trip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
                 Trip nextTrip;
-                if(nextTripInCirculation[currentTripID-1] > 0){
-                    nextTrip = trips.get(nextTripInCirculation[currentTripID-1]-1);
-                } else{
+                if (nextTripInCirculation[currentTripID - 1] > 0) {
+                    nextTrip = trips.get(nextTripInCirculation[currentTripID - 1] - 1);
+                } else {
                     nextTrip = currentTrip;
                 }
-                if(!transfersMatrix[currentTripID][0]){
+                if (!transfersMatrix[currentTripID][0]) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
-                            + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
+                        + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
                     vehicleNumber++;
                 }
                 tripNumberOfVehicle++;
@@ -1163,14 +1218,16 @@ public class IO
 
     }
 
-    /** calculate the output-file vehicle-scheduling/Vehicle_Schedules_MDM2.
+    /**
+     * calculate the output-file vehicle-scheduling/Vehicle_Schedules_MDM2.
      * Every line stands for one single vehicle and lists the assigned trips in the right order,
-     * 	format: vehicleID; tripsID's seperated by ";"
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * format: vehicleID; tripsID's seperated by ";"
+     *
+     * @param trips     an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param transfers an ArrayList of the transfers, each transfer is represented like in the function
-     * {@link #readTransfers}
+     *                  {@link #readTransfers}
      */
-    public static void calculateVSFileMDM2(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException{
+    public static void calculateVSFileMDM2(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException {
         File file = new File(vehicleSchedulesFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -1185,11 +1242,11 @@ public class IO
         pstream.println("#");
         pstream.println("# Every line stands for one single trip performed by a vehicle.");
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
         boolean[][] transfersMatrix = new boolean[trips.size()][trips.size()];
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; i < trips.size(); i++){
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; i < trips.size(); i++) {
                 transfersMatrix[i][j] = false;
             }
         }
@@ -1200,9 +1257,9 @@ public class IO
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             beginningTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[j][i]) {
                     beginningTrip[i] = false;
                     break;
@@ -1212,9 +1269,9 @@ public class IO
 
         boolean[] endingTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             endingTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[i][j]) {
                     endingTrip[i] = false;
                     break;
@@ -1224,15 +1281,15 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j]){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j]) {
                     nextTripInCirculation[i] = j;
                 }
             }
@@ -1243,39 +1300,39 @@ public class IO
         int tripNumberOfVehicle = 1;
 
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
             pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + "-1" + "; " + "-1"
-                    + "; " + "-1" + "; " + "0" + "; " +  trips.get(i-1).getStartID() + "; " + trips.get(i-1).getPeriodicStartID()
-                    + "; " + trips.get(i-1).getStartStation() + "; " + trips.get(i-1).getStartTime() + "; " + "-1");
+                + "; " + "-1" + "; " + "0" + "; " + trips.get(i - 1).getStartID() + "; " + trips.get(i - 1).getPeriodicStartID()
+                + "; " + trips.get(i - 1).getStartStation() + "; " + trips.get(i - 1).getStartTime() + "; " + "-1");
             tripNumberOfVehicle++;
 
 
-            while(!tripPrinted[currentTripID-1]){
-                Trip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                Trip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
-                Trip nextTrip = trips.get(nextTripInCirculation[currentTripID-1]);
-                if(!endingTrip[currentTripID-1]){
+                Trip nextTrip = trips.get(nextTripInCirculation[currentTripID - 1]);
+                if (!endingTrip[currentTripID - 1]) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
-                            + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
+                        + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
                     vehicleNumber++;
                 }
                 tripNumberOfVehicle++;
@@ -1286,7 +1343,7 @@ public class IO
 
     }
 
-    public static void checkAssignments(ArrayList<Trip> trips, ArrayList<Transfer> transfers){
+    public static void checkAssignments(ArrayList<Trip> trips, ArrayList<Transfer> transfers) {
         boolean allright = true;
 
         int[] numberOfLeftDepartures = new int[stops.size()];
@@ -1307,13 +1364,13 @@ public class IO
             }
         }
 
-        if(!allright){
-            System.err.println("The assignment model has a station, which doesn't have the same number of entries and departures!");
+        if (!allright) {
+            logger.error("The assignment model has a station, which doesn't have the same number of entries and departures!");
 
-            System.err.println("Details: (Station, Delta Outgoing)");
-            for(int i = 0; i < numberOfLeftDepartures.length; ++i) {
-                if(numberOfLeftDepartures[i] != 0){
-                    System.err.println((i + 1) + ": " + numberOfLeftDepartures[i]);
+            logger.error("Details: (Station, Delta Outgoing)");
+            for (int i = 0; i < numberOfLeftDepartures.length; ++i) {
+                if (numberOfLeftDepartures[i] != 0) {
+                    logger.error((i + 1) + ": " + numberOfLeftDepartures[i]);
                 }
             }
         }
@@ -1327,8 +1384,8 @@ public class IO
                 }
             }
         }
-        System.err.println("Minimal distance between two trips, where the first trip ends at the same station where the second trip began: "
-                    + minDistanceBetweenTwoTripsAtTheSameStation);
+        logger.debug("Minimal distance between two trips, where the first trip ends at the same station where the second trip began: "
+            + minDistanceBetweenTwoTripsAtTheSameStation);
 
         int minDistanceBetweenTwoTripsDifferentStations = Integer.MAX_VALUE;
 
@@ -1339,20 +1396,22 @@ public class IO
                 }
             }
         }
-        System.err.println("Minimal distance between two trips, where the first trip ends at an other station than where the second trip began: "
-                    + minDistanceBetweenTwoTripsDifferentStations
-                    );
+        logger.debug("Minimal distance between two trips, where the first trip ends at an other station than where the second trip began: "
+            + minDistanceBetweenTwoTripsDifferentStations
+        );
 
     }
 
-    /** calculate the output-file vehicle-scheduling/Vehicle_Schedules_AM.
+    /**
+     * calculate the output-file vehicle-scheduling/Vehicle_Schedules_AM.
      * Every line stands for one single vehicle and lists the assigned trips in the right order,
-     * 	format: vehicleID; tripsID's seperated by ";"
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * format: vehicleID; tripsID's seperated by ";"
+     *
+     * @param trips     an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param transfers an ArrayList of the transfers, each transfer is represented like in the function
-     * {@link #readTransfers}
+     *                  {@link #readTransfers}
      */
-    public static void calculateVSFileAM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws IOException{
+    public static void calculateVSFileAM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws IOException {
 
         checkAssignments(trips, transfers);
 
@@ -1378,11 +1437,11 @@ public class IO
         pstream.println(numberOfVehicles);
 
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
         int[][] transfersMatrix = new int[trips.size()][trips.size()];
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; i < trips.size(); i++){
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; i < trips.size(); i++) {
                 transfersMatrix[i][j] = 0;
             }
         }
@@ -1398,9 +1457,9 @@ public class IO
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             beginningTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[j][i] == 1) {
                     beginningTrip[i] = false;
                     break;
@@ -1410,15 +1469,15 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j] != 0){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] != 0) {
                     nextTripInCirculation[i] = j;
                 }
             }
@@ -1426,11 +1485,11 @@ public class IO
 
         int[] numberOfZsAfterTrip = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j] < 0){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] < 0) {
                     numberOfZsAfterTrip[i] = -transfersMatrix[i][j];
-                } else if(transfersMatrix[i][j] == 1){
+                } else if (transfersMatrix[i][j] == 1) {
                     numberOfZsAfterTrip[i] = 0;
                 }
             }
@@ -1441,59 +1500,61 @@ public class IO
         int vehicleNumber = 1;
         int tripNumberOfVehicle = 1;
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
-            while(!tripPrinted[currentTripID-1]){
-                Trip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                Trip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
-                Trip nextTrip = trips.get(nextTripInCirculation[currentTripID-1]);
-                if(numberOfZsAfterTrip[currentTripID-1] == 0){
+                Trip nextTrip = trips.get(nextTripInCirculation[currentTripID - 1]);
+                if (numberOfZsAfterTrip[currentTripID - 1] == 0) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                    vehicleNumber += numberOfZsAfterTrip[currentTripID-1];
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                    vehicleNumber += numberOfZsAfterTrip[currentTripID - 1];
                 }
                 tripNumberOfVehicle++;
                 currentTripID = nextTrip.getID();
             }
         }
 
-        for(int i = 0; i < tripPrinted.length; i++){
-            if(!tripPrinted[i]){
+        for (int i = 0; i < tripPrinted.length; i++) {
+            if (!tripPrinted[i]) {
                 Trip currentTrip = trips.get(i);
-                System.err.println("Trip " + (i+1) + ": TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                logger.debug("Trip " + (i + 1) + ": TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
             }
         }
 
     }
 
-    /** calculate the output-file vehicle-scheduling/Vehicle_Schedules_TM.
+    /**
+     * calculate the output-file vehicle-scheduling/Vehicle_Schedules_TM.
      * Every line stands for one single vehicle and lists the assigned trips in the right order,
-     * 	format: vehicleID; tripsID's seperated by ";"
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * format: vehicleID; tripsID's seperated by ";"
+     *
+     * @param trips     an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param transfers an ArrayList of the transfers, each transfer is represented like in the function
-     * {@link #readTransfers}
+     *                  {@link #readTransfers}
      */
-    public static void calculateVSFileTM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException{
+    public static void calculateVSFileTM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException {
         File file = new File(vehicleSchedulesFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -1508,11 +1569,11 @@ public class IO
         pstream.println("#");
         pstream.println("# Every line stands for one single trip performed by a vehicle.");
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
-        boolean[][] transfersMatrix = new boolean[trips.size()+1][trips.size()+1];
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; i <= trips.size(); i++){
+        boolean[][] transfersMatrix = new boolean[trips.size() + 1][trips.size() + 1];
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; i <= trips.size(); i++) {
                 transfersMatrix[i][j] = false;
             }
         }
@@ -1524,9 +1585,9 @@ public class IO
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             beginningTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[j][i]) {
                     beginningTrip[i] = false;
                     break;
@@ -1536,20 +1597,20 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             nextTripInCirculation[i] = -1;
         }
 
         // In this loop the depot isn't considered, because it isn't really allowed as successor.
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j]){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j]) {
                     nextTripInCirculation[i] = j;
                 }
             }
@@ -1560,44 +1621,44 @@ public class IO
         int tripNumberOfVehicle = 1;
 
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
             pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + "-1" + "; " + "-1"
-                    + "; " + "-1" + "; " + "0" + "; " +  trips.get(i-1).getStartID() + "; " + trips.get(i-1).getPeriodicStartID()
-                    + "; " + trips.get(i-1).getStartStation() + "; " + trips.get(i-1).getStartTime() + "; " + "-1");
+                + "; " + "-1" + "; " + "0" + "; " + trips.get(i - 1).getStartID() + "; " + trips.get(i - 1).getPeriodicStartID()
+                + "; " + trips.get(i - 1).getStartStation() + "; " + trips.get(i - 1).getStartTime() + "; " + "-1");
             tripNumberOfVehicle++;
 
 
-            while(!tripPrinted[currentTripID-1]){
-                Trip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                Trip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
                 Trip nextTrip;
-                if(nextTripInCirculation[currentTripID-1] >= 0){
-                    nextTrip = trips.get(nextTripInCirculation[currentTripID-1]);
-                } else{
+                if (nextTripInCirculation[currentTripID - 1] >= 0) {
+                    nextTrip = trips.get(nextTripInCirculation[currentTripID - 1]);
+                } else {
                     nextTrip = currentTrip;
                 }
-                if(!transfersMatrix[currentTripID-1][trips.size()]){
+                if (!transfersMatrix[currentTripID - 1][trips.size()]) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
-                            + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
+                        + "-1" + "; " + "-1" + "; " + "86400" + "; " + "-1");
                     vehicleNumber++;
                 }
                 tripNumberOfVehicle++;
@@ -1607,14 +1668,16 @@ public class IO
 
     }
 
-    /** calculate the output-file vehicle-scheduling/Vehicle_Schedules_NM.
+    /**
+     * calculate the output-file vehicle-scheduling/Vehicle_Schedules_NM.
      * Every line stands for one single vehicle and lists the assigned trips in the right order,
-     * 	format: vehicleID; tripsID's seperated by ";"
-     * @param trips an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
+     * format: vehicleID; tripsID's seperated by ";"
+     *
+     * @param trips     an ArrayList of the trips, each trip is represented like in the function {@link #readTrips}
      * @param transfers an ArrayList of the transfers, each transfer is represented like in the function
-     * {@link #readTransfers}
+     *                  {@link #readTransfers}
      */
-    public static void calculateVSFileNM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException{
+    public static void calculateVSFileNM(ArrayList<Trip> trips, ArrayList<Transfer> transfers) throws FileNotFoundException {
         File file = new File(vehicleSchedulesFileName);
 
         PrintStream pstream = new PrintStream(file);
@@ -1630,11 +1693,11 @@ public class IO
         pstream.println("#");
         pstream.println("# Every line stands for one single trip performed by a vehicle.");
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
-        boolean[][] transfersMatrix = new boolean[trips.size()+1][trips.size()+1];
-        for(int i = 0; i <= trips.size(); i++){
-            for(int j = 0; i <= trips.size(); i++){
+        boolean[][] transfersMatrix = new boolean[trips.size() + 1][trips.size() + 1];
+        for (int i = 0; i <= trips.size(); i++) {
+            for (int j = 0; i <= trips.size(); i++) {
                 transfersMatrix[i][j] = false;
             }
         }
@@ -1646,9 +1709,9 @@ public class IO
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             beginningTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[j][i]) {
                     beginningTrip[i] = false;
                     break;
@@ -1658,20 +1721,20 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             nextTripInCirculation[i] = -1;
         }
 
         // In this loop the depot isn't considered, because it isn't really allowed as successor.
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j]){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j]) {
                     nextTripInCirculation[i] = j;
                 }
             }
@@ -1682,44 +1745,44 @@ public class IO
         int tripNumberOfVehicle = 1;
 
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
             pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + "-1" + "; " + "-1"
-                    + "; " + depot + "; " + "0" + "; " +  trips.get(i-1).getStartID() + "; " + trips.get(i-1).getPeriodicStartID()
-                    + "; " + trips.get(i-1).getStartStation() + "; " + trips.get(i-1).getStartTime() + "; " + "-1");
+                + "; " + depot + "; " + "0" + "; " + trips.get(i - 1).getStartID() + "; " + trips.get(i - 1).getPeriodicStartID()
+                + "; " + trips.get(i - 1).getStartStation() + "; " + trips.get(i - 1).getStartTime() + "; " + "-1");
             tripNumberOfVehicle++;
 
 
-            while(!tripPrinted[currentTripID-1]){
-                Trip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                Trip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
                 Trip nextTrip;
-                if(nextTripInCirculation[currentTripID-1] >= 0){
-                    nextTrip = trips.get(nextTripInCirculation[currentTripID-1]);
-                } else{
+                if (nextTripInCirculation[currentTripID - 1] >= 0) {
+                    nextTrip = trips.get(nextTripInCirculation[currentTripID - 1]);
+                } else {
                     nextTrip = currentTrip;
                 }
-                if(!transfersMatrix[currentTripID-1][trips.size()]){
+                if (!transfersMatrix[currentTripID - 1][trips.size()]) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
-                            + "-1" + "; " + depot + "; " + "86400" + "; " + "-1");
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + "-1" + "; "
+                        + "-1" + "; " + depot + "; " + "86400" + "; " + "-1");
                     vehicleNumber++;
                 }
                 tripNumberOfVehicle++;
@@ -1729,7 +1792,7 @@ public class IO
 
     }
 
-    public static CanalNetwork calculateCanalNetwork() throws IOException{
+    public static CanalNetwork calculateCanalNetwork() throws IOException {
         CanalNetwork network = new CanalNetwork();
 
         ArrayList<CTrip> trips;
@@ -1742,62 +1805,62 @@ public class IO
         return network;
     }
 
-    public static void checkAssignments(ArrayList<CTrip> trips, int[][] transfersMatrix){
+    public static void checkAssignments(ArrayList<CTrip> trips, int[][] transfersMatrix) {
 
-            int minDistanceBetweenTwoTripsAtTheSameStation = Integer.MAX_VALUE;
+        int minDistanceBetweenTwoTripsAtTheSameStation = Integer.MAX_VALUE;
 
-            for(int i = 0; i < trips.size(); i++){
-                for(int j = 0; j < trips.size(); j++){
-                    if(transfersMatrix[i][j] == 1){
-                        if(trips.get(i).getEndStation() == trips.get(j).getStartStation()){
-                            if(minDistanceBetweenTwoTripsAtTheSameStation >
-                                    trips.get(j).getStartTime() - trips.get(i).getEndTime()){
-                                minDistanceBetweenTwoTripsAtTheSameStation = trips.get(j).getStartTime() - trips.get(i).getEndTime();
-                                }
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] == 1) {
+                    if (trips.get(i).getEndStation() == trips.get(j).getStartStation()) {
+                        if (minDistanceBetweenTwoTripsAtTheSameStation >
+                            trips.get(j).getStartTime() - trips.get(i).getEndTime()) {
+                            minDistanceBetweenTwoTripsAtTheSameStation = trips.get(j).getStartTime() - trips.get(i).getEndTime();
                         }
                     }
                 }
             }
+        }
 
-            System.err.println("Minimal distance between two trips, where the first trip ends at the same station where the second trip began: "
-                        + minDistanceBetweenTwoTripsAtTheSameStation);
+        logger.debug("Minimal distance between two trips, where the first trip ends at the same station where the second trip began: "
+            + minDistanceBetweenTwoTripsAtTheSameStation);
 
-            int minDistanceBetweenTwoTripsAtDifferentStations = Integer.MAX_VALUE;
+        int minDistanceBetweenTwoTripsAtDifferentStations = Integer.MAX_VALUE;
 
-            for(int i = 0; i < trips.size(); i++){
-                for(int j = 0; j < trips.size(); j++){
-                    if(transfersMatrix[i][j] == 1){
-                        if(trips.get(i).getEndStation() != trips.get(j).getStartStation()){
-                            if(minDistanceBetweenTwoTripsAtDifferentStations >
-                                    trips.get(j).getStartTime() - trips.get(i).getEndTime()){
-                                minDistanceBetweenTwoTripsAtDifferentStations = trips.get(j).getStartTime() - trips.get(i).getEndTime();
-                                }
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] == 1) {
+                    if (trips.get(i).getEndStation() != trips.get(j).getStartStation()) {
+                        if (minDistanceBetweenTwoTripsAtDifferentStations >
+                            trips.get(j).getStartTime() - trips.get(i).getEndTime()) {
+                            minDistanceBetweenTwoTripsAtDifferentStations = trips.get(j).getStartTime() - trips.get(i).getEndTime();
                         }
                     }
                 }
             }
+        }
 
-            System.err.println("Minimal distance between two trips, where the first trip ends at an other station than where the second trip began: "
-                        + minDistanceBetweenTwoTripsAtDifferentStations);
+        logger.debug("Minimal distance between two trips, where the first trip ends at an other station than where the second trip began: "
+            + minDistanceBetweenTwoTripsAtDifferentStations);
 
     }
 
     public static void calculateVSFileCanal(Canal[] newCanals,
-            ArrayList<CTrip> trips, ArrayList<CTransfer> occuringTransfers,
-            HashMap<Canal, HashMap<CEvent, CEvent>> mappings)
-    throws IOException{
+                                            ArrayList<CTrip> trips, ArrayList<CTransfer> occuringTransfers,
+                                            HashMap<Canal, HashMap<CEvent, CEvent>> mappings)
+        throws IOException {
 
 
-        HashMap<Integer,Integer> eventsOfTheLines = new HashMap<>();
-        HashMap<Integer,Integer> eventsOfTheOccuringTransfers = new HashMap<>();
-        HashMap<Integer,Integer> eventsOfTheMappings = new HashMap<>();
-        HashMap<Integer,Integer> lineIDforGivenEventIDs = new HashMap<>();
+        HashMap<Integer, Integer> eventsOfTheLines = new HashMap<>();
+        HashMap<Integer, Integer> eventsOfTheOccuringTransfers = new HashMap<>();
+        HashMap<Integer, Integer> eventsOfTheMappings = new HashMap<>();
+        HashMap<Integer, Integer> lineIDforGivenEventIDs = new HashMap<>();
 
-        HashMap<Integer,CTransfer> transferForGivenEventIDs = new HashMap<>();
+        HashMap<Integer, CTransfer> transferForGivenEventIDs = new HashMap<>();
 
         int greatestLineID = 0;
 
-        for(CTransfer transfer: occuringTransfers){
+        for (CTransfer transfer : occuringTransfers) {
             int startID = transfer.getStartEvent().getID();
             int endID = transfer.getEndEvent().getID();
 
@@ -1807,7 +1870,7 @@ public class IO
             eventsOfTheOccuringTransfers.put(transfer.getStartEvent().getID(), transfer.getEndEvent().getID());
         }
 
-        for(CTrip trip: trips){
+        for (CTrip trip : trips) {
             int startID = trip.getStartID();
             int endID = trip.getEndID();
 
@@ -1816,31 +1879,31 @@ public class IO
             lineIDforGivenEventIDs.put(startID, trip.getID());
             lineIDforGivenEventIDs.put(endID, trip.getID());
 
-            if(startID > greatestLineID){
+            if (startID > greatestLineID) {
                 greatestLineID = startID;
             }
-            if(endID > greatestLineID){
+            if (endID > greatestLineID) {
                 greatestLineID = endID;
             }
         }
 
-        for(Canal canal: newCanals){
-            if(canal == null || canal.getEvents() == null || canal.getEvents().size() <= 0){
+        for (Canal canal : newCanals) {
+            if (canal == null || canal.getEvents() == null || canal.getEvents().size() <= 0) {
                 continue;
             }
             HashMap<CEvent, CEvent> canalMappings = mappings.get(canal);
-            if(canalMappings.size() <= 0){
-                System.err.println("No mappings!");
+            if (canalMappings.size() <= 0) {
+                logger.debug("No mappings!");
             }
 
             ArrayList<CEvent> events = canal.getEvents();
 
-            for(CEvent event: events){
-                if(event.getType().equals("END")){
+            for (CEvent event : events) {
+                if (event.getType().equals("END")) {
                     continue;
                 }
-                if(canalMappings.get(event) == null){
-                    System.err.println("Event " + event.getID() + " doesn't have a successor!");
+                if (canalMappings.get(event) == null) {
+                    logger.debug("Event " + event.getID() + " doesn't have a successor!");
                     continue;
                 }
                 eventsOfTheMappings.put(event.getID(), canalMappings.get(event).getID());
@@ -1854,22 +1917,22 @@ public class IO
         pstream.println("# This file shows the schedules of the used vehicles, calculated by the canal model.");
         pstream.println("# Every line stands for one single trip performed by a vehicle.");
         pstream.print("# Format: circulation-ID; vehicle-ID; trip-number of this vehicle; type; start-ID; periodic-start-ID; start-station; start-time;");
-        pstream.println(	" end-ID; periodic-end-id; end-station; end-time; line");
+        pstream.println(" end-ID; periodic-end-id; end-station; end-time; line");
 
         // This matrix shows, if trip j is served directly after trip i by the same vehicle. Only in this case, transfersMatrix[i][j] will be 1.
         int[][] transfersMatrix = VS.calculateTransfersMatrix(trips,
-                lineIDforGivenEventIDs, eventsOfTheLines,
-                eventsOfTheOccuringTransfers, eventsOfTheMappings,
-                distances, transferForGivenEventIDs, turnOverTime);
+            lineIDforGivenEventIDs, eventsOfTheLines,
+            eventsOfTheOccuringTransfers, eventsOfTheMappings,
+            distances, transferForGivenEventIDs, turnOverTime);
 
         checkAssignments(trips, transfersMatrix);
 
 
         boolean[] beginningTrip = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             beginningTrip[i] = true;
-            for(int j = 0; j < trips.size(); j++){
+            for (int j = 0; j < trips.size(); j++) {
                 if (transfersMatrix[j][i] == 1) {
                     beginningTrip[i] = false;
                     break;
@@ -1879,15 +1942,15 @@ public class IO
 
         boolean[] tripPrinted = new boolean[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
+        for (int i = 0; i < trips.size(); i++) {
             tripPrinted[i] = false;
         }
 
         int[] nextTripInCirculation = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j] != 0){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] != 0) {
                     nextTripInCirculation[i] = j;
                 }
             }
@@ -1895,11 +1958,11 @@ public class IO
 
         int[] numberOfZsAfterTrip = new int[trips.size()];
 
-        for(int i = 0; i < trips.size(); i++){
-            for(int j = 0; j < trips.size(); j++){
-                if(transfersMatrix[i][j] < 0){
+        for (int i = 0; i < trips.size(); i++) {
+            for (int j = 0; j < trips.size(); j++) {
+                if (transfersMatrix[i][j] < 0) {
                     numberOfZsAfterTrip[i] = -transfersMatrix[i][j];
-                } else if(transfersMatrix[i][j] == 1){
+                } else if (transfersMatrix[i][j] == 1) {
                     numberOfZsAfterTrip[i] = 0;
                 }
             }
@@ -1910,53 +1973,53 @@ public class IO
         int tripNumberOfVehicle = 1;
 
 
-        for(int i = 1; i <= trips.size(); i++){
-            if(!beginningTrip[i-1]){
+        for (int i = 1; i <= trips.size(); i++) {
+            if (!beginningTrip[i - 1]) {
                 continue;
             }
 
             int currentTripID = i;
 
-            if(!tripPrinted[currentTripID-1]){
+            if (!tripPrinted[currentTripID - 1]) {
                 circulationNumber++;
             }
 
-            while(!tripPrinted[currentTripID-1]){
-                CTrip currentTrip = trips.get(currentTripID-1);
+            while (!tripPrinted[currentTripID - 1]) {
+                CTrip currentTrip = trips.get(currentTripID - 1);
                 pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
-                tripPrinted[currentTripID-1] = true;
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                tripPrinted[currentTripID - 1] = true;
                 tripNumberOfVehicle++;
-                CTrip nextTrip = trips.get(nextTripInCirculation[currentTripID-1]);
-                if(numberOfZsAfterTrip[currentTripID-1] == 0){
+                CTrip nextTrip = trips.get(nextTripInCirculation[currentTripID - 1]);
+                if (numberOfZsAfterTrip[currentTripID - 1] == 0) {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                } else{
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                } else {
                     pstream.println(circulationNumber + "; " + vehicleNumber + "; " + tripNumberOfVehicle + "; " + "EMPTY" + "; " + currentTrip.getEndID() + "; "
-                            + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " +  nextTrip.getStartID() + "; "
-                            + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
-                    vehicleNumber += numberOfZsAfterTrip[currentTripID-1];
+                        + currentTrip.getPeriodicEndID() + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + nextTrip.getStartID() + "; "
+                        + nextTrip.getPeriodicStartID() + "; " + nextTrip.getStartStation() + "; " + nextTrip.getStartTime() + "; " + "-1");
+                    vehicleNumber += numberOfZsAfterTrip[currentTripID - 1];
                 }
                 tripNumberOfVehicle++;
                 currentTripID = nextTrip.getID();
             }
         }
 
-        for(int i = 0; i < tripPrinted.length; i++){
-            if(!tripPrinted[i]){
+        for (int i = 0; i < tripPrinted.length; i++) {
+            if (!tripPrinted[i]) {
                 CTrip currentTrip = trips.get(i);
-                System.err.println("Trip " + (i+1) + ": TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
-                        + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " +  currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
-                        + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
+                logger.debug("Trip " + (i + 1) + ": TRIP" + "; " + currentTrip.getStartID() + "; " + currentTrip.getPeriodicStartID()
+                    + "; " + currentTrip.getStartStation() + "; " + currentTrip.getStartTime() + "; " + currentTrip.getEndID() + "; " + currentTrip.getPeriodicEndID()
+                    + "; " + currentTrip.getEndStation() + "; " + currentTrip.getEndTime() + "; " + currentTrip.getLineID());
             }
         }
 
     }
 
-    public static void printCanalNetwork(CanalNetwork network) throws FileNotFoundException{
-        if(!verbose) return;
+    public static void printCanalNetwork(CanalNetwork network) throws FileNotFoundException {
+        if (!verbose) return;
 
         File file = new File(canalNetworkFileName);
 
@@ -1969,10 +2032,10 @@ public class IO
         // print the trips
         pstream.println("#Trips: (format = ID; startID; startStation; startTime; endID; endStation; endTime)");
 
-        for(int i = 0; i < network.getTrips().size(); i++){
+        for (int i = 0; i < network.getTrips().size(); i++) {
             CTrip trip = network.getTrips().get(i);
             pstream.println(trip.getID() + "; " + trip.getStartID() + "; " + trip.getStartStation() + "; " + trip.getStartTime() + "; "
-                     + trip.getEndID() + "; " + trip.getEndStation() + "; "	+ trip.getEndTime());
+                + trip.getEndID() + "; " + trip.getEndStation() + "; " + trip.getEndTime());
         }
         pstream.println();
 
@@ -1980,7 +2043,7 @@ public class IO
         // print the transfers
         pstream.println("#Transfers: (format = ID; startEvent (with format 'ID ; time; type'); endEvent (with format 'ID ; time; type'); costs; timeCycleJump; type)");
         StringBuilder transfersString = new StringBuilder();
-        for(CTransfer currentTransfer: network.getTransfers()){
+        for (CTransfer currentTransfer : network.getTransfers()) {
             transfersString.append(currentTransfer.getID());
             transfersString.append("; ");
             final Event startEvent = currentTransfer.getStartEvent();
@@ -2010,10 +2073,10 @@ public class IO
         // print the canals
         pstream.println("#Canals: (format = ID; stationID; type; events separated by \";\" with the format 'ID ; time; type')");
         StringBuilder canalString = new StringBuilder(network.getCanals().length * 65536);
-        for(Canal currentCanal: network.getCanals()) {
-            if(currentCanal == null) continue;
-            if(currentCanal.getEvents() == null) continue;
-            if(currentCanal.getEvents().isEmpty()) continue;
+        for (Canal currentCanal : network.getCanals()) {
+            if (currentCanal == null) continue;
+            if (currentCanal.getEvents() == null) continue;
+            if (currentCanal.getEvents().isEmpty()) continue;
 
             canalString.append(currentCanal.getID());
             canalString.append("; ");
@@ -2021,7 +2084,7 @@ public class IO
             canalString.append("; ");
             canalString.append(currentCanal.getType());
 
-            for(CEvent currentEvent: currentCanal.getEvents()){
+            for (CEvent currentEvent : currentCanal.getEvents()) {
                 canalString.append("; ");
                 canalString.append(currentEvent.getID());
                 canalString.append("; ");
@@ -2035,11 +2098,10 @@ public class IO
         pstream.print(canalString);
     }
 
-    public static void initialize(Config config) throws Exception{
+    public static void initialize(Config config) throws Exception {
 
         modelName = config.getStringValue("vs_model").toUpperCase();
         vehicleCosts = (int) config.getDoubleValue("vs_vehicle_costs");
-        verbose = config.getBooleanValue("vs_verbose");
         boolean ptnIsUndirected = config.getBooleanValue("ptn_is_undirected");
         penCosts = config.getIntegerValue("vs_penalty_costs");
         depot = config.getIntegerValue("vs_depot_index");
@@ -2053,7 +2115,13 @@ public class IO
         String stationDistancesFileName = config.getStringValue("default_vs_station_distances_file");
         vehicleSchedulesFileName = config.getStringValue("default_vehicle_schedule_file");
 
-        System.out.println("modelName= " + modelName);
+        timelimit = config.getIntegerValue("vs_timelimit");
+        threadLimit = config.getIntegerValue("vs_threads");
+        mipGap = config.getDoubleValue("vs_mip_gap");
+        outputSolverMessages = config.getLogLevel("console_log_level") == LogLevel.DEBUG;
+        writeLpFile = config.getBooleanValue("vs_write_lp_file");
+
+        logger.debug("modelName= " + modelName);
 
         readStops();
         readEdges();
@@ -2063,9 +2131,9 @@ public class IO
         PrintStream pstream = new PrintStream(new File(stationDistancesFileName));
         pstream.println("# from-station-id; to-station-id; distance");
 
-        for(int i=0; i<distances.length; i++){
-            for(int j=0; j<distances[i].length; j++){
-                pstream.println((i+1) + ";" + (j+1) + ";" + distances[i][j]);
+        for (int i = 0; i < distances.length; i++) {
+            for (int j = 0; j < distances[i].length; j++) {
+                pstream.println((i + 1) + ";" + (j + 1) + ";" + distances[i][j]);
             }
         }
 

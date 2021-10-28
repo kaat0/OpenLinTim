@@ -18,14 +18,14 @@ public class PTNWriter {
     private final boolean writeLinks;
     private final boolean writeLoads;
     private final boolean writeHeadways;
-    private final String stopFileName ;
-    private final String linkFileName ;
-    private final String loadFileName ;
-    private final String headwayFileName ;
-    private final String stopHeader ;
-    private final String linkHeader ;
-    private final String loadHeader ;
-    private final String headwayHeader ;
+    private final String stopFileName;
+    private final String linkFileName;
+    private final String loadFileName;
+    private final String headwayFileName;
+    private final String stopHeader;
+    private final String linkHeader;
+    private final String loadHeader;
+    private final String headwayHeader;
     private final Graph<Stop, Link> ptn;
 
     private PTNWriter(Builder builder) {

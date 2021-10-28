@@ -131,11 +131,11 @@ def parse_od_activator(name: str) -> ODActivator:
 class SolverParameters:
 
     def __init__(self, config: Config, model_prefix: str):
-        self.time_limit = config.getIntegerValue(model_prefix + '_time_limit')
+        self.time_limit = config.getIntegerValue(model_prefix + '_timelimit')
         self.mip_gap = config.getDoubleValue(model_prefix + '_mip_gap')
-        self.write_lp_output = config.getBooleanValue(model_prefix + '_write_lp_output')
-        self.n_threads = config.getIntegerValue('int_max_threads')
-        self.solver_type = config.getSolverType('int_solver_type')
+        self.write_lp_output = config.getBooleanValue(model_prefix + '_write_lp_file')
+        self.n_threads = config.getIntegerValue('int_threads')
+        self.solver_type = config.getSolverType('int_solver')
         self.show_solver_output = config.getLogLevel("console_log_level") == logging.DEBUG
         self.objectives_file_name = config.getStringValue('filename_objectives_file')
         self.solver_statistic_file_name = config.getStringValue('filename_solver_statistic_file')

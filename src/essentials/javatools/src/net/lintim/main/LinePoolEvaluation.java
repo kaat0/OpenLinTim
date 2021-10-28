@@ -131,6 +131,69 @@ public class LinePoolEvaluation {
                 statistic.setDoubleValue("lpool_time_average",
                         lpTimeAverage);
                 System.err.println(lpTimeAverage);
+
+            System.err.print("    Line-Pool Minimum Length: ");
+            Double min_length =
+                    LineCollectionEvaluator.minLength(lp);
+                statistic.setDoubleValue("lpool_min_length",
+                        min_length);
+            System.err.println(min_length);
+            
+            System.err.print("    Line-Pool Minimum Distance: ");
+            Double min_dist =
+                    LineCollectionEvaluator.minDistance(lp);
+                statistic.setDoubleValue("lpool_min_distance",
+                        min_dist);
+            System.err.println(min_dist);
+            
+            System.err.print("    Line-Pool Minimum Edges: ");
+            Double min_edges =
+                    LineCollectionEvaluator.minEdges(lp);
+                statistic.setDoubleValue("lpool_min_edges",
+                        min_edges);
+            System.err.println(min_edges);
+                
+            System.err.print("    Line-Pool Average Length: ");
+            Double av_length =
+                    LineCollectionEvaluator.averageLength(lp);
+                statistic.setDoubleValue("lpool_average_length",
+                        av_length);
+            System.err.println(av_length);
+            
+            System.err.print("    Line-Pool Average Distance: ");
+            Double av_dist =
+                    LineCollectionEvaluator.averageDistance(lp);
+                statistic.setDoubleValue("lpool_average_distance",
+                        av_dist);
+            System.err.println(av_dist);
+            
+            System.err.print("    Line-Pool Average Edges: ");
+            Double av_edges =
+                    LineCollectionEvaluator.averageEdges(lp);
+                statistic.setDoubleValue("lpool_average_edges",
+                        av_edges);
+            System.err.println(av_edges);
+            
+            System.err.print("    Line-Pool Variance Length: ");
+            Double var_length =
+                    LineCollectionEvaluator.varianceLength(lp);
+                statistic.setDoubleValue("lpool_var_length",
+                        var_length);
+            System.err.println(var_length);
+            
+            System.err.print("    Line-Pool Variance Distance: ");
+            Double var_dist =
+                    LineCollectionEvaluator.varianceDistance(lp);
+                statistic.setDoubleValue("lpool_var_distance",
+                        var_dist);
+            System.err.println(var_dist);
+            
+            System.err.print("    Line-Pool Variance Edges: ");
+            Double var_edges =
+                    LineCollectionEvaluator.varianceEdges(lp);
+                statistic.setDoubleValue("lpool_var_edges",
+                        var_edges);
+            System.err.println(var_edges);
                 
             
 

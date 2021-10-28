@@ -1,59 +1,41 @@
 package net.lintim.algorithm.lineplanning;
 
 import com.dashoptimization.*;
+import net.lintim.exception.LinTimException;
 import net.lintim.model.*;
-import net.lintim.util.LogLevel;
+import net.lintim.solver.SolverParameters;
+import net.lintim.solver.impl.XpressHelper;
+import net.lintim.util.Logger;
 
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 /**
  * A class to solve the cost model of line planning using Xpress.
  */
 public class CostXpress extends LinePlanningCostSolver {
 
-    @Override
-    public boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, int timelimit) {
-        Level logLevel = LogManager.getLogManager().getLogger("").getLevel();
-        return solveLinePlanningCost(ptn, linePool, timelimit, logLevel);
-    }
+    private static final Logger logger = new Logger(CostXpress.class);
 
     @Override
-    public boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, int timelimit, Level logLevel) {
-        Logger logger = Logger.getLogger("net.lintim.algorithm.lineplanning.CostXpress");
+    public boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, SolverParameters parameters) {
 
         XPRB bcl = new XPRB();
         XPRBprob costModel = bcl.newProb("cost model line planning");
         costModel.setSense(XPRB.MINIM);
-        timelimit = timelimit == -1 ? 0 : -1 * timelimit;
-        logger.log(LogLevel.DEBUG, "Set Xpress timelimit to " + timelimit);
-        costModel.getXPRSprob().setIntControl(XPRS.MAXTIME, timelimit);
+        XpressHelper.setXpressSolverParameters(costModel, parameters);
 
         HashMap<Integer, XPRBvar> frequencies = new HashMap<>();
 
-        if (logLevel.equals(LogLevel.DEBUG)) {
-            costModel.setMsgLevel(4);
-        } else if (logLevel.equals(LogLevel.INFO)) {
-            costModel.setMsgLevel(2);
-        } else if (logLevel.equals(LogLevel.WARN)) {
-            costModel.setMsgLevel(2);
-        } else if (logLevel.equals(LogLevel.ERROR)) {
-            costModel.setMsgLevel(0);
-        } else if (logLevel.equals(LogLevel.FATAL)) {
-            costModel.setMsgLevel(0);
-        }
-
         //Add variables
-        logger.log(LogLevel.DEBUG, "Add variables");
+        logger.debug("Add variables");
         for (Line line : linePool.getLines()) {
             XPRBvar frequency = costModel.newVar("f_" + line.getId(), XPRB.UI, 0, XPRB.INFINITY);
             frequencies.put(line.getId(), frequency);
         }
 
         //Add constraints
-        logger.log(LogLevel.DEBUG, "Add frequency constraints");
+        logger.debug("Add frequency constraints");
         XPRBexpr sumFreqPerLine;
         for (Link link : ptn.getEdges()) {
             sumFreqPerLine = new XPRBexpr();
@@ -66,34 +48,48 @@ public class CostXpress extends LinePlanningCostSolver {
             costModel.newCtr("upperBound_" + link.getId(), sumFreqPerLine.lEql(link.getUpperFrequencyBound()));
         }
 
-        logger.log(LogLevel.DEBUG, "Construct objective");
+        logger.debug("Construct objective");
         XPRBexpr objective = new XPRBexpr();
         for (Line line : linePool.getLines()) {
             objective.addTerm(line.getCost(), frequencies.get(line.getId()));
         }
 
-        logger.log(LogLevel.DEBUG, "Set objective");
+        logger.debug("Set objective");
         costModel.setObj(objective);
-        logger.log(LogLevel.DEBUG, "Start optimization");
-        costModel.mipOptimise();
-        logger.log(LogLevel.DEBUG, "End optimization");
 
-        if (costModel.getMIPStat() == XPRB.MIP_OPTIMAL) {
-            logger.log(LogLevel.DEBUG, "Optimal solution found");
+        if (parameters.writeLpFile()) {
+            try {
+                costModel.exportProb("cost-model.lp");
+            } catch (IOException e) {
+                throw new LinTimException(e.getMessage());
+            }
+        }
+
+        logger.debug("Start optimization");
+        costModel.mipOptimise();
+        logger.debug("End optimization");
+
+        int status = costModel.getMIPStat();
+
+        if (costModel.getXPRSprob().getIntAttrib(XPRS.MIPSOLS) > 0) {
+            if (status == XPRB.MIP_OPTIMAL) {
+                logger.debug("Optimal solution found");
+            } else {
+                logger.debug("Feasible solution found");
+            }
             for (Line line : linePool.getLines()) {
                 line.setFrequency((int) Math.round(frequencies.get(line.getId()).getSol()));
             }
             return true;
         }
-        logger.log(LogLevel.DEBUG, "No optimal solution found");
-        if (costModel.getMIPStat() == XPRB.MIP_INFEAS) {
-            logger.log(LogLevel.DEBUG, "The problem is infeasible!");
-            if (logLevel == LogLevel.DEBUG) {
-                costModel.getXPRSprob().firstIIS(1);
-                costModel.getXPRSprob().writeIIS(0, "cost-model.ilp", 0);
-            }
+        logger.debug("No feasible solution found");
+        if (status == XPRB.MIP_INFEAS) {
+            logger.debug("The problem is infeasible!");
+            costModel.getXPRSprob().firstIIS(1);
+            costModel.getXPRSprob().writeIIS(0, "cost-model.ilp", 0);
         }
         return false;
     }
+
 
 }

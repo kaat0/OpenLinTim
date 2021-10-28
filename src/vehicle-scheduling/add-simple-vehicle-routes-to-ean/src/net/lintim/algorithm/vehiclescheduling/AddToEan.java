@@ -2,6 +2,7 @@ package net.lintim.algorithm.vehiclescheduling;
 
 import net.lintim.model.*;
 import net.lintim.util.*;
+import net.lintim.util.vehiclescheduling.Parameters;
 
 /**
  * Class containing a static method to add vehicle scheduling activities to an existing periodic ean

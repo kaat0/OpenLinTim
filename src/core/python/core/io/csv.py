@@ -29,7 +29,7 @@ class CsvReader:
         logger = logging.getLogger(__name__)
         logger.debug("Reading file {}".format(file_name))
         try:
-            input_file = open(file_name, newline='')
+            input_file = open(file_name, newline='', encoding="utf8")
         except IOError:
             raise InputFileException(file_name)
 
@@ -135,7 +135,7 @@ class CsvWriter:
         :param value: the value to shorten
         :return: the shortened representation
         """
-        return "{:.2f}".format(value).rstrip("0").rstrip(".")
+        return "{:.5f}".format(value).rstrip("0").rstrip(".")
 
 
     @staticmethod

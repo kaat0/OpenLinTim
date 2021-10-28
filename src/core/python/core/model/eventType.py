@@ -10,6 +10,7 @@ class EventType(Enum):
     ARRIVAL = "\"arrival\""
     DEPARTURE = "\"departure\""
     FIX = "\"fix\""
+    VIRTUAL = "\"virtual\""
 
     def __init__(self, representation: str):
         self.representation = representation

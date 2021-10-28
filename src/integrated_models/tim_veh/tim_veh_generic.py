@@ -1,3 +1,4 @@
+from core.exceptions.algorithm_dijkstra import AlgorithmStoppingCriterionException
 from core.solver.generic_solver_interface import Model, Solver, IntAttribute, \
     VariableType, LinearExpression, OptimizationSense, ConstraintSense, DoubleAttribute, Status, Variable
 from ean_data import *
@@ -353,11 +354,14 @@ class TimVehGenericModel:
     def solve(self):
         logger.debug("Start optimization")
         self._m.solve()
-        self.is_feasible = self._m.getStatus() == Status.FEASIBLE or self._m.getStatus() == Status.OPTIMAL
+        self.is_feasible = self._m.getIntAttribute(IntAttribute.NUM_SOLUTIONS) > 0
         if not self.is_feasible:
             logger.debug("No feasible solution found")
-            if self._parameters.show_solver_output:
+            if self._m.getStatus() == Status.INFEASIBLE:
                 self._m.computeIIS("TimVeh.ilp")
+            raise AlgorithmStoppingCriterionException("Tim Veh")
+        if self._m.getStatus() == Status.OPTIMAL:
+            logger.debug("Optimal solution found")
         else:
             logger.debug("Feasible solution found")
         logger.debug("End optimization")

@@ -3,6 +3,7 @@ package net.lintim.io;
 import net.lintim.exception.InputFileException;
 import net.lintim.exception.OutputFileException;
 import net.lintim.util.Config;
+import net.lintim.util.Logger;
 import net.lintim.util.Statistic;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ public class StatisticWriter {
     private final String fileName;
     private final Statistic statistic;
     private final boolean append;
+
+    private static final Logger logger = new Logger(StatisticWriter.class);
 
     private StatisticWriter(Builder builder) {
         this.statistic = builder.statistic == null ? Statistic.getDefaultStatistic() : builder.statistic;
@@ -60,6 +63,8 @@ public class StatisticWriter {
             }
             return discStatistic;
         } catch (InputFileException e) {
+            // Give error message to explain the logged error message of missing statistic file
+            logger.error("Will continue with empty statistic");
             return statistic;
         }
     }

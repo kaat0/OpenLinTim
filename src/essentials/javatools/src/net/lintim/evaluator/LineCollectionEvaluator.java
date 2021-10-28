@@ -12,7 +12,7 @@ import net.lintim.model.EventActivityNetwork.ModelFrequency;
 import net.lintim.model.EventActivityNetwork.ModelHeadway;
 import net.lintim.util.BiLinkedHashMap;
 import net.lintim.util.MathHelper;
-import net.lintim.util.Pair;
+import net.lintim.util.SinglePair;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -26,16 +26,16 @@ import java.util.Map.Entry;
 public class LineCollectionEvaluator {
 	private static boolean feasible_od = true;
 	private static boolean feasible_od_yet_checked= false;
-	
+
 	private static class DirectedStation {
-		
+
 		public Station station;
 
 		public DirectedStation(Station station) {
 			this.station = station;
 		}
 	}
-	
+
 	public static Double minLength(LineCollection lc){
 		double retval=Double.MAX_VALUE;
 		double length;
@@ -54,7 +54,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval;
 	}
-	
+
 	public static Double minDistance(LineCollection lc){
 		double retval=Double.MAX_VALUE;
 		double distance;
@@ -73,7 +73,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval;
 	}
-	
+
 	public static Double minEdges(LineCollection lc){
 		double retval=Double.MAX_VALUE;
 		int edges;
@@ -92,7 +92,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval;
 	}
-	
+
 	public static Double averageLength(LineCollection lc){
 		double retval=0;
 		int count=0;
@@ -111,7 +111,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval/count;
 	}
-	
+
 	public static Double averageDistance(LineCollection lc){
 		double retval=0;
 		double distance;
@@ -132,7 +132,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval/count;
 	}
-	
+
 	public static Double averageEdges(LineCollection lc){
 		double retval=0;
 		int count=0;
@@ -151,7 +151,7 @@ public class LineCollectionEvaluator {
 		}
 		return retval/count;
 	}
-	
+
 	public static Double varianceLength(LineCollection lc){
 		double sum=0;
 		double squared_sum=0;
@@ -177,7 +177,7 @@ public class LineCollectionEvaluator {
 		squared_sum/=count;
 		return squared_sum-sum;
 	}
-	
+
 	public static Double varianceDistance(LineCollection lc){
 		double sum=0;
 		double squared_sum=0;
@@ -203,7 +203,7 @@ public class LineCollectionEvaluator {
 		squared_sum/=count;
 		return squared_sum-sum;
 	}
-	
+
 	public static Double varianceEdges(LineCollection lc){
 		double sum=0;
 		double squared_sum=0;
@@ -229,8 +229,8 @@ public class LineCollectionEvaluator {
 		squared_sum/=count;
 		return squared_sum-sum;
 	}
-	
-	
+
+
 
     /**
      * Computes the cost of a line concept, i.e. the sum of lineCost*frequency
@@ -397,27 +397,27 @@ public class LineCollectionEvaluator {
     }
 
     /**
-     * Method to determine the average time a passengers spends in the PTN with the 
+     * Method to determine the average time a passengers spends in the PTN with the
      * lines used in the LineCollection to reach their destination.
      * @param lc The LineCollection considered.
      * @param od The OD-Matrix used.
      * @param minimalWaitingTime The time a passengers spend approximatly at any station.
      * @return The average traveling time.
      */
-    public static Double lineCollectionTimeAverage(LineCollection lc,  
+    public static Double lineCollectionTimeAverage(LineCollection lc,
     		OriginDestinationMatrix od, Double minimalWaitingTime)
     		throws DataInconsistentException {
-    	
+
     	Double retval = 0.0;
 		Double passengers = 0.0;
 		Double passengers_od = 0.0;
-		
-		BiLinkedHashMap<Station, Station, Double> lcTime = 
+
+		BiLinkedHashMap<Station, Station, Double> lcTime =
 				computeLcTime(lc, od, minimalWaitingTime);
 
 		BiLinkedHashMap<Station, Station, Double> odData = od.getMatrix();
 
-		for (Entry<Station, LinkedHashMap<Station, Double>> e1 : 
+		for (Entry<Station, LinkedHashMap<Station, Double>> e1 :
 				lcTime.entrySet()) {
 
 			for (Entry<Station, Double> e2 : e1.getValue().entrySet()) {
@@ -431,28 +431,28 @@ public class LineCollectionEvaluator {
 		}
 
 		return retval/passengers;
-    	
+
     }
-    
+
     private static BiLinkedHashMap<Station, Station, Double> computeLcTime(
 			LineCollection lc, OriginDestinationMatrix od,
 			Double minimalWaitingTime) throws DataInconsistentException {
 
-		BiLinkedHashMap<Station, Station, Double> retval = 
+		BiLinkedHashMap<Station, Station, Double> retval =
 				new BiLinkedHashMap<Station, Station, Double>();
 
-		ShortestPathsGraph<DirectedStation, Link> sp = 
+		ShortestPathsGraph<DirectedStation, Link> sp =
 				new ShortestPathsGraph<DirectedStation, Link>();
 
-		LinkedHashMap<Station, Pair<DirectedStation>> directedStationMap = 
-				new LinkedHashMap<Station, Pair<DirectedStation>>();
+		LinkedHashMap<Station, SinglePair<DirectedStation>> directedStationMap =
+				new LinkedHashMap<Station, SinglePair<DirectedStation>>();
 
 		LinkedHashSet<Station> stations = lc.getUsedStations();
-		
+
 		for (Station station : stations) {
 			DirectedStation incomingLinks = new DirectedStation(station);
 			DirectedStation outgoingLinks = new DirectedStation(station);
-			directedStationMap.put(station, new Pair<DirectedStation>(
+			directedStationMap.put(station, new SinglePair<DirectedStation>(
 					incomingLinks, outgoingLinks));
 
 			sp.addVertex(incomingLinks);
@@ -505,15 +505,15 @@ public class LineCollectionEvaluator {
 		return retval;
 
 	}
-    
+
     /**
-	 * Returns whether there is a way for each OD-pair through the PTN with the 
+	 * Returns whether there is a way for each OD-pair through the PTN with the
 	 * given lines.
 	 * @param lc the given {@link LineCollection}.
 	 * @param od the given {@link OriginDestinationMatrix}.
 	 * @return Whether all OD-pair can travel.
 	 */
-	public static Boolean lcFeasibleOd(LineCollection lc, 
+	public static Boolean lcFeasibleOd(LineCollection lc,
 			OriginDestinationMatrix od, Double minimalWaitingTime)
 			throws DataInconsistentException {
 		if(lc.getPublicTransportationNetwork().getStations().size() != lc.getUsedStations().size())
@@ -522,11 +522,11 @@ public class LineCollectionEvaluator {
 			lineCollectionTimeAverage(lc, od, minimalWaitingTime);
 		return feasible_od;
 	}
-    
+
 
     /**
-     * A Method to determine whether the given LineCollection  does not contain 
-     * lines with circles. 
+     * A Method to determine whether the given LineCollection  does not contain
+     * lines with circles.
      * @param lc The LineCollection to consider.
      * @return Whether no line in the LineCollection contains a circle.
      */
@@ -547,9 +547,9 @@ public class LineCollectionEvaluator {
     	}
     	return true;
     }
-    
-    
-    
+
+
+
     /**
      * Computes a lower bound for the sum of duration*passengers, i.e. a lower
      * bound for the average traveling time for a given {@link LineCollection}
@@ -575,7 +575,7 @@ public class LineCollectionEvaluator {
     throws DataInconsistentException{
 
         double retval = 0.0;
-		
+
         PublicTransportationNetwork ptn = lc.getPublicTransportationNetwork();
         boolean isUndirected = ptn.isUndirected();
 
@@ -617,11 +617,11 @@ public class LineCollectionEvaluator {
                 else {
                     tempLc.addLine(line1);
                 }
-            } 
+            }
         }
 
 	// **********************************************
-	
+
 	// Watch out change here from tempLC to lc in EAN!!!!!!!!!!!
 	// **********************************************
         EventActivityNetwork ean = new EventActivityNetwork(lc,

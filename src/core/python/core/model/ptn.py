@@ -24,18 +24,18 @@ class Stop(Node):
         :param yCoordinate: the y-coordinate of the stop. This should be the
         latitude coordinate of the stop.
         """
-        self.stopId = stopId
-        self.shortName = shortName
-        self.longName = longName
-        self.xCoordinate = xCoordinate
-        self.yCoordinate = yCoordinate
+        self.stop_id = stopId
+        self.short_name = shortName
+        self.long_name = longName
+        self.x_coord = xCoordinate
+        self.y_coord = yCoordinate
         self.station = True
 
     def getId(self) -> int:
-        return self.stopId
+        return self.stop_id
 
     def setId(self, newId: int) -> None:
-        self.stopId = newId
+        self.stop_id = newId
 
     def getShortName(self) -> str:
         """
@@ -43,7 +43,7 @@ class Stop(Node):
         stop. Need not be unique.
         :return: the short name
         """
-        return self.shortName
+        return self.short_name
 
     def getLongName(self) -> str:
         """
@@ -51,7 +51,7 @@ class Stop(Node):
         stop.
         :return: the long name
         """
-        return self.longName
+        return self.long_name
 
     def getXCoordinate(self) -> float:
         """
@@ -59,7 +59,7 @@ class Stop(Node):
         coordinate of the stop.
         :return: the x-coordinate
         """
-        return self.xCoordinate
+        return self.x_coord
 
     def getYCoordinate(self) -> float:
         """
@@ -67,7 +67,7 @@ class Stop(Node):
         coordinate of the stop.
         :return: the y-coordinate
         """
-        return self.yCoordinate
+        return self.y_coord
 
     def isStation(self) -> bool:
         """
@@ -88,26 +88,21 @@ class Stop(Node):
         :param isStation: the new value
         """
 
-    def toCsvStrings(self) -> [str]:
+    def toCsvStrings(self) -> List[str]:
         """
         Return a string list, representing the stop for a LinTim csv file.
         :return: the csv representation of this stop
         """
-        x_coordinate = self.getXCoordinate()
-        if math.isclose(x_coordinate, int(x_coordinate)):
-            x_coordinate = int(x_coordinate)
-        y_coordinate = self.getYCoordinate()
-        if math.isclose(y_coordinate, int(y_coordinate)):
-            y_coordinate = int(y_coordinate)
-        return [str(self.getId()), self.getShortName(), self.getLongName(),
-                str(x_coordinate), str(y_coordinate)]
+        return [str(self.stop_id), self.short_name, self.long_name,
+                CsvWriter.shortenDecimalValueForOutput(self.x_coord),
+                CsvWriter.shortenDecimalValueForOutput(self.y_coord)]
 
     def __hash__(self) -> int:
-        result = self.stopId
-        result = 31 * result + self.shortName.__hash__()
-        result = 31 * result + self.longName.__hash__()
-        result = 31 * result + self.xCoordinate.__hash__()
-        result = 31 * result + self.yCoordinate.__hash__()
+        result = self.stop_id
+        result = 31 * result + self.short_name.__hash__()
+        result = 31 * result + self.long_name.__hash__()
+        result = 31 * result + self.x_coord.__hash__()
+        result = 31 * result + self.y_coord.__hash__()
         return result
 
     def __str__(self) -> str:
@@ -361,3 +356,34 @@ class Link(Edge[Stop]):
 
     def __hash__(self):
         return hash((self.link_id, self.left_stop, self.right_stop, self.length, self.lower_bound, self.upper_bound, self.directed))
+
+
+class StationLimit:
+    def __init__(self, stop_id: int, min_wait_time: int, max_wait_time: int, min_change_time: int, max_change_time: int):
+        self.stop_id = stop_id
+        self.min_wait_time = min_wait_time
+        self.max_wait_time = max_wait_time
+        self.min_change_time = min_change_time
+        self.max_change_time = max_change_time
+
+    def getStopId(self) -> int:
+        return self.stop_id
+
+    def getMinWaitTime(self) -> int:
+        return self.min_wait_time
+
+    def getMaxWaitTime(self) -> int:
+        return self.max_wait_time
+
+    def getMinChangeTime(self) -> int:
+        return self.min_change_time
+
+    def getMaxChangeTiem(self) -> int:
+        return self.max_change_time
+
+    def toCsvStrings(self) -> List[str]:
+        return [str(self.getStopId()),
+                str(self.getMinWaitTime()),
+                str(self.getMaxWaitTime()),
+                str(self.getMinChangeTime()),
+                str(self.getMaxChangeTiem())]

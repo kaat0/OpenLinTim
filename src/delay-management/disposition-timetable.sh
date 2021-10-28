@@ -10,7 +10,7 @@ if [[ ${dm_method} == "DM2" || ${dm_method} == "DM1" || ${dm_method} == "DM2-pre
 	make  --quiet -C ${PROGRAMPATH}/../essentials/config config_cmd
 	${PROGRAMPATH}/ip-based/Solve/update_solver.sh
 	ant -q -f ${PROGRAMPATH}/ip-based/build.xml build-delay-management
-	java "${JFLAGS[@]}" -classpath ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/ip-based/Solve${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/Tools${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/EAN${PATHSEP}${PROGRAMPATH}/../essentials/statistic SolveDM
+	java "${JFLAGS[@]}" -classpath ${CLASSPATH}${PATHSEP}${CORE_DIR}/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/ip-based/Solve${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/Tools${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/EAN${PATHSEP}${PROGRAMPATH}/../essentials/statistic SolveDM $1
 elif [[ ${dm_method} == "online-dm" ]]; then
 	ant -q -f ${PROGRAMPATH}/online-dm/build.xml build-online-delay-management
 	java "${JFLAGS[@]}" -classpath ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/online-dm${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/Tools${PATHSEP}${PROGRAMPATH}/../essentials/dm-helper/EAN ODM

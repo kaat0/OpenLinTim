@@ -116,12 +116,14 @@ public class IO
 				driveCount++;
 			else if (type.equals("wait"))
 				waitCount++;
-			else if (type.equals("fixed-turnaround") || type.equals("turnaround"))
+			else if (type.equals("fixed-circulation"))
 				circCount++;
 			else if (type.equals("change"))
 				changeCount++;
 			else if (type.equals("headway"))
 				headwayCount++;
+			else if (type.equals("turn") || type.equals("circulation") || type.equals("turnaround"))
+				waitCount++;
 			else{
 				reader.close();
 				throw new IllegalArgumentException("IO: unsupported activity type: " + type);
@@ -188,7 +190,7 @@ public class IO
 				if (DEBUG)
 					System.out.println("  waiting activity " + a);
 			}
-			else if (type.equals("fixed-turnaround") || type.equals("turnaround"))
+			else if (type.equals("fixed-circulation"))
 			{
 				lowerBound = (int) Math.round(lowerBoundReductionFactor * lowerBound);
 				NonPeriodicActivity a = new NonPeriodicActivity(ID, source, target, lowerBound, upperBound, w, type, periodicID);
@@ -198,7 +200,12 @@ public class IO
 				source.addOutgoingActivity(a);
 				target.addIncomingActivity(a);
 				if (DEBUG)
-					System.out.println("  (fixed) turnaround activity " + a);
+					System.out.println("  (fixed) circulation activity " + a);
+			}
+			else if (type.equals("circulation"))
+			{
+				if (DEBUG)
+					System.out.println("  ignoring (non-fixed) circulation activity");
 			}
 			else if (type.equals("change"))
 			{
@@ -219,6 +226,16 @@ public class IO
 				target.addIncomingActivity(a);
 				if (DEBUG)
 					System.out.println("  headway activity " + a);
+			}
+			else if (type.equals("turn"))
+			{
+				NonPeriodicActivity a = new NonPeriodicActivity(ID, source, target, lowerBound, upperBound, w, type, periodicID);
+				A.add(a);
+				A_wait.add(a);
+				source.addOutgoingActivity(a);
+				target.addIncomingActivity(a);
+				if (DEBUG)
+					System.out.println("  turn activity " + a);
 			}
 		}
 		reader.close();

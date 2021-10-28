@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project name="LinTim" default="build-rollout" basedir=".">
-	<property name="enable_debug" value="false"/>
+	<property name="enable_debug" value="true"/>
 	<property name="enable_optimize" value="true"/>
-	
+
 	<target name="build-config">
 		<javac srcdir="../config"
 		       destdir="../config"
@@ -35,5 +35,5 @@
 		       optimize="${enable_optimize}"
 		       includeAntRuntime="true" />
 	</target>
-		
+
 </project>

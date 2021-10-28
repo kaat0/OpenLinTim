@@ -2,7 +2,8 @@
 
 declare -r SRC_DIR=`dirname "$(readlink -f ${BASH_SOURCE[0]})"`
 
-CORE_DIR="${SRC_DIR}/core"
+CORE_DIR=${SRC_DIR}/core
+LIB_DIR=${SRC_DIR}/../libs
 
 
 PATHSEP=":"
@@ -18,7 +19,7 @@ if [[ ! -x ${CONFIGPROG} ]]; then
 	echo "exists and is executable."
 	exit 1;
 fi
-if [[ ${#} -eq 1 ]]; then
+if [[ ${#} -ge 1 ]]; then
 	if [[ -r ${1} ]]; then
 		CONFIGCMD=("${CONFIGPROG}" -c "${1}") #"${CONFIGPROG} -c ${1}"
 	else

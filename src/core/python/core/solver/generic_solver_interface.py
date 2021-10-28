@@ -73,6 +73,10 @@ class Constraint(metaclass=ABCMeta):
     def getRhs(self) -> float:
         raise NotImplementedError
 
+    @abstractmethod
+    def getLhs(self) -> LinearExpression:
+        raise NotImplementedError
+
 
 class OptimizationSense(Enum):
     MAXIMIZE = "MAXIMIZE"
@@ -84,6 +88,7 @@ class IntAttribute(Enum):
     NUM_CONSTRAINTS = "NUM_CONSTRAINTS"
     NUM_INT_VARIABLES = "NUM_INT_VARIABLES"
     NUM_BIN_VARIABLES = "NUM_BIN_VARIABLES"
+    NUM_SOLUTIONS = "NUM_SOLUTIONS"
     STATUS = "STATUS"
     RUNTIME = "RUNTIME"
 

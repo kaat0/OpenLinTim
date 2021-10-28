@@ -32,7 +32,7 @@ public class PTNReader {
         if (readStops) {
             stopFileName = !"".equals(builder.stopFileName) ? builder.stopFileName : builder.config.getStringValue
                 ("default_stops_file");
-            conversionFactorCoordinates = builder.conversionFactorCoordinates == 0 ? builder.config.getDoubleValue
+            conversionFactorCoordinates = builder.conversionFactorCoordinates == null ? builder.config.getDoubleValue
                 ("gen_conversion_coordinates") : builder.conversionFactorCoordinates;
         }
         else {
@@ -43,7 +43,7 @@ public class PTNReader {
         if (readLinks) {
             linkFileName = !"".equals(builder.linkFileName) ? builder.linkFileName : builder.config.getStringValue
                 ("default_edges_file");
-            conversionFactorLength = builder.conversionFactorLength == 0 ? builder.config.getDoubleValue
+            conversionFactorLength = builder.conversionFactorLength == null ? builder.config.getDoubleValue
                 ("gen_conversion_length") : builder.conversionFactorLength;
         }
         else {
@@ -308,8 +308,8 @@ public class PTNReader {
         private boolean readLinks = true;
         private boolean readLoads = false;
         private boolean readHeadways = false;
-        private double conversionFactorLength = 0;
-        private double conversionFactorCoordinates = 0;
+        private Double conversionFactorLength;
+        private Double conversionFactorCoordinates;
         private Config config = Config.getDefaultConfig();
         private String stopFileName = "";
         private String linkFileName = "";

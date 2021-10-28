@@ -31,6 +31,7 @@ public class FixedLineCapacityReader {
     /**
      * Start the reader process. The behaviour of the reader is determined by the {@link Builder} that was used for
      * creating the reader
+     *
      * @return the read line capacities
      */
     public Map<Line, Integer> read() {
@@ -92,6 +93,7 @@ public class FixedLineCapacityReader {
          *          file name (dependent on config) - the file to read
          *     </li>
          * </ul>
+         *
          * @param fixedLines the pool containing all fixed lines
          */
         public Builder(LinePool fixedLines) {
@@ -103,7 +105,7 @@ public class FixedLineCapacityReader {
             return this;
         }
 
-        public Builder setCapacities (Map<Line, Integer> capacities) {
+        public Builder setCapacities(Map<Line, Integer> capacities) {
             Objects.requireNonNull(capacities);
             this.capacities = capacities;
             return this;
@@ -118,6 +120,7 @@ public class FixedLineCapacityReader {
         /**
          * Build a line capacity reader with the current parameter set in the Builder. Use {@link #read()} afterwards
          * for the reading process
+         *
          * @return the finished reader
          */
         public FixedLineCapacityReader build() {

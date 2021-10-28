@@ -13,13 +13,14 @@ import org.junit.runners.Suite;
     net.lintim.algorithm.DijkstraTest.class,
     net.lintim.io.IOTest.class,
     net.lintim.model.impl.ArrayListGraphTest.class,
-    net.lintim.model.impl.FullODTest.class,
     net.lintim.model.impl.LinkedListPathTest.class,
     net.lintim.model.impl.SimpleMapGraphTest.class,
+    net.lintim.model.impl.FullODTest.class,
+    net.lintim.model.impl.MapODTest.class,
     net.lintim.model.impl.SparseODTest.class,
     net.lintim.util.ConfigTest.class,
-    net.lintim.util.LinePlanningHelperTest.class,
-    net.lintim.util.StatisticTest.class
+    net.lintim.util.StatisticTest.class,
+    net.lintim.util.LinePlanningHelperTest.class
 })
 public class TestRunner {
     public static void main(String[] args) {

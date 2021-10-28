@@ -17,8 +17,14 @@ public class ODReader {
 
     private ODReader(Builder builder) {
         this.od = builder.od;
-        this.fileName = "".equals(builder.fileName) ? builder.config.getStringValue("default_od_file") :
-            builder.fileName;
+        if (!builder.readNodeOd) {
+            this.fileName = "".equals(builder.fileName) ? builder.config.getStringValue("default_od_file") :
+                builder.fileName;
+        }
+        else {
+            this.fileName = "".equals(builder.fileName) ? builder.config.getStringValue("filename_od_nodes_file") :
+                builder.fileName;
+        }
     }
 
     /**
@@ -79,6 +85,7 @@ public class ODReader {
     public static class Builder {
         private String fileName = "";
         private final OD od;
+        private boolean readNodeOd = false;
         private Config config = Config.getDefaultConfig();
         private final int odSize;
 
@@ -88,6 +95,10 @@ public class ODReader {
          *     <li>
          *         od (set in constructor) - the od matrix to fill. This constructor needs an od matrix. If you don't
          *         want to provide an od matrix, use {@link #Builder(int)} instead.
+         *     </li>
+         *     <li>
+         *         readNodeOd (false) - whether to read a node od file or a stop od file. Default is stop od file.
+         *         If this is set to true, a node od file will be read instead.
          *     </li>
          *     <li>
          *         config {@link Config#getDefaultConfig()} - the config to read the file name from. This will only
@@ -142,6 +153,11 @@ public class ODReader {
          */
         public Builder setFileName(String fileName) {
             this.fileName = fileName;
+            return this;
+        }
+
+        public Builder readNodeOd(boolean readNodeOd) {
+            this.readNodeOd = readNodeOd;
             return this;
         }
 

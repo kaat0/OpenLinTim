@@ -10,7 +10,8 @@ enum ActivityType{
     CHANGE,
     TURNAROUND,
     HEADWAY,
-    SYNC
+    SYNC,
+    VIRTUAL
 };
 
 #endif

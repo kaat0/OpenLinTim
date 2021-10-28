@@ -12,11 +12,21 @@ model "tm.mos"
 	! Declare the variables:
 	declarations
 	NumberOfTrips: integer
+	timelimit: integer
+	threads: integer
+	mipGap: real
+	outputMessages: boolean
+	writeLpFile: boolean
 	end-declarations
 
 	! Import the NumberOfTrips
 	initializations from DATAFILE
 		NumberOfTrips
+		timelimit
+        threads
+        mipGap
+		outputMessages
+		writeLpFile
 	end-initializations
 
 	! Declare the variables:
@@ -35,7 +45,7 @@ model "tm.mos"
 					     ! C(i,j) = s_i                      if i = j \in \{1, \ldots, NumberOfTrips\}
 					     ! C(i,j) = cv/2                     if i = NumberOfTrips+1 oder j = NumberOfTrips+1
 					     ! C(i,j) = 0                        sonst
-	! Decision variables: 
+	! Decision variables:
 	x: array(Indizes, Indizes) of mpvar
 	end-declarations
 
@@ -58,7 +68,7 @@ model "tm.mos"
 		if (i = j and i<=NumberOfTrips and j<=NumberOfTrips) then
 			C(i,j) := s(i);
 		end-if
-		if (i <> j and i = NumberOfTrips+1) or 
+		if (i <> j and i = NumberOfTrips+1) or
 		   (i <> j and j = NumberOfTrips+1) then
 			C(i,j) := cv / 2; ! If you choose U(i,j) + cv / 2 for this place, you will get the same value of the objective function as with the model am.
 		end-if
@@ -93,13 +103,32 @@ model "tm.mos"
 		x(i,j) is_integer;
 		x(i,j) >= 0;
 	end-do
-	
+
+    ! Set solver parameters
+    if timelimit > 0 then
+        setparam("XPRS_MAXTIME", timelimit);
+    end-if
+    if threads > 0 then
+        setparam("XPRS_THREADS", threads);
+    end-if
+    if outputMessages then
+        setparam("XPRS_VERBOSE", true)
+    else
+        setparam("XPRS_VERBOSE", false)
+    end-if
+    if mipGap > 0 then
+        setparam("XPRS_MIPRELSTOP", mipGap)
+    end-if
+    if writeLpFile then
+        exportprob("am.lp")
+    end-if
+
 	!Minimization of the costs:
 	minimize(costs);
 
 	! Problem solved?
 !	print_status
-	
+
 	! Print the Cost-Matrix:
 !	forall(i in Indizes, j in Indizes) writeln(" C(", i, ",", j, ") = ", C(i,j))
 
@@ -129,6 +158,6 @@ model "tm.mos"
 			end-if
 		end-do
 	end-do
-	fclose(F_OUTPUT)	
+	fclose(F_OUTPUT)
 
 end-model

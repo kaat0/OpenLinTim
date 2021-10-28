@@ -1,8 +1,7 @@
 package net.lintim.util;
 
 import net.lintim.exception.LinTimException;
-import net.lintim.model.Line;
-import net.lintim.model.LinePool;
+import net.lintim.model.*;
 
 import java.util.*;
 
@@ -23,15 +22,8 @@ public class LinePlanningHelper {
         Set<Integer> possibleSystemFrequencies = new HashSet<>();
         int temp = periodLength;
         if(configCommonDivisor <= 0) {
-            // Find all prime factors for the period length
-            for (int i = 2; i <= temp / i; i++) {
-                while (temp % i == 0) {
-                    possibleSystemFrequencies.add(i);
-                    temp /= i;
-                }
-            }
-            if (temp > 1) {
-                possibleSystemFrequencies.add(temp);
+            for(int value : new int[]{2, 3, 5, 7, 11, 13}) {
+                possibleSystemFrequencies.add(value);
             }
         }
         else {
@@ -62,6 +54,10 @@ public class LinePlanningHelper {
      */
     public static void setFrequencies(LinePool lineConcept, HashMap<Integer, Integer> frequencies) {
         for(Line line : lineConcept.getLines()) {
+            // First check if we have a fixed line, i.e., a line that already has a frequency
+            if (line.getFrequency() > 0) {
+                continue;
+            }
             try {
                 line.setFrequency(frequencies.get(line.getId()));
             }
@@ -70,6 +66,24 @@ public class LinePlanningHelper {
                     "present!");
                 throw new LinTimException(e.getMessage());
             }
+        }
+    }
+
+    public static void preprocessForFixedLines(LinePool allLines, Map<Line, Integer> capacities, int unfixedCapacity) {
+        for (Line line : capacities.keySet()) {
+            for (Link link : line.getLinePath().getEdges()) {
+                int newBound = (link.getLowerFrequencyBound()*unfixedCapacity - line.getFrequency()*capacities.get(line))/unfixedCapacity;
+                logger.debug("Set lower bound of " + link + " to max of 0 and " + newBound + ", old bound was " + link.getLowerFrequencyBound());
+                link.setLowerFrequencyBound(Math.max(0, newBound));
+                logger.debug("Its now " + link.getLowerFrequencyBound());
+            }
+            allLines.removeLine(line.getId());
+        }
+    }
+
+    public static void postProcessForFixedLines(LinePool allLines, Collection<Line> fixedLines) {
+        for (Line fixedLine : fixedLines) {
+            allLines.addLine(fixedLine);
         }
     }
 }

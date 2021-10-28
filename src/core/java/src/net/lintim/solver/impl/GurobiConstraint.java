@@ -53,4 +53,13 @@ public class GurobiConstraint implements Constraint {
             throw new SolverGurobiException(e.getMessage());
         }
     }
+
+    @Override
+    public void setRhs(double value) {
+        try {
+            constr.set(GRB.DoubleAttr.RHS, value);
+        } catch (GRBException e) {
+            throw new SolverGurobiException(e.getMessage());
+        }
+    }
 }

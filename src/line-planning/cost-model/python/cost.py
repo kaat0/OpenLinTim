@@ -6,9 +6,9 @@ from core.exceptions.config_exceptions import ConfigNoFileNameGivenException
 from core.io.config import ConfigReader
 from core.io.lines import LineReader, LineWriter
 from core.io.ptn import PTNReader
-from core.solver.generic_solver_interface import Solver, VariableType, ConstraintSense, IntParam, DoubleParam, \
-    OptimizationSense, Status
-from core.util.config import Config
+from core.solver.generic_solver_interface import Solver, VariableType, ConstraintSense, OptimizationSense, Status, \
+    IntAttribute
+from core.solver.solver_parameters import SolverParameters
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +17,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise ConfigNoFileNameGivenException()
     logger.info("Start reading configuration")
-    ConfigReader.read(sys.argv[1])
-    time_limit = Config.getIntegerValueStatic("lc_timelimit")
-    mip_gap = Config.getIntegerValueStatic("lc_mip_gap")
-    solver_type = Config.getSolverTypeStatic("lc_solver")
+    config = ConfigReader.read(sys.argv[1])
+    parameters = SolverParameters(config, "lc_")
     logger.info("Finished reading configuration")
 
     logger.info("Begin reading input data")
@@ -29,7 +27,7 @@ if __name__ == '__main__':
     logger.info("Finished reading input data")
 
     logger.info("Begin execution of line planning cost model")
-    solver = Solver.createSolver(solver_type)
+    solver = Solver.createSolver(parameters.getSolverType())
     model = solver.createModel()
     logger.debug("Add variables")
     frequencies = {}
@@ -49,11 +47,9 @@ if __name__ == '__main__':
                             f"l_{link.getId()}")
 
     logger.debug("Add parameters")
-    model.setIntParam(IntParam.TIMELIMIT, time_limit)
-    model.setIntParam(IntParam.OUTPUT_LEVEL, logger.getEffectiveLevel())
-    model.setDoubleParam(DoubleParam.MIP_GAP, mip_gap)
+    parameters.setSolverParameters(model)
     model.setSense(OptimizationSense.MINIMIZE)
-    if logger.level == logging.DEBUG:
+    if parameters.writeLpFile():
         logger.debug("Writing lp file")
         model.write("costModel.lp")
         logger.debug("Finished writing lp file")
@@ -63,7 +59,7 @@ if __name__ == '__main__':
     logger.debug("Finished optimization")
 
     status = model.getStatus()
-    if status == Status.OPTIMAL or status == Status.FEASIBLE:
+    if model.getIntAttribute(IntAttribute.NUM_SOLUTIONS) > 0:
         if status == Status.OPTIMAL:
             logger.debug("Optimal solution found")
         else:
@@ -71,8 +67,8 @@ if __name__ == '__main__':
         for line in line_pool.getLines():
             line.setFrequency(int(round(model.getValue(frequencies[line]))))
     else:
-        logger.debug("Problem is infeasible")
-        if logger.level == logging.DEBUG:
+        logger.debug("No feasible solution found")
+        if status == Status.INFEASIBLE:
             model.computeIIS("costModel.ilp")
         raise AlgorithmStoppingCriterionException("cost model line planning")
     logger.info("Finished execution of line planning cost model")

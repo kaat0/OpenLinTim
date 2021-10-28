@@ -1,7 +1,7 @@
 package net.lintim.model;
 
 import net.lintim.exception.DataInconsistentException;
-import net.lintim.util.Pair;
+import net.lintim.util.SinglePair;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -45,8 +45,8 @@ public class Line {
     private Line undirectedCounterpart;
     private Line undirectedRepresentative;
 
-    private LinkedHashMap<Station, LinkedList<Pair<Link>>> stationLinkMap =
-        new LinkedHashMap<Station, LinkedList<Pair<Link>>>();
+    private LinkedHashMap<Station, LinkedList<SinglePair<Link>>> stationLinkMap =
+        new LinkedHashMap<Station, LinkedList<SinglePair<Link>>>();
 
     // =========================================================================
     // === Constructors ========================================================
@@ -152,26 +152,26 @@ public class Line {
         } else {
             links.addLast(link);
             Station lastStation = stations.getLast();
-            LinkedList<Pair<Link>> lastStationStationAdjacentLinks =
+            LinkedList<SinglePair<Link>> lastStationStationAdjacentLinks =
                 stationLinkMap.get(lastStation);
             if(lastStationStationAdjacentLinks == null){
                 throw new DataInconsistentException("last station has no " +
                         "adjacent links. This should never happen.");
             }
-            Pair<Link> lastStationAdjacentLinks =
+            SinglePair<Link> lastStationAdjacentLinks =
                 lastStationStationAdjacentLinks.getLast();
             if (link.getFromStation() != lastStation) {
                 throw new DataInconsistentException("line connection broken");
             }
             lastStationAdjacentLinks.second = link;
             Station toStation = link.getToStation();
-            LinkedList<Pair<Link>> newLastStationStationAdjacentLinks =
+            LinkedList<SinglePair<Link>> newLastStationStationAdjacentLinks =
                 stationLinkMap.get(toStation);
             if(newLastStationStationAdjacentLinks == null){
-                newLastStationStationAdjacentLinks = new LinkedList<Pair<Link>>();
+                newLastStationStationAdjacentLinks = new LinkedList<SinglePair<Link>>();
                 stationLinkMap.put(toStation, newLastStationStationAdjacentLinks);
             }
-            newLastStationStationAdjacentLinks.addLast(new Pair<Link>(link, null));
+            newLastStationStationAdjacentLinks.addLast(new SinglePair<Link>(link, null));
             stations.addLast(toStation);
             stationSet.add(toStation);
 
@@ -226,7 +226,7 @@ public class Line {
         } else {
             links.addFirst(link);
             Station firstStation = stations.getFirst();
-            LinkedList<Pair<Link>> firstStationStationAdjacentLinks =
+            LinkedList<SinglePair<Link>> firstStationStationAdjacentLinks =
                 stationLinkMap.get(firstStation);
             if(firstStationStationAdjacentLinks == null){
                 throw new DataInconsistentException("first station has no " +
@@ -235,22 +235,22 @@ public class Line {
             if (link.getToStation() != firstStation) {
                 throw new DataInconsistentException("line connection broken");
             }
-            Pair<Link> firstStationAdjacentLinks =
+            SinglePair<Link> firstStationAdjacentLinks =
                 firstStationStationAdjacentLinks.getFirst();
             firstStationAdjacentLinks.first = link;
             Station fromStation = link.getFromStation();
-            LinkedList<Pair<Link>> newFirstStationStationAdjacentLinks =
+            LinkedList<SinglePair<Link>> newFirstStationStationAdjacentLinks =
                 stationLinkMap.get(fromStation);
             if(newFirstStationStationAdjacentLinks == null){
-                newFirstStationStationAdjacentLinks = new LinkedList<Pair<Link>>();
+                newFirstStationStationAdjacentLinks = new LinkedList<SinglePair<Link>>();
                 stationLinkMap.put(fromStation, newFirstStationStationAdjacentLinks);
             }
-            newFirstStationStationAdjacentLinks.addFirst(new Pair<Link>(null, link));
+            newFirstStationStationAdjacentLinks.addFirst(new SinglePair<Link>(null, link));
             stations.addFirst(fromStation);
             stationSet.add(fromStation);
-            if (stationSet.size() < stations.size()) {
-                throw new DataInconsistentException("loop created");
-            }
+//            if (stationSet.size() < stations.size()) {
+//                throw new DataInconsistentException("loop created");
+//            }
             changes.firePropertyChange(PROPERTY_ADD_STATION, null, fromStation);
         }
         length += link.getLength();
@@ -420,14 +420,14 @@ public class Line {
         stationSet.add(fromStation);
         stationSet.add(toStation);
 
-        LinkedList<Pair<Link>> fromStationStationAdjacentLinks =
-            new LinkedList<Pair<Link>>();
-        fromStationStationAdjacentLinks.add(new Pair<Link>(null, link));
+        LinkedList<SinglePair<Link>> fromStationStationAdjacentLinks =
+            new LinkedList<SinglePair<Link>>();
+        fromStationStationAdjacentLinks.add(new SinglePair<Link>(null, link));
         stationLinkMap.put(fromStation, fromStationStationAdjacentLinks);
 
-        LinkedList<Pair<Link>> toStationStationAdjacentLinks =
-            new LinkedList<Pair<Link>>();
-        toStationStationAdjacentLinks.add(new Pair<Link>(link, null));
+        LinkedList<SinglePair<Link>> toStationStationAdjacentLinks =
+            new LinkedList<SinglePair<Link>>();
+        toStationStationAdjacentLinks.add(new SinglePair<Link>(link, null));
         stationLinkMap.put(toStation, toStationStationAdjacentLinks);
     }
 
@@ -493,7 +493,7 @@ public class Line {
         return links;
     }
 
-    public LinkedList<Pair<Link>> getAdjacentLinks(Station station) {
+    public LinkedList<SinglePair<Link>> getAdjacentLinks(Station station) {
         return stationLinkMap.get(station);
     }
 
@@ -515,6 +515,10 @@ public class Line {
 
     public Double getLength() {
         return length;
+    }
+
+    public void setLength(Double newLength){
+        this.length = newLength;
     }
 
     public Line getUndirectedRepresentative() {

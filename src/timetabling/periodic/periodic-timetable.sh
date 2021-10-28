@@ -93,7 +93,18 @@ elif [[ ${TIM_MODEL} == "rptts_ns" ]]; then
 	fi
 elif [[ ${TIM_MODEL} == "ip" ]]; then
 	ant -q -f ${PROGRAMPATH}/ip/build.xml
-	java -Djava.util.logging.config.file=${PROGRAMPATH}/../../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/ip/build${PATHSEP}${PROGRAMPATH}/../../core/java/lintim-core.jar net.lintim.main.timetabling.periodic.PespIp basis/Config.cnf
+	java ${JFLAGS[@]} -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/ip/build${PATHSEP}${PROGRAMPATH}/../../core/java/lintim-core.jar net.lintim.main.timetabling.periodic.PespIp $1
+elif [[ ${TIM_MODEL} == "cb_ip" ]]; then
+    bash ${PROGRAMPATH}/cycle-base/run.sh $1
+elif [[ ${TIM_MODEL} == "phase-one" ]]; then
+    bash ${PROGRAMPATH}/phase-one/run.sh $1
+elif [[ ${TIM_MODEL} == "ns_cb" ]]; then
+    make -C ${PROGRAMPATH}/modulo-simplex/Release || exit 1
+    echo "Using network simplex + cycle base mip"
+    ${PROGRAMPATH}/modulo-simplex/Release/networksimplex
+    if [[ $? == 0 ]]; then
+        bash ${PROGRAMPATH}/cycle-base/run.sh $1
+    fi
 
 else
 	echo "Error: Requested TIM_MODEL \"${TIM_MODEL}\" not available!"

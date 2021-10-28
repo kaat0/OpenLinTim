@@ -20,7 +20,7 @@ LinkedHashMap<T1, LinkedHashMap<T2, T3>> {
 	public T3 put(T1 key1, T2 key2, T3 value) {
 	    LinkedHashMap<T2,T3> toPut = get(key1);
 	    if(toPut == null){
-	        toPut = new LinkedHashMap<T2, T3>();
+	        toPut = new LinkedHashMap<>();
 	    }
 	    T3 retval = toPut.put(key2, value);
 	    super.put(key1, toPut);

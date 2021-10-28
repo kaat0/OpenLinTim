@@ -62,8 +62,9 @@ activities_header; "activity-id; periodic-id; type; tail-event-id; head-event-id
 activities_header_periodic; "activity-id; type; tail-event-id; head-event-id; lower-bound; upper-bound; passengers"
 timetable_header; "event-id; time"
 timetable_header_periodic; "event-id; time"
+timetable_header_periodic_fixed; "event-id; lower-bound; upper-bound"
 timetable_header_disposition; "event-id; time"
-timetable_header_visum; "line-id;line-code;direction;stop-order;stop-id;frequency;departure_time;arrival_time"
+timetable_header_visum; "line-id;line-code;direction;stop-order;stop-id;frequency;arrival_time;departure_time;line-repetition"
 loads_header; "edge-id; load; lower-frequency; upper-frequency"
 od_header; "left-stop-id; right-stop-id; customers"
 cngstops_header; "stop-id; line-id; frequency-id"
@@ -72,10 +73,14 @@ line_stops_header; "stop-id; line-id; frequency-id"
 line_edges_header; "tail-stop-id; head-stop-id; lower-bound; upper-bound; passengers"
 trip_header; "aperiodic-start-ID; periodic-start-ID; start-stop-id; start-time; aperiodic-end-ID; periodic-end-ID; end-stop-id; end-time; line-id"
 vehicle_schedule_header; "circulation-ID; vehicle-ID; trip-number of this vehicle; type; aperiodic-start-ID; periodic-start-ID; start-stop-id; start-time; aperiodic-end-ID; periodic-end-ID; end-stop-id; end-time; line-id"
+line_capacities_header; "line-id; capacity"
+invalid_load_header; "link-id;load;frequency"
+additional_load_header; "edge-id; left-stop-id; right-stop-id; additional-load"
 #
 # -----------------------------------------------------------------------------
 # === FILENAMES (default_*_file) ==============================================
 # -----------------------------------------------------------------------------
+# TODO: remove "default_", new style: "filename_XYZ"
 default_stops_file; "basis/Stop.giv"
 default_stops_coordinates_file; "basis/Stop.giv.geo"
 default_od_file; "basis/OD.giv"
@@ -131,8 +136,8 @@ default_evaluation_dm_file; "delay-management/Evaluation.txt"
 default_evaluation_vs_file; "vehicle-scheduling/VS_Evaluation.vs"
 default_statistic_file; "statistic/statistic.sta"
 default_turn_file; "basis/Turn.giv"
-#default_debug_od_link_paths_file; "Debug/ODLinkPaths.dbg"
-#default_debug_od_activity_paths_file; "Debug/ODActivityPaths.dbg"
+default_debug_od_link_paths_file; "Debug/ODLinkPaths.dbg"
+default_debug_od_activity_paths_file; "Debug/ODActivityPaths.dbg"
 default_vehicle_schedule_file; "vehicle-scheduling/Vehicle_Schedules.vs"
 default_vs_station_distances_file; "vehicle-scheduling/Station_Distances.vs"
 default_existing_stop_file; "basis/Existing-Stop.giv"
@@ -150,11 +155,19 @@ filename_lpool_station_undirected_line_distribution; "statistic/LPOOL-station-un
 filename_initial_duration_assumption; "timetabling/Initial-duration-assumption-periodic.giv"
 filename_state_config; "basis/State-Config.cnf"
 filename_lc_fixed_lines; "line-planning/Fixed-Lines.lin"
+filename_lc_fixed_line_capacities; "line-planning/Line-Capacities.lin"
+filename_tim_fixed_times; "timetabling/Fixed-timetable-periodic.tim"
+filename_visum_additional_edges_file; "visum.net"
 filename_dm_best_of_all_objectives; "statistic/dm_objectives.sta"
 filename_aperiodic_ean_dot_file; "graphics/Aperiodic-event-activity-network.dot"
 filename_periodic_ean_dot_file; "graphics/Event-activity-network.dot"
 filename_aperiodic_ean_graph_file; "graphics/Aperiodic-event-activity-network.png"
 filename_periodic_ean_graph_file; "graphics/Event-activity-network.png"
+filename_invalid_loads; "statistic/Invalid-Loads.sta"
+filename_objectives_file; "statistic/objectives.sta"
+filename_solver_statistic_file; "statistic/solver_statistic.sta"
+filename_additional_load_file; "basis/Additional-Load.giv"
+filename_station_limit_file; "basis/Station-Limits.giv"
 # ===========================================================================
 # === Stop Location =========================================================
 # ===========================================================================
@@ -170,6 +183,11 @@ sl_deceleration; 0.7
 sl_waiting_time; 0
 sl_destruction_allowed; false
 sl_eval_extended; false
+sl_solver; xpress
+sl_timelimit; -1 # (-1 = no restriction)
+sl_mip_gap; -1 # (-1 = no restriction)
+sl_threads; -1 # (-1 = no restriction)
+sl_write_lp_file; false
 #
 # ===========================================================================
 # === Line Pool Generation ==================================================
@@ -228,6 +246,7 @@ ean_model_headway; "PRODUCT_OF_FREQUENCIES"
 ean_discard_unused_change_activities; false
 # do not modify, is controlled by debug_paths_in_ean
 ean_remember_od_paths; false
+# TODO set this to 0?
 ean_change_penalty; 20
 # =!!!LOCAL_ONLY!!!= # period_length; 60
 # =!!!LOCAL_ONLY!!!= # time_units_per_minute; 1
@@ -236,6 +255,7 @@ ean_change_penalty; 20
 # =!!!LOCAL_ONLY!!!= # ean_default_minimal_change_time; 3
 # =!!!LOCAL_ONLY!!!= # ean_default_maximal_change_time; 62
 # =!!!LOCAL_ONLY!!!= # ean_change_penalty; 15
+ean_individual_station_limits; false
 ean_model_weight_drive; "AVERAGE_DRIVING_TIME"
 # ean_model_weight_drive; "MINIMAL_DRIVING_TIME"
 # ean_model_weight_drive; "MAXIMAL_DRIVING_TIME"
@@ -289,9 +309,11 @@ lc_model; "cost"
 #lc_model; "mult-cost-direct-relax"
 #lc_model; "minchanges_ip"
 #lc_model; "minchanges_cg"
+lc_direct_optimize_costs; false
 lc_number_of_possible_frequencies; 2
-# time limit in seconds (-1 = no timelimit)
-lc_timelimit; -1
+lc_timelimit; -1 # (-1 = no restriction)
+lc_mip_gap; -1 # (-1 = no restriction)
+lc_threads; -1 # (-1 = no restriction)
 lc_respect_fixed_lines; false
 lc_maximal_frequency; 10
 lc_minimal_global_frequency; 0
@@ -313,7 +335,6 @@ lc_traveling_time_cg_add_sol_3; false
 lc_traveling_time_cg_add_sol_3_name; "line-planning/Direct.giv"
 lc_traveling_time_cg_max_iterations; 1000
 lc_traveling_time_cg_termination_value; 0.0001
-lc_traveling_time_cg_weight_change_edge; 40
 lc_traveling_time_cg_weight_od_edge;40
 lc_traveling_time_cg_solve_ip; true
 lc_traveling_time_cg_print_paths; false
@@ -322,15 +343,15 @@ lc_minchanges_nr_ptn_paths; 10
 lc_minchanges_nr_cg_paths_per_ptn_path; 10
 lc_minchanges_cg_var_per_it; 50000
 lc_minchanges_max_reduced_costs_included_IP; 5
-lc_minchanges_xpress_miprelstop; 0.05
 lc_minchanges_xpress_logfile; xpress.log
 lc_minchanges_max_num_edges; 100
 lc_minchanges_pricing_method; "heuristic"
 #lc_minchanges_pricing_method; "exact"
 lc_minchanges_nr_max_changes; 5
 lc_verbose; false
-#lc_solver; "GUROBI"
-lc_solver; "XPRESS"
+lc_solver; "GUROBI"
+#lc_solver; "XPRESS"
+lc_write_lp_file; false
 #
 # -----------------------------------------------------------------------------
 # === TIMETABLE (tim_*) =======================================================
@@ -340,9 +361,13 @@ tim_concept; periodic
 tim_eval_periodic; true
 tim_eval_extended; false
 # tim_solver will affect tim_model javatools only
-tim_solver; "xpress"
+#tim_solver; "xpress"
 #tim_solver; "cplex"
-#tim_solver; "gurobi"
+tim_solver; "gurobi"
+tim_timelimit; -1 # (-1 = no restriction)
+tim_mip_gap; -1 # (-1 = no restriction)
+tim_write_lp_file; false
+tim_threads; -1 # (-1 = no restriction)
 # tim_linear_model will affect tim_model javatools only
 # Only tim_model; "javatools" has support for selecting the linear model
 # cpf: javatools default. Support for cplex, gurobi and xpress
@@ -355,8 +380,8 @@ tim_cyclebase_model; "unexplored_vertices"
 #tim_cyclebase_model; "msf_fundamental_improvement"
 #tim_model; "ns_improve"
 #tim_model; "con_prop"
-#tim_model; "csp"
-#tim_model; "csp_ns"
+#tim_model; "csp" # Currently not in the release version
+#tim_model; "csp_ns" # Currently not in the release version
 #tim_model; "javatools"
 #tim_model; "con_ns"
 #tim_model; "matching"
@@ -366,6 +391,7 @@ tim_model; MATCH
 tim_passenger_threshold; 1.0
 tim_use_old_solution; false
 tim_fix_old_modulo; false
+tim_respect_fixed_times; false
 match-weight; "w3"
 #match-weight; "w1"
 #match-weight; "w2"
@@ -399,11 +425,15 @@ tim_nws_tab_search; "TAB_PERCENTAGE"
 # parameters
 tim_nws_ts_memory; 40
 tim_nws_ts_max_iterations; 150
+tim_nws_pivot_count_max_iterations; 100
+tim_nws_loc_number_of_nodes; 10
 tim_nws_sa_init; 50000
 tim_nws_sa_cooldown; 0.95
 tim_nws_percentage; 80
 tim_nws_min_pivot; 0.1
 tim_nws_dyn_pivot; 0.5
+# gurobi thread = 0 means gurobi can use all cores
+tim_nws_gurobi_threads; 1
 # random seed = 0 means no given seed.
 tim_nws_seed; 0
 #maximum iteration number = 0 means no limit.
@@ -429,9 +459,12 @@ tim_cp_time_limit; 0
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # === PESP IP (tim_pesp_ip_*) -------------------------------------------------
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-tim_pesp_ip_gap; 0
-# in seconds. time limit = 0 means no given limit.
-tim_pesp_ip_timelimit; 0
+# only implemented for gurobi
+tim_pesp_ip_solution_limit; 0
+# only implemented for gurobi
+tim_pesp_ip_best_bound_stop; 0
+# see gurobi MIPFocus
+tim_pesp_ip_mip_focus; 0
 #
 # -----------------------------------------------------------------------------
 # === LOAD GENERATOR (load_generator_*) =======================================
@@ -451,6 +484,7 @@ load_generator_max_iteration; 10
 load_generator_scaling_factor; 50
 load_generator_use_cg; false
 load_generator_min_change_time_factor; 4
+load_generator_add_additional_load; false
 #
 # -----------------------------------------------------------------------------
 # === LINE POOL GENERATOR (lpool_*) ===========================================
@@ -478,7 +512,11 @@ rob_buffer_generator; "exponential"
 #rob_buffer_generator; "uniform-random"
 #rob_buffer_generator; "exceed-random"
 #rob_buffer_generator; "proportional"
+#rob_buffer_generator; "proportional-restricted"
 rob_average_buffer_on_activity; 1
+rob_proportional_drive_activity_buffer; 0
+rob_buffer_on_wait_activity; 0
+rob_buffer_on_drive_activity; 0
 rob_relax_upper_bound; 10
 rob_lambda; 1
 rob_max_puffer_exc_rand; 5
@@ -486,6 +524,9 @@ rob_buffer_drive; true
 rob_buffer_wait; true
 # 0 means no seed
 rob_buffer_seed; 0
+rob_buffer_link_list; ""
+rob_buffer_stop_percentage; 0
+rob_buffer_link_percentage; 0
 #
 # -----------------------------------------------------------------------------
 # === ROLLOUT SETTINGS (rollout_*) ============================================
@@ -495,6 +536,15 @@ rollout_whole_trips; false
 rollout_discard_unused_change_edges; true
 rollout_for_nonperiodic_timetabling; false
 rollout_passenger_paths; false
+#
+# -----------------------------------------------------------------------------
+# === Robustness-Check Parameter ==============================================
+# -----------------------------------------------------------------------------
+dm_robustness_iterations; 3
+#How many edges should be delayed
+dm_robustness_treeOnTrack_binomial; 0.5
+#Average deley (in seconds)
+dm_robustness_treeOnTrack_beta; 300
 #
 # -----------------------------------------------------------------------------
 # === DELAY GENERATOR SETTINGS (delays_*) =====================================
@@ -556,13 +606,15 @@ DM_method; "best-of-all"
 #DM_method; "FIXFRFS"
 DM_method_prio_percentage; 100
 DM_opt_method_for_heuristic; "DM2"
-# time limit for MIP solver in seconds - 0 does mean no time limit at all
-DM_solver_time_limit; 0
+DM_timelimit; -1 # (-1 = no restriction)
+DM_threads; -1 # (-1 = no restriction)
+DM_write_lp_file; false
+DM_mip_gap; -1 # (-1 = no restriction)
 DM_debug; false
 DM_verbose; true
 DM_enable_consistency_checks; true
-DM_solver; "Xpress"
-#DM_solver; "Gurobi"
+#DM_solver; "Xpress"
+DM_solver; "Gurobi"
 # parameters for propagate method (no optimization)
 DM_propagate_maxwait; 300
 DM_propagate_swapHeadways; true
@@ -610,25 +662,99 @@ plot_delays_passengers; true
 #vs_model; ASSIGNMENT_MODEL
 #vs_model; TRANSPORTATION_MODEL
 #vs_model; NETWORK_FLOW_MODEL
-vs_model; CANAL_MODEL
+#vs_model; CANAL_MODEL
 #vs_model; LINE_BASED
 #vs_model; SIMPLE
-#vs_model; IP
+vs_model; IP
 vs_solver; GUROBI
-vs_timelimit; -1
+vs_timelimit; -1 # (-1 = no restriction)
+vs_mip_gap; -1 # (-1 = no restriction)
+vs_threads; -1 # (-1 = no restriction)
+vs_write_lp_file; false
 vs_vehicle_costs; 100000
 vs_min_distance; 0
 vs_penalty_costs; 50000
-vs_depot_index; 1
+vs_depot_index; -1
 vs_turn_over_time; 0
 vs_maximum_buffer_time; 20
-vs_verbose; true
 vs_line_based_method; 4
 vs_line_based_alpha; 0.3
+vs_line_based_solve_lp_relax; false
+vs_line_based_regard_frequencies; true
 vs_eval_cost_factor_empty_trips_length; 1.5
 vs_eval_cost_factor_empty_trips_duration; 25
 vs_eval_cost_factor_full_trips_length; 1.5
 vs_eval_cost_factor_full_trips_duration; 25
+#
+# -----------------------------------------------------------------------------
+# === INTEGRATED MODELS =======================================================
+# -----------------------------------------------------------------------------
+# COMMONS
+int_threads; 4
+int_factor_travel_time; 1
+int_factor_drive_time; 0
+int_factor_transfer_time; 0
+int_factor_wait_time; 0
+int_factor_penalty_time_slice; 2
+int_time_slices; 1
+int_number_of_periods; 4
+int_restrict_to_system_frequency; true
+int_system_frequency; 1
+int_check_lower_frequencies; false
+int_check_upper_frequencies; true
+int_set_starting_timetable; false
+int_solver; GUROBI
+# TIM_PASS
+tim_pass_use_preprocessing; true
+tim_pass_use_cycle_base; true
+tim_pass_restrict_transfer_stations; false
+tim_pass_add_fixed_passenger_paths; true
+tim_pass_number_of_routed_od_pairs; -1
+tim_pass_choose_routed_od_pairs; POTENTIAL
+#tim_pass_choose_routed_od_pairs; LARGEST_WEIGHT
+#tim_pass_choose_routed_od_pairs; SMALLEST_WEIGHT
+#tim_pass_choose_routed_od_pairs; LARGEST_WEIGHT_WITH_TRANSFER
+#tim_pass_choose_routed_od_pairs; LARGEST_DISTANCE
+#tim_pass_choose_routed_od_pairs; DIFF
+#tim_pass_choose_routed_od_pairs; RANDOM
+tim_pass_timelimit; 3600
+tim_pass_mip_gap; -1
+tim_pass_write_lp_file; false
+# LIN_TIM_PASS
+lin_tim_pass_use_preprocessing; true
+lin_tim_pass_add_fixed_passenger_paths; true
+lin_tim_pass_number_of_routed_od_pairs; -1
+lin_tim_pass_factor_line_cost; 1
+lin_tim_pass_timelimit; 3600
+lin_tim_pass_mip_gap; -1
+lin_tim_pass_write_lp_file; false
+lin_tim_pass_choose_routed_od_pairs; LARGEST_WEIGHT
+#lin_tim_pass_choose_routed_od_pairs; SMALLEST_WEIGHT
+#lin_tim_pass_choose_routed_od_pairs; LARGEST_DISTANCE
+#lin_tim_pass_choose_routed_od_pairs; RANDOM
+# TIM_VEH
+tim_veh_allow_empty_trips; true
+tim_veh_use_lower_bound; true
+tim_veh_timelimit; 3600
+tim_veh_mip_gap; -1
+tim_veh_write_lp_file; false
+# LIN_TIM_PASS_VEH
+lin_tim_pass_veh_use_preprocessing; true
+lin_tim_pass_veh_add_fixed_passenger_paths; true
+lin_tim_pass_veh_number_of_routed_od_pairs; -1
+lin_tim_pass_veh_timelimit; 3600
+lin_tim_pass_veh_mip_gap; -1
+lin_tim_pass_veh_write_lp_file; false
+lin_tim_pass_veh_allow_empty_trips; true
+lin_tim_pass_veh_choose_routed_od_pairs; LARGEST_WEIGHT
+#lin_tim_pass_veh_choose_routed_od_pairs; SMALLEST_WEIGHT
+#lin_tim_pass_veh_choose_routed_od_pairs; LARGEST_DISTANCE
+#lin_tim_pass_veh_choose_routed_od_pairs; RANDOM
+# Eigenmodel
+# TIM_VEH_TO_LIN
+tim_veh_to_lin_timelimit; 3600
+tim_veh_to_lin_mip_gap; -1
+tim_veh_to_lin_write_lp_file; false
 # -----------------------------------------------------------------------------
 # === GUI SETTINGS ============================================================
 # -----------------------------------------------------------------------------

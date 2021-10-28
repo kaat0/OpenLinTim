@@ -26,7 +26,7 @@ public class EvaluateDM
 
 	public static void main(String[] args) throws Exception
 	{
-		
+
 		readConfig();
 		readEAN();
 		int delayedEvents = 0;
@@ -42,9 +42,9 @@ public class EvaluateDM
 				weightedTotalDelay += delay * e.getWeight();
 			}
 		}
-		
+
 		//Read the number of passengers from the OD-matrix to calculate the average of the objective value
-		
+
 		Scanner od_scanner = new Scanner(new BufferedReader(new FileReader(new File(odFile))));
 		number_of_passengers=0;
 		String od_line;
@@ -62,7 +62,7 @@ public class EvaluateDM
 			number_of_passengers+=Integer.parseInt(values[2].trim());
 		}
 		od_scanner.close();
-		
+
 
 		Statistic s = new Statistic(new File("statistic/statistic.sta"));
 		int missedUsedConnections = 0;
@@ -176,7 +176,7 @@ public class EvaluateDM
 		Net.setZ();
 		Net.setG();
 	}
-	
+
 	private static long evaluatePassengerPaths() throws Exception{
 		Config config = new Config(new File("basis/Config.cnf"));
 		String pathsFileName = config.getStringValue("default_passenger_paths_file");
@@ -205,7 +205,6 @@ public class EvaluateDM
 			values = line.split(";");
 			weight=Integer.parseInt(values[0].trim());
 			weighted_time += events_by_id.get(Integer.parseInt(values[2].trim())).getTime()*weight;
-			number_of_passengers+=weight;
 		}
 		reader.close();
 		System.err.println("Done!");
@@ -215,7 +214,7 @@ public class EvaluateDM
 		System.err.println("Calculated non-delayed time: "+weighted_time);
 		return weighted_delay_time-weighted_time;
 	}
-	
+
 	private static long calculateRealDelay() throws IOException{
 		Config config = new Config(new File("basis/Config.cnf"));
 		String pathsFileName = config.getStringValue("default_passenger_paths_file");
@@ -237,7 +236,7 @@ public class EvaluateDM
 		}
 		System.err.println("Done!");
 		System.err.print("Calculate the real delay of the passengers given the nondelayed paths...");
-		BufferedReader reader = new BufferedReader(new FileReader(pathsFileName));	
+		BufferedReader reader = new BufferedReader(new FileReader(pathsFileName));
 		while((line=reader.readLine())!=null){
 			position = line.indexOf('#');
 			if (position != -1)
@@ -273,7 +272,7 @@ public class EvaluateDM
 		reader.close();
 		return realDelay;
 	}
-	
+
 	private static boolean checkFeasiblity(){
 		int duration;
 		NonPeriodicChangingActivity act_change;
@@ -303,7 +302,7 @@ public class EvaluateDM
 		}
 		return true;
 	}
-	
+
 	private static double calcAverageTravelTime(){
 		double weighted_travel_time=0;
 		for(NonPeriodicActivity act: Net.getActivities()){
@@ -311,5 +310,5 @@ public class EvaluateDM
 		}
 		return weighted_travel_time/number_of_passengers;
 	}
-	
+
 }

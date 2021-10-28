@@ -1,5 +1,7 @@
 package net.lintim.model;
 
+import java.util.Objects;
+
 /**
  */
 public class ChangeAndGoEdge implements Edge<ChangeAndGoNode> {
@@ -7,11 +9,11 @@ public class ChangeAndGoEdge implements Edge<ChangeAndGoNode> {
     public static final int CHANGE_LINK = -1;
 
     private int linkId;
-    private int correspondingPtnLinkId;
-    private double length;
+    private final int correspondingPtnLinkId;
+    private final double length;
     private double load;
-    private ChangeAndGoNode leftNode;
-    private ChangeAndGoNode rightNode;
+    private final ChangeAndGoNode leftNode;
+    private final ChangeAndGoNode rightNode;
 
     /**
      * Create a new change and go link. Links in a change and go network are directed. A change and go link needs a
@@ -83,8 +85,8 @@ public class ChangeAndGoEdge implements Edge<ChangeAndGoNode> {
 
         if (correspondingPtnLinkId != that.correspondingPtnLinkId) return false;
         if (Double.compare(that.length, length) != 0) return false;
-        if (leftNode != null ? !leftNode.equals(that.leftNode) : that.leftNode != null) return false;
-        return rightNode != null ? rightNode.equals(that.rightNode) : that.rightNode == null;
+        if (!Objects.equals(leftNode, that.leftNode)) return false;
+        return Objects.equals(rightNode, that.rightNode);
     }
 
     @Override

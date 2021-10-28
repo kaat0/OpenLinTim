@@ -31,7 +31,7 @@ public class Edge implements Comparable<Edge> {
 		this.lower_frequency_bound = 0;
 		this.upper_frequency_bound = 0;
 	}
-	
+
 
 // Setter---------------------------------------------------------------------------
 
@@ -50,18 +50,18 @@ public class Edge implements Comparable<Edge> {
 	public void setBackward_edge(Edge backward_edge) {
 		this.backward_edge = backward_edge;
 	}
-	
+
 	public void setOriginal_edge(Edge original_edge){
 		this.original_edge=original_edge;
 	}
 
 	public void setLowerFrequencyBound(int bound){
 		this.lower_frequency_bound = bound;
-	}	
+	}
 
 	public void setUpperFrequencyBound(int bound){
 		this.upper_frequency_bound = bound;
-	}	
+	}
 // Getter------------------------------------------------------------------------------
 	public int getIndex() {
 		return index;
@@ -102,29 +102,29 @@ public class Edge implements Comparable<Edge> {
 	public int getUpperFrequencyBound(){
 		return upper_frequency_bound;
 	}
-	
+
 	/**
 	 * Returns an edge which is equal to the backward-edge, if it exists
 	 */
 	public Edge getReverseEdge() {
 		return new Edge(directed, 0, right_stop, left_stop, 0,0,0);
 	}
-	
+
 	public Edge getOriginal_edge(){
 		if(original_edge == null)
 			return this;
 		else
 			return original_edge;
 	}
-	
-	
+
+
 //CompareTo-------------------------------------------------------------------------
 
     @Override
     public int compareTo(Edge o) {
         return index-o.index;
     }
-    
+
 //equals---------------------------------------------------------------------------
     /**
      * Not consistent with compareTo!
@@ -139,9 +139,13 @@ public class Edge implements Comparable<Edge> {
     		return true;
     	return false;
     }
-	
 
-//CSV--------------------------------------------------------------------------------------
+    @Override
+    public int hashCode() {
+        return Objects.hash(left_stop, right_stop);
+    }
+
+    //CSV--------------------------------------------------------------------------------------
 	public static String printHeader() {
 		return "# "+header;
 	}

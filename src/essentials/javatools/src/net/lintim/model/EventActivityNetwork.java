@@ -11,7 +11,7 @@ import net.lintim.model.Activity.ActivityType;
 import net.lintim.model.Event.EventType;
 import net.lintim.util.BiLinkedHashMap;
 import net.lintim.util.MathHelper;
-import net.lintim.util.Pair;
+import net.lintim.util.SinglePair;
 import net.lintim.util.TriLinkedHashMap;
 
 import org.apache.commons.math.util.MathUtils;
@@ -306,15 +306,15 @@ public class EventActivityNetwork {
                         + index + ": not between arrival and departure");
             }
 
-            if (fromStation != toStation) {
-                throw new DataInconsistentException("change activity index "
-                        + index + ": from- and toStation different");
-            }
+//            if (fromStation != toStation) {
+//                throw new DataInconsistentException("change activity index "
+//                        + index + ": from- and toStation different");
+//            }
 
-            if (fromLine == toLine) {
-                throw new DataInconsistentException("change activity index "
-                        + index + ": same line for both events");
-            }
+//            if (fromLine == toLine) {
+//                throw new DataInconsistentException("change activity index "
+//                        + index + ": same line for both events");
+//            }
 
             if (currentActivities != null && modelChange == ModelChange.SIMPLE) {
                 throw new DataInconsistentException(
@@ -381,13 +381,13 @@ public class EventActivityNetwork {
             if (fromLine == null) {
                 Line line1 = eventUndirectedLineMap.get(fromEvent);
                 Line line2 = line1.getUndirectedCounterpart();
-                LinkedList<Pair<Link>> firstLinkPairList =
+                LinkedList<SinglePair<Link>> firstLinkPairList =
                     line1.getAdjacentLinks(fromStation);
-                LinkedList<Pair<Link>> secondLinkPairList =
+                LinkedList<SinglePair<Link>> secondLinkPairList =
                     line2.getAdjacentLinks(fromStation);
 
-                for(Pair<Link> firstLinkPair : firstLinkPairList){
-                    for(Pair<Link> secondLinkPair : secondLinkPairList){
+                for(SinglePair<Link> firstLinkPair : firstLinkPairList){
+                    for(SinglePair<Link> secondLinkPair : secondLinkPairList){
                         if (firstLinkPair.second != null
                                 && toStation == firstLinkPair.second.getToStation()) {
                             fromEvent.setLine(line1);
@@ -422,7 +422,7 @@ public class EventActivityNetwork {
 
             Link link = null;
 
-            for(Pair<Link> possibleLinkPair : fromEvent.getLine().getAdjacentLinks(
+            for(SinglePair<Link> possibleLinkPair : fromEvent.getLine().getAdjacentLinks(
                     fromEvent.getStation())){
 
                 Link possibleLink = possibleLinkPair.second;

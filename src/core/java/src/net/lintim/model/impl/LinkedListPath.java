@@ -222,6 +222,85 @@ public class LinkedListPath<N extends Node, E extends Edge<N>> implements Path<N
     }
 
     @Override
+    public Path<N, E> getSubPath(N start, N end) {
+        Path<N, E> subPath = new LinkedListPath<>(isDirected());
+        if (!this.getNodes().contains(start) || !this.getNodes().contains(end)) {
+            throw new IllegalArgumentException("Range from " + start + " to " + end + " is not part of this path!");
+        }
+        if (start.equals(end)) {
+            return subPath;
+        }
+        boolean insidePath = false;
+        // First the directed case
+        if (isDirected()) {
+            for (E edge : this.getEdges()) {
+                if (edge.getLeftNode().equals(start)) {
+                    insidePath = true;
+                }
+                if (insidePath) {
+                    subPath.addLast(edge);
+                }
+                if (insidePath && edge.getRightNode().equals(end)) {
+                    return subPath;
+                }
+            }
+        }
+        else {
+            // Now for the undirected case, first create the node list
+            List<N> nodeList = new ArrayList<>();
+            for (N node : this.getNodes()) {
+                boolean isStartOrEnd = node.equals(start) || node.equals(end);
+                if (!insidePath && isStartOrEnd) {
+                    insidePath = true;
+                    nodeList.add(node);
+                    continue;
+                }
+                if (insidePath) {
+                    nodeList.add(node);
+                }
+                if (insidePath && isStartOrEnd) {
+                    break;
+                }
+            }
+            if (!(nodeList.contains(start) && nodeList.contains(end))) {
+                // Did not find end of path!
+                throw new IllegalArgumentException("Range from " + start + " to " + end + " is not part of this path!");
+            }
+            insidePath = false;
+            // Now lets search for the path based on the node list
+            subPath = new LinkedListPath<>(isDirected());
+            N startOfPath = nodeList.get(0);
+            N endOfPath = nodeList.get(nodeList.size()-1);
+            for (E edge : this.getEdges()) {
+                // First check if we find the beginning of the undirected path, i.e., the first element of the node list
+                if (!insidePath && (edge.getLeftNode().equals(startOfPath) || edge.getRightNode().equals(startOfPath))) {
+                    insidePath = true;
+                    // Special case: Do we search for the first edge in the path? Then add the edge directly. Otherwise
+                    // the first occurence of startOfPath will be in the edge BEFORE the subpath and we want to skip it
+                    if (startOfPath.equals(getNodes().get(0))) {
+                        subPath.addFirst(edge);
+                        // Next special case: Do we only search for one edge? Then we need to quit immediately, to
+                        // avoid adding the next edge after the subpath as well
+                        if (edge.getLeftNode().equals(endOfPath) || edge.getRightNode().equals(endOfPath)) {
+                            return subPath;
+                        }
+                    }
+                    continue;
+                }
+                // Add every edge inside the path. Afterwards check if we found the end and quit accordingly
+                if (insidePath) {
+                    subPath.addLast(edge);
+                }
+                if (insidePath && (edge.getLeftNode().equals(endOfPath) || edge.getRightNode().equals(endOfPath))) {
+                    return subPath;
+                }
+            }
+        }
+        // Did not find end of path!
+        throw new IllegalArgumentException("Range from " + start + " to " + end + " is not part of this path!");
+    }
+
+    @Override
     public boolean canAppendToStart(E edge) {
         if (edge == null) throw new IllegalArgumentException("null cannot be an edge");
         //We need to handle different cases, depending of the size of the current path

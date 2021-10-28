@@ -18,9 +18,7 @@ public abstract class Solver {
         String solverClassName = getSolverClassName(type);
         try {
             Class<?> solverClass = Class.forName(solverClassName);
-            // newInstance is currently deprecated. In the future, use .getDeclaredConstructor().newInstance() but
-            // we can only use this when dropping support for Java 8.
-            return (Solver) solverClass.newInstance();
+            return (Solver) solverClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             logger.debug("Tried to load class " + solverClassName);
             logger.debug(e.getMessage());

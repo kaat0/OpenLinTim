@@ -37,7 +37,7 @@ public class CsvWriter {
     private static DecimalFormat provideDecimalFormat() {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setDecimalSeparator('.');
-        DecimalFormat result = new DecimalFormat("0.##", symbols);
+        DecimalFormat result = new DecimalFormat("0.#####", symbols);
         result.setRoundingMode(RoundingMode.HALF_UP);
         return result;
     }
@@ -193,7 +193,7 @@ public class CsvWriter {
      */
     public static String shortenDecimalValueForOutput(double value) {
         // See if the number is integer
-        if (Math.abs(value - Math.round(value)) < 0.005) {
+        if (Math.abs(value - Math.round(value)) < 0.000005) {
             return String.valueOf((long) value);
         }
         // It is a double but not integer, lets round to two decimals

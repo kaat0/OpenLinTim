@@ -1,3 +1,5 @@
+import logging
+
 from core.exceptions.exceptions import LinTimException
 from core.exceptions.solver_exceptions import SolverAttributeNotImplementedException, SolverParamNotImplementedException
 from core.solver import generic_solver_interface
@@ -59,8 +61,9 @@ class GurobiLinearExpression(LinearExpression):
 
 class GurobiConstraint(Constraint):
 
-    def __init__(self, constr: Constr):
+    def __init__(self, constr: Constr, lhs: GurobiLinearExpression):
         self._constr = constr
+        self._lhs = lhs
 
     def getName(self) -> str:
         return self._constr.constrname
@@ -73,10 +76,13 @@ class GurobiConstraint(Constraint):
             return ConstraintSense.LESS_EQUAL
         if sense == GRB.EQUAL:
             return ConstraintSense.EQUAL
-        raise Solver
+        raise LinTimException(f"Unknown constraint sense {sense}")
 
     def getRhs(self) -> float:
         return self._constr.rhs
+
+    def getLhs(self) -> LinearExpression:
+        return self._lhs
 
 
 def raise_for_non_gurobi_variable(var: Variable):
@@ -133,7 +139,7 @@ class GurobiModel(generic_solver_interface.Model):
         con_sense = GurobiModel.transform_constraint_sense(sense)
         raise_for_non_gurobi_expression(expression)
         constr = self._model.addConstr(expression._expr, con_sense, rhs, name)
-        return GurobiConstraint(constr)
+        return GurobiConstraint(constr, expression)
 
     @staticmethod
     def transform_constraint_sense(sense: ConstraintSense) -> str:
@@ -195,8 +201,6 @@ class GurobiModel(generic_solver_interface.Model):
     def transform_gurobi_status(self, status: int) -> Status:
         if status == GRB.OPTIMAL:
             return Status.OPTIMAL
-        if status == GRB.INFEASIBLE:
-            return Status.INFEASIBLE
         if self._model.solcount > 0:
             return Status.FEASIBLE
         return Status.INFEASIBLE
@@ -224,6 +228,8 @@ class GurobiModel(generic_solver_interface.Model):
             return self._model.numintvars
         if attribute == IntAttribute.RUNTIME:
             return self._model.runtime
+        if attribute == IntAttribute.NUM_SOLUTIONS:
+            return self._model.solcount
         raise SolverAttributeNotImplementedException(SolverType.GUROBI, attribute.name)
 
     def getDoubleAttribute(self, attribute: DoubleAttribute):

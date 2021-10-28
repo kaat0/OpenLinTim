@@ -18,8 +18,8 @@ fi
 
 SOLVER=$("${config}" -c basis/Config.cnf -s DM_solver -t string -u)
 echo "using solver ${SOLVER} - you can change the solver by setting the variable DM_solver"
-if ! diff -q "${SRC_DIR}"/delay-management/ip-based/"${SOLVER}"/Solve.java "${SRC_DIR}"/delay-management/ip-based/Solve/Solve.java 1>/dev/null; then
-	cp "${SRC_DIR}"/delay-management/ip-based/"${SOLVER}"/Solve.java "${SRC_DIR}"/delay-management/ip-based/Solve/Solve.java
+if ! diff -q "${SRC_DIR}"/delay-management/ip-based/"${SOLVER^^}"/Solve.java "${SRC_DIR}"/delay-management/ip-based/Solve/Solve.java 1>/dev/null; then
+	cp "${SRC_DIR}"/delay-management/ip-based/"${SOLVER^^}"/Solve.java "${SRC_DIR}"/delay-management/ip-based/Solve/Solve.java
 	rm -f "${SRC_DIR}"/delay-management/ip-based/Solve/Solve.class
 	rm -f "${SRC_DIR}"/delay-management/ip-based/Solve/DM.class
 fi

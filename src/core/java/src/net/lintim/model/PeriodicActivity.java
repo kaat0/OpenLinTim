@@ -101,6 +101,15 @@ public class PeriodicActivity implements Edge<PeriodicEvent> {
     }
 
     /**
+     * Set the number of passengers using the activity.
+     *
+     * @param newPassengers the new number of passengers
+     */
+    public void setNumberOfPassengers(double newPassengers) {
+        this.numberOfPassengers = newPassengers;
+    }
+
+    /**
      * Check whether the periodic duration of the activity, i.e., the difference between its start and end time mod
      * periodLength, is feasible,
      * i.e., between the lower and the upper bound of the activity.
@@ -180,8 +189,6 @@ public class PeriodicActivity implements Edge<PeriodicEvent> {
         temp = Double.doubleToLongBits(lowerBound);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(upperBound);
-        result = 31 * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(numberOfPassengers);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
     }
