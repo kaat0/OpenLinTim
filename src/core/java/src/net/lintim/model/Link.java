@@ -84,7 +84,7 @@ public class Link implements Edge<Stop> {
     }
 
     /**
-     * Get the lowerBound of the link, i.e., the minimal time in minutes, a vehicle needs to  traverse the edge.
+     * Get the lowerBound of the link, i.e., the minimal time in time units, a vehicle needs to  traverse the edge.
      *
      * @return the lower bound
      */
@@ -93,7 +93,7 @@ public class Link implements Edge<Stop> {
     }
 
     /**
-     * Get the upperBound of the link, i.e., the maximal time in minutes, a vehicle needs to traverse the edge.
+     * Get the upperBound of the link, i.e., the maximal time in time units, a vehicle needs to traverse the edge.
      *
      * @return the upper bound
      */

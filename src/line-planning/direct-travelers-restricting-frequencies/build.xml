@@ -2,7 +2,8 @@
 <project name="LinTim" default="build-direct-travelers-restricting-frequencies" basedir=".">
 	<property name="target" value="1.8"/>
 	<property name="source" value="1.8"/>
-	<property name="build-dir" value="build" />
+    <property name="build-dir" value="build" />
+    <property name="src-dir" value="src" />
 	<property name="doc-dir" value="docs" />
 	<property name="core-folder" value="../../core/java" />
 	<path id="build-direct-travelers-restricting-frequencies.classpath">
@@ -40,8 +41,7 @@
 	<!-- Solver specific build targets, will only be used if the respective solvers are installed -->
 	<target name="build-with-gurobi" depends="init" if="${gurobi.installed}">
 		<echo>Gurobi installed</echo>
-		<javac includeantruntime="true" debug="true" destdir="${build-dir}" source="${source}" target="${target}">
-			<src path="."/>
+		<javac includeantruntime="true" debug="true" destdir="${build-dir}" srcdir="${src-dir}" source="${source}" target="${target}">
 			<classpath refid="build-direct-travelers-restricting-frequencies.classpath"/>
 		</javac>
 	</target>

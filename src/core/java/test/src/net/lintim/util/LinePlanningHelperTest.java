@@ -13,16 +13,16 @@ import static org.junit.Assert.assertEquals;
 public class LinePlanningHelperTest {
 
     @Test
-    public void testPrimeFactors() {
+    public void testPossibleSystemFrequencies() {
         Set<Integer> result = new HashSet<>();
-        assertEquals("1 has no prime factors", result, LinePlanningHelper.determinePossibleSystemFrequencies(-1, 1));
+        result.add(1);
+        assertEquals("1 has no system frequencies", result, LinePlanningHelper.determinePossibleSystemFrequencies(1, 1));
+        result.clear();
         result.add(2);
-        assertEquals("Can not compute prime factors", result, LinePlanningHelper.determinePossibleSystemFrequencies
+        assertEquals("Can give back a specific frequency", result, LinePlanningHelper.determinePossibleSystemFrequencies
             (2, 60));
-        assertEquals("Can compute prime factors of 16", result, LinePlanningHelper
-            .determinePossibleSystemFrequencies(-1, 16));
-        result.addAll(Arrays.asList(3, 5));
-        assertEquals("Can compute prime factors of 60", result, LinePlanningHelper
+        result.addAll(Arrays.asList(3, 5, 7, 11, 13));
+        assertEquals("Can find all system frequencies", result, LinePlanningHelper
             .determinePossibleSystemFrequencies(-1, 60));
     }
 }

@@ -122,6 +122,10 @@ public class PeriodicEANReader {
             case "\"fix\"":
                 type = EventType.FIX;
                 break;
+            case "virtual":
+            case "\"virtual\"":
+                type = EventType.VIRTUAL;
+                break;
             default:
                 throw new DataIllegalEventTypeException(eventId, args[1]);
 
@@ -227,6 +231,10 @@ public class PeriodicEANReader {
             case "sync":
             case "\"sync\"":
                 type = ActivityType.SYNC;
+                break;
+            case "virtual":
+            case "\"virtual\"":
+                type = ActivityType.VIRTUAL;
                 break;
             default:
                 throw new DataIllegalActivityTypeException(activityId, args[1]);
@@ -505,7 +513,7 @@ public class PeriodicEANReader {
         }
 
         /**
-         * Create a new aperiodic ean reader with the current builder settings
+         * Create a new periodic ean reader with the current builder settings
          * @return the new reader. Use {@link PeriodicEANReader#read()} for the reading process.
          */
         public PeriodicEANReader build() {

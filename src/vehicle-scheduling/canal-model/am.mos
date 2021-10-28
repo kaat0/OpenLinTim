@@ -12,11 +12,21 @@ model "am.mos"
 	! Declare the Variables:
 	declarations
 	NumberOfTrips: integer
+	timelimit: integer
+	threads: integer
+	mipGap: real
+	outputMessages: boolean
+	writeLpFile: boolean
 	end-declarations
 
 	! Import the NumberOfTrips
 	initializations from DATAFILE
 		NumberOfTrips
+		timelimit
+        threads
+        mipGap
+		outputMessages
+		writeLpFile
 	end-initializations
 
 	! Declare the Variables:
@@ -28,7 +38,7 @@ model "am.mos"
 	cv : real ! costs of a single vehicle
 	U: array(Indizes, Indizes) of real ! pure transfer costs
 	C: array(Indizes, Indizes) of real ! overall costs (Edges between incompatible trips get additionally the costs of a single vehicle)
-	! Decision Variables: 
+	! Decision Variables:
 	x: array(Indizes, Indizes) of mpvar
 	end-declarations
 
@@ -60,7 +70,27 @@ model "am.mos"
 	forall(i in Indizes, j in Indizes) do
 		x(i,j) is_binary;
 	end-do
-	
+
+    ! Set solver parameters
+    if timelimit > 0 then
+        setparam("XPRS_MAXTIME", timelimit);
+    end-if
+    if threads > 0 then
+        setparam("XPRS_THREADS", threads);
+    end-if
+    if outputMessages then
+        setparam("XPRS_VERBOSE", true)
+    else
+        setparam("XPRS_VERBOSE", false)
+    end-if
+    if mipGap > 0 then
+        setparam("XPRS_MIPRELSTOP", mipGap)
+    end-if
+    if writeLpFile then
+        exportprob("am.lp")
+    end-if
+
+
 	!Minimization of the costs:
 	minimize(costs);
 
@@ -69,7 +99,7 @@ model "am.mos"
 
 	! Print the Cost-Matrix:
 !	forall(i in Indizes, j in Indizes) writeln(" C(", i, ",", j, ") = ", C(i,j))
-	
+
 	! Print the results:
 !	forall(i in Indizes, j in Indizes) writeln(" x(", i, ",", j, ") = ", getsol(x(i,j)))
 !	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
@@ -88,17 +118,17 @@ model "am.mos"
 	writeln("# remark: a time cycle jump occurs, when a vehicle pauses between to trips untill the next time cycle, e.g. over night")
 	forall(i in Indizes) do
 		forall(j in Indizes | getsol(x(i,j)) = 1) do
-			if (i <> j) then 
+			if (i <> j) then
 				write(i, " ; ", j, " ; ", C(i,j) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
 				if (A(i,j) = 0) then writeln(" ; false")
 					else writeln(" ; true")
 				end-if
-			else 
+			else
 				write(i, " ; ", j, " ; ", C(i,j) / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
 				writeln(" ; true")
 			end-if
 		end-do
 	end-do
-	fclose(F_OUTPUT)	
+	fclose(F_OUTPUT)
 
 end-model

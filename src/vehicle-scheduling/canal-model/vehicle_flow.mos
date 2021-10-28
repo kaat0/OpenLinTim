@@ -16,6 +16,11 @@ model "vehicle_flow.mos"
 	NumberOfCanalEvents: integer
 	NumberOfCanals: integer
 	NumberOfLineTransfers: integer
+	timelimit: integer
+	threads: integer
+	mipGap: real
+	outputMessages: boolean
+	writeLpFile: boolean
 	!Only for the output:
 	NumberOfEvents: integer
 	end-declarations
@@ -27,6 +32,11 @@ model "vehicle_flow.mos"
 		NumberOfCanalEvents
 		NumberOfCanals
 		NumberOfLineTransfers
+		timelimit
+        threads
+        mipGap
+		outputMessages
+		writeLpFile
 		!Only for the output:
 		NumberOfEvents
 	end-initializations
@@ -53,7 +63,7 @@ model "vehicle_flow.mos"
 	TransferEndEvent: array(Indizes) of integer
 	TransferType: array(Indizes) of string
 	TimeOfEvents: array(EventIndizes) of integer
-	! Decision Variables: 
+	! Decision Variables:
 	x: array(Indizes) of mpvar
 	N: array(CanalEventIndizes) of mpvar
 	end-declarations
@@ -79,7 +89,7 @@ model "vehicle_flow.mos"
 	costs:= ((sum(i in Indizes) C(i) * x(i)) + (sum(j in CanalIndizes | CanalExists(j)) cv * N(Jump(j))));
 
 	! Define the constraints:
-	forall (i in LineTransferIndizes) do 
+	forall (i in LineTransferIndizes) do
 		x(i) = 1;
 	end-do
 
@@ -100,6 +110,25 @@ model "vehicle_flow.mos"
 		end-if
 	end-do
 
+    ! Set solver parameters
+    if timelimit > 0 then
+        setparam("XPRS_MAXTIME", timelimit);
+    end-if
+    if threads > 0 then
+        setparam("XPRS_THREADS", threads);
+    end-if
+    if outputMessages then
+        setparam("XPRS_VERBOSE", true)
+    else
+        setparam("XPRS_VERBOSE", false)
+    end-if
+    if mipGap > 0 then
+        setparam("XPRS_MIPRELSTOP", mipGap)
+    end-if
+    if writeLpFile then
+        exportprob("am.lp")
+    end-if
+
 	!Minimization of the costs:
 	minimize(costs);
 
@@ -108,7 +137,7 @@ model "vehicle_flow.mos"
 
 	! Print the Costs:
 !	forall(i in Indizes) writeln(" C(", i, ") = ", C(i))
-	
+
 	! Print the results:
 !	forall(i in Indizes) writeln(" x(", i, ") = ", getsol(x(i)))
 !	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval)
@@ -124,7 +153,7 @@ model "vehicle_flow.mos"
 	writeln("# Number of used vehicles: ", getsol(sum(j in CanalIndizes | CanalExists(j)) N(Jump(j)) + sum(i in Indizes | TransfersWithTimeCycleJump(i)) x(i)))
 	write("# ")
 	print_status
-	
+
 	writeln("# Canals of the model with the events contained in the calculated vehicle flow, format:")
 	writeln("# first line: 'Canal; canal-id', following lines: line i has the format 'id of the ith event of the canal (format 'ID ; time; type')'")
 	k := 1
@@ -144,7 +173,7 @@ model "vehicle_flow.mos"
 						!writeln(AssociatedTransfer(j))
 					end-if
 				end-do
-			else	
+			else
 				forall(j in CanalEventIndizes) do
 					if(getsol(x(AssociatedTransfer(j))) = 1) then
 						if(j > Jump(k) and j <= Jump(i)) then ! FIXME: An dieser Stelle sollte k den Index des vorherigen existierenden
@@ -163,36 +192,36 @@ model "vehicle_flow.mos"
 			end-if
 			k := i;
 		end-if
-	end-do 
+	end-do
 
 !	writeln("# transfers (id ; costs) seperated by ';' (only the transfers, which occur in the calculated vehicle flow)")
 !	forall(i in Indizes) do
-!			if (getsol(x(i)) = 1) then 
+!			if (getsol(x(i)) = 1) then
 !				!write(i, "; ")
 !				write(i, "; ", C(i), "; ")
 !			end-if
 !	end-do
 !	writeln("")
 
-	writeln("#Transfers: (format = ID; startEvent (with format 'ID ; time; type'); endEvent (with format 'ID ; time; type'); costs; timeCycleJump; type)")	
+	writeln("#Transfers: (format = ID; startEvent (with format 'ID ; time; type'); endEvent (with format 'ID ; time; type'); costs; timeCycleJump; type)")
 	forall(i in Indizes) do
 		if (getsol(x(i)) = 1) then
 			write(i, "; ", TransferStartEvent(i), "; ")
-			write(TimeOfEvents(TransferStartEvent(i)), "; ")			
+			write(TimeOfEvents(TransferStartEvent(i)), "; ")
 			write("END", "; ")
-			write(TransferEndEvent(i), "; ") 
+			write(TransferEndEvent(i), "; ")
 			write(TimeOfEvents(TransferEndEvent(i)), "; ")
-			write("START", "; ")			
+			write("START", "; ")
 			write(C(i), "; ", TransfersWithTimeCycleJump(i), "; ", TransferType(i))
-			writeln("")	
-			!write(i, "; ", TransferStartEvent(i), EventType(TransferStartEvent(i)), TransferEndEvent(i), EventType(TransferEndEvent(i)), C(i), TransfersWithTimeCycleJump(i)) 	
+			writeln("")
+			!write(i, "; ", TransferStartEvent(i), EventType(TransferStartEvent(i)), TransferEndEvent(i), EventType(TransferEndEvent(i)), C(i), TransfersWithTimeCycleJump(i))
 		end-if
 	end-do
 
 !	forall(i in Indizes) writeln(" x(", i, ") = ", getsol(x(i)))
 	!writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval / 100) ! The costs have been multiplicated with 100 by calculating the mosel-input
 !	writeln("Zielfunktionswert (entstehende Kosten) = ", getobjval / 1000) ! The costs have been multiplicated with 1000 by calculating the mosel-input
-!	forall(i in CanalEventIndizes) writeln("N(", i, ") = ", getsol(N(i))) 
+!	forall(i in CanalEventIndizes) writeln("N(", i, ") = ", getsol(N(i)))
 !	forall(j in CanalIndizes | CanalExists(j)) writeln(j)
 
 !	forall(j in CanalIndizes | CanalExists(j)) do
@@ -208,6 +237,6 @@ model "vehicle_flow.mos"
 !	end-do
 
 !	writeln("# Number of used vehicles: ", getsol(sum(j in CanalIndizes | CanalExists(j)) N(Jump(j)) + sum(i in Indizes | TransfersWithTimeCycleJump(i)) x(i)))
-	!fclose(F_OUTPUT)	
+	!fclose(F_OUTPUT)
 
 end-model

@@ -8,12 +8,14 @@ ant -q -f ${PROGRAMPATH}/build.xml build-linepool
 
 lpool_model=`"${CONFIGCMD[@]}" -s lpool_model -u`
 
-if [[ ${lpool_model} == tree_based ]]; then
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/lp-helper${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../line-planning/cost-model/cost-model.jar${PATHSEP}${PROGRAMPATH} CreateLinepool ${1}
+CLASSPATH=${CLASSPATH}${PATHSEP}${PROGRAMPATH}/../essentials/lp-helper${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.5.0.jar${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jheaps-0.13.jar${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/build
+
+if [[ ${lpool_model} == tree_based || ${lpool_model} == restricted_line_duration ]]; then
+	java "${JFLAGS[@]}" -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/../line-planning/cost-model/cost-model.jar CreateLinepool ${1}
 elif [[ ${lpool_model} == k_shortest_paths ]]; then
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/lp-helper${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH} CreateLinepoolSP ${1}
-elif [[ ${lpool_model} == restricted_line_duration ]]; then
-	java -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/../essentials/config${PATHSEP}${PROGRAMPATH}/../essentials/lp-helper${PATHSEP}${PROGRAMPATH}/../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../line-planning/cost-model/cost-model.jar${PATHSEP}${PROGRAMPATH} CreateLinepoolDurationRestrictions ${1}
+	java "${JFLAGS[@]}" -cp ${CLASSPATH} CreateLinepoolSP ${1}
+elif [[ ${lpool_model} == terminal-to-terminal ]]; then
+    bash ${PROGRAMPATH}/complete/run.sh $1
 else
 	echo "Error: Invalid lpool_model argument: ${lpool_model}"
 	exit 1

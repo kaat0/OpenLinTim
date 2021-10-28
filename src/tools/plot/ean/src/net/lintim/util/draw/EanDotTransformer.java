@@ -168,6 +168,8 @@ public class EanDotTransformer {
 				return "arr";
 			case DEPARTURE:
 				return "dep";
+			case VIRTUAL:
+				return "vir";
 			default:
 				throw new LinTimException("Ean draw cannot work with event type " + type);
 		}

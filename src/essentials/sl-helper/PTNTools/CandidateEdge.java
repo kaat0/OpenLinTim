@@ -31,7 +31,7 @@ public class CandidateEdge implements Comparable<CandidateEdge> {
 	public void setOriginalEdge(Edge edge){
 		this.original_edge = edge;
 	}
-	
+
 	public void setWeight(double weight){
 		this.weight = weight;
 	}
@@ -56,7 +56,7 @@ public class CandidateEdge implements Comparable<CandidateEdge> {
 	public boolean isDirected() {
 		return directed;
 	}
-	
+
 	public Edge getOriginal_edge(){
 		return original_edge;
 	}
@@ -81,15 +81,15 @@ public class CandidateEdge implements Comparable<CandidateEdge> {
 		else
 			return false;
 	}
-	
-	
+
+
 //CompareTo-------------------------------------------------------------------------
 
    @Override
     public int compareTo(CandidateEdge o) {
         return index-o.index;
     }
-    
+
 //equals---------------------------------------------------------------------------
     /**
      * Not consistent with compareTo!
@@ -104,9 +104,13 @@ public class CandidateEdge implements Comparable<CandidateEdge> {
     		return true;
     	return false;
     }
-	
 
-//CSV--------------------------------------------------------------------------------------
+    @Override
+    public int hashCode() {
+        return Objects.hash(left_candidate, right_candidate);
+    }
+
+    //CSV--------------------------------------------------------------------------------------
 	public static String printHeader() {
 		return "# "+header;
 	}
@@ -120,7 +124,7 @@ public class CandidateEdge implements Comparable<CandidateEdge> {
 	public static void setHeader(String head){
 		header=head;
 	}
-	
-	
+
+
 
 }

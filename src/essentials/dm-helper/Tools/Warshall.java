@@ -8,15 +8,19 @@ public class Warshall {
 	public static boolean isReachable(long[][] m, int i, int j) {
 		return ((i == j) || (((m[i][j / 64] >>> (j % 64)) & 1L) == 1L));
 	}
-	
+
 	public static void setReachable(long[][] m, int i, int j, boolean b) {
 		long mask = 1L << (j % 64);
 		if (b) m[i][j / 64] |= mask;
 		else m[i][j / 64] &= ~mask;
 	}
-	
+
 	public static void applyTransitiveClosure(long[][] m) {
 		int m1 = m.length;
+		if (m1 == 0) {
+		    // We don't have any matrix
+		    return;
+        }
 		int m2 = m[0].length;
 		for (int k = 0; k < m1; k++) {
 			int k1 = k / 64;
@@ -27,8 +31,8 @@ public class Warshall {
 						m[i][j] |= m[k][j];
 		}
 	}
-	
-	
+
+
 	public static void main(String[] args) throws InterruptedException
 	{
 		for (int i = 0; i < 3*64; i++)
@@ -55,10 +59,10 @@ public class Warshall {
 					if (isReachable(m, j, i)) System.out.println("9: " + i + " - " + j + " - " + k);
 					//Thread.sleep(100);
 				}
-				
+
 			}
 		}
 	}
-	
-	
+
+
 }

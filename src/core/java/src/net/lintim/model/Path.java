@@ -140,6 +140,8 @@ public interface Path<N extends Node, E extends Edge<N>> extends Iterable<N>{
         return false;
     }
 
+    Path<N,E> getSubPath(N start, N end);
+
     /**
      * Check, whether this path contains the given edge.
      * @param edge the edge to check

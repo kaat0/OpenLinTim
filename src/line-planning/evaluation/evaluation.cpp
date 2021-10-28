@@ -206,11 +206,11 @@ void evaluation::evaluate()
 
 	feasible_result = feasible();
 
-
 	nr_all_sp_direct_travellers_result = nr_all_sp_direct_travellers();
 	pool_costs_result = pool_costs();
-	if(lc_extended_statistic)
+	if(lc_extended_statistic){
 		nr_of_changes_sp_result = nr_of_changes_sp();
+	}
 	sum_squared_edge_frequencies_result = sum_squared_edge_frequencies();
 
 	//average_frequency_result = average_frequency();
@@ -229,7 +229,6 @@ void evaluation::evaluate()
 
 void evaluation::print_results()
 {
-	std::cout<<"**Lineplanning Evaluation**\n\n";
 
 	std::cout<<"Comments:\n";
 
@@ -674,8 +673,16 @@ int evaluation::nr_all_sp_direct_travellers()
 	int result = 0;
         int linenumber = 0;
 	// Loop over all od-pairs
+	int count = 1;
 	for (OD::iterator it = od_matrix.begin(); it != od_matrix.end(); ++it)
-	{
+	{	
+		if (count % 1000 == 1) {
+			std::cout << "OD pair " << count << " of " << od_matrix.size() << std::endl;
+		}
+		count += 1;
+		if (it->second == 0) {
+			continue;
+		}
 		// Get weight of path
 		double weight = path.get_distance(it->first.first-1, it->first.second-1);
 		bool direct = false;

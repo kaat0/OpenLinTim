@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -5,11 +7,12 @@ import java.io.PrintStream;
 import java.io.IOException;
 
 /**
+ *
  */
 public class Dijkstra {
 
     public static String[][][] allShortestPaths(double[][] cost, int[][] names) {
-        Vector<String[][]> allPaths = new Vector<String[][]>();
+        Vector<String[][]> allPaths = new Vector<>();
         Dijkstra d = new Dijkstra(cost.length, cost, names);
         for (int i = 0; i < cost.length; i++)
             allPaths.add(d.solve(i, null));
@@ -23,15 +26,15 @@ public class Dijkstra {
 
     public static double[][] parseFromFile(String filename, boolean undirected) throws IOException {
         int n_vertices = 0;
-        double[][] cost = new double[0][0];
+        double[][] cost;
         BufferedReader in = new BufferedReader(new FileReader(filename));
         String line;
         while ((line = in.readLine()) != null) {
-            if (line.indexOf("#") > -1)
+            if (line.contains("#"))
                 line = line.substring(0, line.indexOf("#"));
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             line = line.substring(line.indexOf(";") + 1);
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             int v = Integer.parseInt(line.substring(0, line.indexOf(";")).trim());
             if (v > n_vertices) n_vertices = v;
             line = line.substring(line.indexOf(";") + 1);
@@ -47,17 +50,17 @@ public class Dijkstra {
                 cost[i][j] = Double.POSITIVE_INFINITY;
         }
         while ((line = in.readLine()) != null) {
-            if (line.indexOf("#") > -1)
+            if (line.contains("#"))
                 line = line.substring(0, line.indexOf("#"));
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             line = line.substring(line.indexOf(";") + 1);
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             int v1 = Integer.parseInt(line.substring(0, line.indexOf(";")).trim());
             line = line.substring(line.indexOf(";") + 1);
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             int v2 = Integer.parseInt(line.substring(0, line.indexOf(";")).trim());
             line = line.substring(line.indexOf(";") + 1);
-            if (line.indexOf(";") == -1) continue;
+            if (!line.contains(";")) continue;
             cost[v1 - 1][v2 - 1] = Double.parseDouble(line.substring(0, line.indexOf(";")).trim());
             if (undirected) cost[v2 - 1][v1 - 1] = cost[v1 - 1][v2 - 1];
         }
@@ -65,9 +68,9 @@ public class Dijkstra {
         return cost;
     }
 
-    private double[][] cost;
-    private int n_vertices;
-    private int[][] names;
+    private final double[][] cost;
+    private final int n_vertices;
+    private final int[][] names;
 
     public Dijkstra(int n_vertices, double[][] cost, int[][] names) {
         this.cost = cost;
@@ -79,16 +82,16 @@ public class Dijkstra {
 
     public String[][] solve(int initial, PrintStream out) {
         String[][] paths = new String[n_vertices][];
-        double min[] = new double[n_vertices];
-        Vector<String>[] path = new Vector[n_vertices];
-        boolean visited[] = new boolean[n_vertices];
+        double[] min = new double[n_vertices];
+        List<Vector<String>> path = new ArrayList<>(n_vertices);
+        boolean[] visited = new boolean[n_vertices];
         for (int i = 0; i < n_vertices; i++) {
             min[i] = Double.POSITIVE_INFINITY;
-            path[i] = new Vector<String>();
+            path.add(new Vector<>());
         }
         min[initial] = 0;
         //path[initial].add("" + (initial + 1));
-        path[initial].add("-");
+        path.get(initial).add("-");
         int current = initial;
         while (true) {
             visited[current] = true;
@@ -96,12 +99,12 @@ public class Dijkstra {
                 if ((cost[current][i] >= 0) && !visited[i]) {
                     if (cost[current][i] + min[current] < min[i]) {
                         min[i] = cost[current][i] + min[current];
-                        path[i].clear();
+                        path.get(i).clear();
                     }
                     if (cost[current][i] + min[current] == min[i])
-                        for (String s : path[current])
+                        for (String s : path.get(current))
                             //path[i].add(s + "-" + (i + 1));
-                            path[i].add(s + names[current][i] + "-");
+                            path.get(i).add(s + names[current][i] + "-");
                 }
             double least = Double.POSITIVE_INFINITY;
             int k = -1;
@@ -115,9 +118,9 @@ public class Dijkstra {
         }
         for (int i = 0; i < n_vertices; i++) {
             if (out != null)
-                for (String s : path[i])
+                for (String s : path.get(i))
                     out.print((initial + 1) + ";" + (i + 1) + ";" + s + "\n");
-            paths[i] = path[i].toArray(new String[0]);
+            paths[i] = path.get(i).toArray(new String[0]);
         }
         return paths;
     }

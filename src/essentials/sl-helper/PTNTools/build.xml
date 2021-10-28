@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <project name="LinTim-sl-helper" default="build-sl-helper" basedir=".">
-	<property name="enable_debug" value="true"/>
-	<property name="enable_optimize" value="true"/>
-	<target depends="build-sl-helper" name="build-all"/>
-	<target name="build-sl-helper">
+    <include file="../../../base.xml"/>
+    <property name="shortest-path-src" value="../../shortest-paths/src" />
+    <property name="shortest-path" value="../../shortest-paths"/>
+	<target depends="build-shortest-paths,build-sl-helper" name="build-all"/>
+    <target name="build-shortest-paths">
+        <ant target="build" dir="${shortest-path}" inheritAll="false"/>
+    </target>
+	<target name="build-sl-helper" depends="build-shortest-paths">
 		<javac srcdir="."
 		       destdir="."
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true">
-		<compilerarg value="-Xlint"/>
-		</javac>
+               classpath="${jgrapht-jar}:${jheap-jar}:${shortest-path-src}" />
 	</target>
 </project>

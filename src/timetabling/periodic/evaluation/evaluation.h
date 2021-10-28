@@ -145,7 +145,7 @@ public:
 	evaluation();
 	void init(std::string activityfile, std::string eventfile,
 		std::string timetablefile, std::string odfile,
-		int periodvalue, bool eval_extended, int change_penalty);
+		int periodvalue, bool eval_extended, int change_penalty, int capacity);
 	void evaluate();
 	void results_to_statistic(Statistic &);
 	//void eval_robustness(std::string robfile);
@@ -159,6 +159,9 @@ private:
 
     //
     int change_penalty;
+
+    int capacity;
+    double overcrowded_factor;
 
     // calculating the square - always useful
     template<typename T>
@@ -183,6 +186,7 @@ private:
 	double sum_od_pairs();
 	double perceived_traveling_time();
 	double average_travel_time();
+	double overcrowded_time();
 	int number_of_transfers();
 
     // variables storing the results of above procedures
@@ -201,6 +205,8 @@ private:
 	double sum_od_pairs_result;
 	double perceived_traveling_time_result;
 	double average_travel_time_result;
+	double overcrowded_time_result;
+	double perceived_overcrowded_travel_time;
 	//double robustness_result;
 	//shortest_paths path;
 	//shortest_paths path_perceived_traveling_time;

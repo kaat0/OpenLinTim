@@ -1,20 +1,22 @@
 <?xml version="1.0"?>
-<project name="LinTim" default="build-traveling-time" basedir=".">
-	<property name="enable_debug" value="false"/>
-	<property name="enable_optimize" value="true"/>
-	<target name="build-config">
-		<javac srcdir="../../../essentials/config"
-		       destdir="../../../essentials/config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-	<target name="build-traveling-time" depends="build-config">
-		<javac srcdir="."
-		       destdir="."
-		       classpath="../../../essentials/config:../../../essentials/statistic:../../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
+<project name="LinTim" default="build" basedir=".">
+    <include file="../../../base.xml"/>
+    <property name="src-dir" value="src"/>
+    <property name="build-dir" value="build" />
+    <path id="lintim-lineplanning-cost-direct.classpath">
+        <pathelement location="."/>
+        <pathelement location="${core-jar}"/>
+        <pathelement location="${jgrapht-jar}"/>
+        <pathelement location="${jheap-jar}"/>
+    </path>
+    <!-- Create necessary folders -->
+    <target name="init">
+        <mkdir dir="${build-dir}"/>
+    </target>
+	<target name="build" depends="init, base-lintim.build-core">
+		<javac srcdir="${src-dir}"
+		       destdir="${build-dir}" >
+            <classpath refid="lintim-lineplanning-cost-direct.classpath"/>
+        </javac>
 	</target>
 </project>

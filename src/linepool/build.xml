@@ -1,44 +1,26 @@
 <?xml version="1.0"?>
 <project name="LinTim-linepool" default="build-linepool" basedir=".">
-    <property name="target" value="1.8"/>
-    <property name="source" value="1.8"/>
-	<property name="enable_debug" value="true"/>
-	<property name="enable_optimize" value="true"/>
-	<property name="cost-path" value="../line-planning/cost-model" />
-	<property name="cost-jar-name" value="cost-model.jar" />
-	<property name="core-folder" value="../core/java" />
-	<target depends="build-config,build-lp-helper,build-linepool" name="build-all"/>
-	<target name="build-lp-helper">
-		<javac srcdir="../essentials/lp-helper"
-		       destdir="../essentials/lp-helper"
-			   classpath="../../libs/jgrapht/jgrapht-core-1.1.0.jar:../essentials/config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true"
-               source="${source}"
-               target="${target}" />
-	</target>
-	<target name="build-config">
-		<javac srcdir="../essentials/config"
-		       destdir="../essentials/config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true"
-               source="${source}"
-               target="${target}" />
-	</target>
-	<target name="build-linepool" depends="build-config,build-lp-helper,build-cost">
-		<javac srcdir="."
-		       destdir="."
-		       classpath="../essentials/config:../essentials/lp-helper:../../libs/jgrapht/jgrapht-core-1.1.0.jar:${cost-path}/${cost-jar-name}:${core-folder}/lintim-core.jar"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true"
-               source="${source}"
-               target="${target}">
-		</javac>
-	</target>
-	<target name="build-cost">
-		<ant target="build-jar" dir="${cost-path}" usenativebasedir="true" inheritall="false"/>
-	</target>
+    <include file="../base.xml"/>
+    <property name="build-dir" value="build" />
+    <property name="src-dir" value="src" />
+    <property name="cost-path" value="../line-planning/cost-model" />
+    <property name="cost-jar-name" value="cost-model.jar" />
+    <property name="lp-helper-folder" value="../essentials/lp-helper" />
+    <!-- Create necessary folders -->
+    <target name="init">
+        <mkdir dir="${build-dir}"/>
+    </target>
+    <target depends="build-lp-helper,build-linepool,base-lintim.build-core,build-cost" name="build-all"/>
+    <target name="build-linepool" depends="base-lintim.build-core,build-lp-helper,build-cost,init">
+        <javac srcdir="${src-dir}"
+               destdir="${build-dir}"
+               classpath="${lp-helper-folder}:${jgrapht-jar}:${jheap-jar}:${cost-path}/${cost-jar-name}:${core-jar}">
+        </javac>
+    </target>
+    <target name="build-lp-helper">
+        <ant target="build" inheritall="false" dir="${lp-helper-folder}"/>
+    </target>
+    <target name="build-cost">
+        <ant target="build-jar" dir="${cost-path}" usenativebasedir="true" inheritall="false"/>
+    </target>
 </project>

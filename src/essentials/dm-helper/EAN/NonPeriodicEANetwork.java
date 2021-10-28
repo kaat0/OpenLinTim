@@ -3,7 +3,7 @@ import java.util.*;
 
 
 
-public class NonPeriodicEANetwork 
+public class NonPeriodicEANetwork
 {
 	/************************************************************************
 	 * private data fields                                                  *
@@ -235,7 +235,7 @@ public class NonPeriodicEANetwork
 		addActivities(tmp);
 		circulationActivities.addAll(toAdd);
 		niceActivities.addAll(toAdd);
-	}	
+	}
 
 
 
@@ -311,7 +311,7 @@ public class NonPeriodicEANetwork
 	}
 	//**************************************************************************
 
-	// Edited by Robert Wichmann 
+	// Edited by Robert Wichmann
 
 	/*	Funktionen, die folgende Fahr und Wartekante zu einer Kante zurückgeben,
 	 *	Berechnung des Slacks einer Aktivität,
@@ -329,9 +329,9 @@ public class NonPeriodicEANetwork
 		else return list.getFirst();
 	}
 
-	public NonPeriodicActivity getNextWaitingActivity(NonPeriodicActivity a) 
+	public NonPeriodicActivity getNextWaitingActivity(NonPeriodicActivity a)
 	{
-		if (a==null) 
+		if (a==null)
 			return null;
 		LinkedList<NonPeriodicActivity> list = a.getTarget().getOutgoingActivities();
 		list.retainAll(this.getWaitingActivities());
@@ -340,11 +340,11 @@ public class NonPeriodicEANetwork
 		else return list.getFirst();
 	}
 
-	public int getSlack(NonPeriodicActivity a) 
+	public int getSlack(NonPeriodicActivity a)
 	{
 		if (a==null)
 			return 0;
-		return a.getTarget().getDispoTime() - a.getSource().getDispoTime() - a.getLowerBound();	
+		return a.getTarget().getDispoTime() - a.getSource().getDispoTime() - a.getLowerBound();
 	}
 
 	public LinkedList<NonPeriodicActivity> getOutgoingChangingActivities(NonPeriodicEvent e)
@@ -397,7 +397,7 @@ public class NonPeriodicEANetwork
 		/*********************************************************
 		 * check the consistency of each event and each activity *
 		 *********************************************************/
-		
+
 		// check whether each event has at least one incoming or
 		// outgoing activity and if events are consecutively numbered,
 		// starting with 1
@@ -573,7 +573,7 @@ public class NonPeriodicEANetwork
 				NonPeriodicEvent current = toVisit.iterator().next();
 				toVisit.remove(current);
 				visited[current.getID()-1] = true;
-				
+
 				for (NonPeriodicActivity a: current.getOutgoingActivities())
 				{
 					String type = a.getType();
@@ -595,7 +595,7 @@ public class NonPeriodicEANetwork
 		}
 		return false;
 	}
-	
+
 		public boolean containsDispoCircle()
 	{
 		// for each event e, we test if there is a directed path,
@@ -613,7 +613,7 @@ public class NonPeriodicEANetwork
 				NonPeriodicEvent current = toVisit.iterator().next();
 				toVisit.remove(current);
 				visited[current.getID()-1] = true;
-				
+
 				for (NonPeriodicActivity a: current.getOutgoingActivities())
 				{
 					String type = a.getType();
@@ -696,9 +696,9 @@ public class NonPeriodicEANetwork
 			}
 		}
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Returns all events of the desired type at a given station.
 	 * @param station the ID of the station
@@ -714,9 +714,9 @@ public class NonPeriodicEANetwork
 				list.add(e);
 		return list.toArray(new NonPeriodicEvent[0]);
 	}
-	
-	
-	
+
+
+
 	public static LinkedList<NonPeriodicActivity>
 			getPathOnTrip(NonPeriodicEvent source, NonPeriodicEvent destination)
 	{
@@ -727,7 +727,7 @@ public class NonPeriodicEANetwork
 			NonPeriodicActivity next = null;
 			for (NonPeriodicActivity a : source.getOutgoingActivities())
 			{
-				if (a.getTarget() == destination)
+				if (a.getTarget() == destination && !a.getType().equalsIgnoreCase("headway"))
 				{
 					path.add(a);
 					return path;
@@ -746,7 +746,7 @@ public class NonPeriodicEANetwork
 		}
 		return null;
 	}
-	
+
 	public LinkedList<NonPeriodicHeadwayActivity> getHeadwaysOnTrip(NonPeriodicEvent source,
 			NonPeriodicEvent destination){
 		LinkedList<NonPeriodicHeadwayActivity> headways = new LinkedList<NonPeriodicHeadwayActivity>();
@@ -774,7 +774,7 @@ public class NonPeriodicEANetwork
 		}
 		return headways;
 	}
-			
+
 
 
 

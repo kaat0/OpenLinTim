@@ -18,7 +18,7 @@ def construct_cycle_base(nx_ean, tree, left_event_function):
         if tree.has_edge(*nx_cycle_base_edge):
             continue
         cycle = [(nx_cycle_base_edge[2], 1)]
-        if nx_ean.node[nx_cycle_base_edge[0]]['name'] == left_event_function(nx_cycle_base_edge[2]):
+        if nx_ean.nodes[nx_cycle_base_edge[0]]['name'] == left_event_function(nx_cycle_base_edge[2]):
             k = 1
         else:
             k = -1
@@ -26,7 +26,7 @@ def construct_cycle_base(nx_ean, tree, left_event_function):
         for node in nx.shortest_path(tree, nx_cycle_base_edge[0], nx_cycle_base_edge[1]):
             if prev_node != -1:
                 corresponding_edge = [edge for edge in tree[prev_node][node]][0]
-                if nx_ean.node[prev_node]['name'] == left_event_function(corresponding_edge):
+                if nx_ean.nodes[prev_node]['name'] == left_event_function(corresponding_edge):
                     cycle.append((corresponding_edge, -1 * k))
                 else:
                     cycle.append((corresponding_edge, 1 * k))

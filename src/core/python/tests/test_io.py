@@ -6,12 +6,14 @@ import shutil
 import sys
 import unittest
 
+from core.io.additional_load import AdditionalLoadReader
 from core.io.aperiodic_ean import AperiodicEANReader, AperiodicEANWriter
 from core.io.config import ConfigReader
 from core.io.lines import LineReader, LineWriter
 from core.io.od import ODReader, ODWriter
 from core.io.periodic_ean import PeriodicEANReader, PeriodicEANWriter
 from core.io.ptn import PTNReader, PTNWriter
+from core.io.station_limit import StationLimitReader
 from core.io.statistic import StatisticReader, StatisticWriter
 from core.io.trip import TripReader, TripWriter
 from core.io.vehicleSchedule import VehicleScheduleReader, VehicleScheduleWriter
@@ -25,9 +27,11 @@ from core.util.statistic import Statistic
 
 class IOTest(unittest.TestCase):
 
-    input_path = os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__),"resources"), "dataset"))
+    undirected_input_path = os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__), "resources"), "undirected-dataset"))
+    directed_input_path = os.path.abspath(os.path.join(os.path.join(os.path.dirname(__file__), "resources"), "directed-dataset"))
     output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "output"))
-    base_path = os.path.join(input_path, "basis")
+    undirected_base_path = os.path.join(undirected_input_path, "basis")
+    directed_base_path = os.path.join(directed_input_path, "basis")
 
     @staticmethod
     def compare_files(file_name_1: str, file_name_2: str) -> bool:
@@ -56,16 +60,16 @@ class IOTest(unittest.TestCase):
 
     def test_config(self):
         config_path = os.path.abspath(os.path.join(os.path.join(
-            os.path.join(os.path.join(os.path.dirname(__file__),"resources"), "dataset"), "basis"), "Config.cnf"))
+            os.path.join(os.path.join(os.path.dirname(__file__),"resources"), "undirected-dataset"), "basis"), "Config.cnf"))
         config = Config()
         ConfigReader.read(config_path, config=config)
-        self.assertEqual(353, len(config.data))
+        self.assertEqual(448, len(config.data))
 
     def test_ptn(self):
-        stop_path = os.path.join(self.base_path, "Stop.giv")
-        link_path = os.path.join(self.base_path, "Edge.giv")
-        load_path = os.path.join(self.base_path, "Load.giv")
-        headway_path = os.path.join(self.base_path, "Headway.giv")
+        stop_path = os.path.join(self.undirected_base_path, "Stop.giv")
+        link_path = os.path.join(self.undirected_base_path, "Edge.giv")
+        load_path = os.path.join(self.undirected_base_path, "Load.giv")
+        headway_path = os.path.join(self.undirected_base_path, "Headway.giv")
         ptn = PTNReader.read(read_loads=True, read_headways=True, stop_file_name=stop_path, link_file_name=link_path,
                              load_file_name=load_path, headway_file_name=headway_path, directed=False,
                              conversion_factor_coordinates=1, conversion_factor_length=1)
@@ -88,13 +92,33 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(load_path, output_load_path))
         self.assertTrue(IOTest.compare_files(headway_path, output_headway_path))
 
+    def test_reading_directed_ptn(self):
+        stop_path = os.path.join(self.directed_base_path, "Stop.giv")
+        link_path = os.path.join(self.directed_base_path, "Edge.giv")
+        config = ConfigReader.read(os.path.join(self.directed_base_path, "Config.cnf"))
+        ptn = PTNReader.read(stop_file_name=stop_path, link_file_name=link_path, config=config)
+        self.assertTrue(ptn.getEdge(1).isDirected())
+
+    def test_reading_station_limit(self):
+        limits_path = os.path.join(self.undirected_base_path, "Station-Limits.giv")
+        limits = StationLimitReader.read(file_name=limits_path)
+        self.assertEqual(2, len(limits))
+        self.assertEqual(4, limits[1].getMinWaitTime())
+        self.assertEqual(1, limits[6].getMinChangeTime())
+
+    def test_reading_additional_load(self):
+        load_path = os.path.join(self.undirected_base_path, "Additional-Load.giv")
+        loads = AdditionalLoadReader.read(file_name=load_path)
+        self.assertEqual(2, len(loads))
+        self.assertEqual(3, loads[5][5, 6])
+
     def test_od(self):
-        od_path = os.path.join(self.base_path, "OD.giv")
+        od_path = os.path.join(self.undirected_base_path, "OD.giv")
         od = ODReader.read(None, 8, od_path)
         self.assertEqual(2622, od.computeNumberOfPassengers())
         self.assertEqual(46, len(od.getODPairs()))
         self.assertEqual(10, od.getValue(1, 2))
-        stop_path = os.path.join(self.base_path, "Stop.giv")
+        stop_path = os.path.join(self.undirected_base_path, "Stop.giv")
         ptn = PTNReader.read(stop_file_name=stop_path, read_links=False, directed=False,
                              conversion_factor_coordinates=1)
         output_od_path = os.path.join(self.output_path, "OD.giv")
@@ -102,12 +126,12 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(od_path, output_od_path))
 
     def test_line_pool(self):
-        stop_path = os.path.join(self.base_path, "Stop.giv")
-        link_path = os.path.join(self.base_path, "Edge.giv")
+        stop_path = os.path.join(self.undirected_base_path, "Stop.giv")
+        link_path = os.path.join(self.undirected_base_path, "Edge.giv")
         ptn = PTNReader.read(stop_file_name=stop_path, link_file_name=link_path, directed=False,
                              conversion_factor_coordinates=1, conversion_factor_length=1)
-        pool_path = os.path.join(self.base_path, "Pool.giv")
-        cost_path = os.path.join(self.base_path, "Pool-Cost.giv")
+        pool_path = os.path.join(self.undirected_base_path, "Pool.giv")
+        cost_path = os.path.join(self.undirected_base_path, "Pool-Cost.giv")
         pool = LineReader.read(ptn, read_frequencies=False, line_file_name=pool_path, line_cost_file_name=cost_path)
         self.assertEqual(8, len(pool.getLines()))
         self.assertEqual(ptn.getEdge(6), pool.getLine(1).getLinePath().getEdges()[1])
@@ -123,11 +147,11 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(cost_path, output_cost_path))
 
     def test_line_concept(self):
-        stop_path = os.path.join(self.base_path, "Stop.giv")
-        link_path = os.path.join(self.base_path, "Edge.giv")
+        stop_path = os.path.join(self.undirected_base_path, "Stop.giv")
+        link_path = os.path.join(self.undirected_base_path, "Edge.giv")
         ptn = PTNReader.read(stop_file_name=stop_path, link_file_name=link_path, directed=False,
                              conversion_factor_coordinates=1, conversion_factor_length=1)
-        lc_path = os.path.join(os.path.join(self.input_path, "line-planning"), "Line-Concept.lin")
+        lc_path = os.path.join(os.path.join(self.undirected_input_path, "line-planning"), "Line-Concept.lin")
         lc = LineReader.read(ptn, read_costs=False, line_file_name=lc_path)
         self.assertEqual(4, lc.getLine(2).getFrequency())
         self.assertEqual(4, len(lc.getLineConcept()))
@@ -137,9 +161,9 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(lc_path, output_lc_path))
 
     def test_periodic_ean(self):
-        event_path = os.path.join(os.path.join(self.input_path, "timetabling"), "Events-periodic.giv")
-        activity_path = os.path.join(os.path.join(self.input_path, "timetabling"), "Activities-periodic.giv")
-        timetable_path = os.path.join(os.path.join(self.input_path, "timetabling"), "Timetable-periodic.tim")
+        event_path = os.path.join(os.path.join(self.undirected_input_path, "timetabling"), "Events-periodic.giv")
+        activity_path = os.path.join(os.path.join(self.undirected_input_path, "timetabling"), "Activities-periodic.giv")
+        timetable_path = os.path.join(os.path.join(self.undirected_input_path, "timetabling"), "Timetable-periodic.tim")
         ean, timetable = PeriodicEANReader.read(read_timetable=True, event_file_name=event_path,
                                                 activity_file_name=activity_path, timetable_file_name=timetable_path,
                                                 time_units_per_minute=1, period_length=60)
@@ -167,9 +191,9 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(timetable_path, output_timetable_path))
 
     def test_aperiodic_ean(self):
-        event_path = os.path.join(os.path.join(self.input_path, "delay-management"), "Events-expanded.giv")
-        activity_path = os.path.join(os.path.join(self.input_path, "delay-management"), "Activities-expanded.giv")
-        timetable_path = os.path.join(os.path.join(self.input_path, "delay-management"), "Timetable-disposition.tim")
+        event_path = os.path.join(os.path.join(self.undirected_input_path, "delay-management"), "Events-expanded.giv")
+        activity_path = os.path.join(os.path.join(self.undirected_input_path, "delay-management"), "Activities-expanded.giv")
+        timetable_path = os.path.join(os.path.join(self.undirected_input_path, "delay-management"), "Timetable-disposition.tim")
         ean, timetable = AperiodicEANReader.read(event_file_name=event_path, activity_file_name=activity_path,
                                                  time_units_per_minute=1)
         self.assertEqual(652, len(ean.getNodes()))
@@ -204,7 +228,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(timetable_path, output_timetable_path))
 
     def test_statistic(self):
-        statistic_path = os.path.join(os.path.join(self.input_path, "statistic"), "statistic.sta")
+        statistic_path = os.path.join(os.path.join(self.undirected_input_path, "statistic"), "statistic.sta")
         statistic = Statistic()
         StatisticReader.read(statistic=statistic, file_name=statistic_path)
         self.assertEqual(10, len(statistic.getData()))
@@ -214,7 +238,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(statistic_path, output_statistic_path))
 
     def test_trips(self):
-        trip_path = os.path.join(os.path.join(self.input_path, "delay-management"), "Trips.giv")
+        trip_path = os.path.join(os.path.join(self.undirected_input_path, "delay-management"), "Trips.giv")
         trips = TripReader.read(file_name=trip_path)
         self.assertEqual(110, len(trips))
         self.assertEqual(36060, trips[2].getStartTime())
@@ -225,7 +249,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(IOTest.compare_files(trip_path, output_trip_path))
 
     def test_vehicle_schedule(self):
-        vs_path = os.path.join(os.path.join(self.input_path, "vehicle-scheduling"), "Vehicle_Schedules.vs")
+        vs_path = os.path.join(os.path.join(self.undirected_input_path, "vehicle-scheduling"), "Vehicle_Schedules.vs")
         vs = VehicleScheduleReader.read(file_name=vs_path)
         self.assertEqual(6, len(vs.getCirculations()))
         self.assertEqual(1, len(vs.getCirculation(2).getVehicleTourList()))

@@ -53,7 +53,6 @@ public class CsvReader {
             reader.close();
         }
         catch (IOException e){
-            logger.error(e.toString());
             throw new InputFileException(fileName);
         }
     }

@@ -80,6 +80,8 @@ public:
             type = DEPARTURE;
         } else if(args[1].find("fix") != std::string::npos){
             type = FIX;
+        } else if(args[1].find("virtual") != std::string::npos){
+            type = EXT;
         } else{
             throw DataIllegalEventTypeException(eventId, args[1]);
         }
@@ -167,6 +169,8 @@ public:
             type = TURNAROUND;
         } else if(args[1].find("sync") != std::string::npos){
             type = SYNC;
+        } else if(args[1].find("virtual") != std::string::npos){
+            type = VIRTUAL;
         } else{
             throw DataIllegalActivityTypeException(activityId, args[1]);
         }

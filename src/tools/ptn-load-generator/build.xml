@@ -12,7 +12,7 @@
         <pathelement location="."/>
         <pathelement location="${core-folder}/lintim-core.jar"/>
         <pathelement location="${cost-folder}/cost-model.jar"/>
-        <pathelement location="${lib-folder}/jgrapht/jgrapht-core-1.1.0.jar"/>
+        <pathelement location="${lib-folder}/jgrapht/jgrapht-core-1.5.0.jar"/>
     </path>
     <target name="clean">
         <delete>

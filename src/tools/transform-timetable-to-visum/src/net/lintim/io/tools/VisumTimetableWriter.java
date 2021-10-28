@@ -3,19 +3,20 @@ package net.lintim.io.tools;
 import net.lintim.exception.LinTimException;
 import net.lintim.io.CsvWriter;
 import net.lintim.model.*;
+import net.lintim.util.LogLevel;
 import net.lintim.util.tools.PeriodicEanHelper;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Output class for a periodic timetable in visum compatible format.
  */
 public class VisumTimetableWriter {
+
+	private static Logger logger = Logger.getLogger(VisumTimetableWriter.class.getCanonicalName());
 
 	/**
 	 * Write the periodic timetable represented in the given ean to the given file, using the given header. The
@@ -27,18 +28,20 @@ public class VisumTimetableWriter {
 	 * @throws IOException on io error
 	 */
 	public static void writeTimetable(Graph<PeriodicEvent, PeriodicActivity> ean, LinePool lineConcept, String fileName,
-	                                  String header) throws IOException {
+	                                  String header, LinePool fixedLines) throws IOException {
 		CsvWriter writer = new CsvWriter(fileName, header);
-		// First, find all events to consider. We only need to write each line once, therefore we only need the first
-		// line repetitions
 		List<PeriodicEvent> events = new ArrayList<>(ean.getNodes());
+		Set<Integer> fixedLineIds = fixedLines.getLines().stream().map(Line::getId).collect(Collectors.toSet());
+		// Experimentally disable filtering of fixed lines
+		//events = events.stream().filter(e -> !fixedLineIds.contains(e.getLineId())).collect(Collectors.toList());
 		// Sort by line id and direction. First sort by line id, afterwards, sort forward direction to the front
 		events.sort(Comparator.comparingInt(PeriodicEvent::getLineId).thenComparing(PeriodicEvent::getDirection)
 				.thenComparing(PeriodicEvent::getLineFrequencyRepetition));
+		logger.log(LogLevel.DEBUG, "Done sorting events, iterating");
 		while (events.size() > 0) {
 			PeriodicEvent event = events.get(0);
 			// Always look for the forward direction first
-			PeriodicEvent startEvent = PeriodicEanHelper.getStartEventOfLineWithoutFrequency(ean, event);
+			PeriodicEvent startEvent = PeriodicEanHelper.getStartEventOfLineWithFrequency(ean, event);
 			if (startEvent == null) {
 				throw new LinTimException("Could find the start of line " + event.getLineId() + event.getDirection());
 			}

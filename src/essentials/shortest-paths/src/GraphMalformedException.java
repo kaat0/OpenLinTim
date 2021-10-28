@@ -1,6 +1,3 @@
-
-
-@SuppressWarnings("serial")
 public class GraphMalformedException extends Exception {
 
     public GraphMalformedException() {

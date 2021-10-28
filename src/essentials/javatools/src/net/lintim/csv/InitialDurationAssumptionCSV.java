@@ -106,7 +106,9 @@ public class InitialDurationAssumptionCSV {
         fw.write("# activity_index; initial_duration_assumption\n");
 
         for(Activity activity : activities){
-
+            if (activity.getInitialDurationAssumption() == null) {
+                continue;
+            }
             fw.write(activity.getIndex() + "; "
                     + Formatter.format(activity.getInitialDurationAssumption())
                     + "\n");

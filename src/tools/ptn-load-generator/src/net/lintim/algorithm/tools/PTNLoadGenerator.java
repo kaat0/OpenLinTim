@@ -1,123 +1,37 @@
 package net.lintim.algorithm.tools;
 
-import net.lintim.exception.ConfigTypeMismatchException;
-import net.lintim.main.tools.PTNLoadGeneratorMain;
 import net.lintim.model.*;
-import net.lintim.util.Config;
-import net.lintim.util.LogLevel;
+import net.lintim.util.Logger;
+import net.lintim.util.Pair;
+import net.lintim.util.tools.LoadGenerationParameters;
 
 import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Map;
 
 /**
  */
 public class PTNLoadGenerator {
 
-    private static Logger logger = Logger.getLogger("net.lintim.algorithm.tools.PTNLoadGenerator");
-    private static final double EPSILON = 0.01;
+    private static final Logger logger = new Logger(PTNLoadGenerator.class);
     private final Graph<Stop, Link> ptn;
-    private final int K;
     private final OD od;
-    private final int capacity;
     private final LoadRoutingNetwork loadRoutingNetwork;
-    private final int maxIterations;
-    private final double lowerFrequencyFactor;
-    private final double upperFrequencyFactor;
-    private final int fixUpperFrequency;
-    private final boolean useFixUpperFrequency;
-    private final PTNLoadGeneratorMain.PTNLoadGeneratorType generatorType;
-
-    public static class Builder{
-        private Graph<Stop, Link> ptn;
-        private OD od;
-        private LinePool linePool;
-        private Config config;
-
-        public Builder(Graph<Stop, Link> ptn, OD od, LinePool linePool, Config config){
-            this.ptn = ptn;
-            this.od = od;
-            this.linePool = linePool;
-            this.config = config;
-        }
-
-        private static PTNLoadGeneratorMain.PTNLoadGeneratorType parseLoadGeneratorType(String type) {
-            switch (type.toLowerCase()) {
-                case "sp":
-                    return PTNLoadGeneratorMain.PTNLoadGeneratorType.SHORTEST_PATH;
-                case "reward":
-                    return PTNLoadGeneratorMain.PTNLoadGeneratorType.REWARD;
-                case "reduction":
-                    return PTNLoadGeneratorMain.PTNLoadGeneratorType.REDUCTION;
-                case "iterative":
-                    return PTNLoadGeneratorMain.PTNLoadGeneratorType.ITERATIVE;
-                default:
-                    throw new ConfigTypeMismatchException("ptn_load_generator_type", "PTNLoadGeneratorType", type);
-            }
-        }
-
-        public PTNLoadGenerator build(){
-            int K = config.getIntegerValue("load_generator_number_of_shortest_paths");
-            PTNLoadGeneratorMain.PTNLoadGeneratorType loadGeneratorType = parseLoadGeneratorType(config
-                .getStringValue("load_generator_type"));
-            int changePenalty = config.getIntegerValue("ean_change_penalty");
-            int minChangeTime = config.getIntegerValue("ean_default_minimal_change_time");
-            int maxChangeTime = config.getIntegerValue("ean_default_maximal_change_time");
-            double minChangeTimeFactor = config.getDoubleValue("load_generator_min_change_time_factor");
-            boolean iterateWithCg = config.getBooleanValue("load_generator_use_cg");
-            String eanModelWeightDrive = config.getStringValue("ean_model_weight_drive");
-            String eanModelWeightWait = config.getStringValue("ean_model_weight_wait");
-            double costFactor = config.getDoubleValue("load_generator_scaling_factor");
-            int maxIterations = config.getIntegerValue("load_generator_max_iteration");
-            double beta = config.getDoubleValue("load_generator_sp_distribution_factor");
-            int capacity = config.getIntegerValue("gen_passengers_per_vehicle");
-            double lowerFrequencyFactor = config.getDoubleValue("load_generator_lower_frequency_factor");
-            double upperFrequencyFactor = config.getDoubleValue("load_generator_upper_frequency_factor");
-            boolean useFixUpperFrequency = config.getBooleanValue("load_generator_fix_upper_frequency");
-            int fixUpperFrequency = config.getIntegerValue("load_generator_fixed_upper_frequency");
-            return new PTNLoadGenerator(ptn, od, linePool, changePenalty, K, iterateWithCg, eanModelWeightDrive,
-                eanModelWeightWait, loadGeneratorType, costFactor, beta, capacity, maxIterations,
-                lowerFrequencyFactor, useFixUpperFrequency, upperFrequencyFactor, fixUpperFrequency, minChangeTime,
-                maxChangeTime, minChangeTimeFactor);
-        }
-    }
+    private final LoadGenerationParameters parameters;
 
     /**
      * Create a new load generator. The computation can be started afterwards using {@link #computeLoad()}.
      * @param ptn the baseline ptn
      * @param od the od matrix
      * @param linePool the linepool. If no change&go network is used, this may be null
-     * @param changePenalty the change penalty, used in the change&go network
-     * @param K the number of shortest paths to calculate
-     * @param iterateWithCg whether to use a change&go-network
-     * @param eanModelWeightDrive the traveling time model to use for the ptn edges
-     * @param loadGeneratorType the type of load generator to use
-     * @param costFactor the cost factor
-     * @param beta the distribution factor, if multiple shortest paths are used
-     * @param capacity the capacity of a vehicle
-     * @param maxIterations the maximal number of iterations
-     * @param lowerFrequencyFactor the factor to multiply the resulting lower frequencies with
-     * @param useFixUpperFrequency whether to use fixed upper frequencies
-     * @param upperFrequencyFactor the factor to multiply the lower freq. with to get the upper freq.
-     * @param fixUpperFrequency the fixed upper frequency to use
+     * @param additionalLoads the additional load, may be null if not used
+     * @param parameters the parameters for the algorithm
      */
-    private PTNLoadGenerator(Graph<Stop, Link> ptn, OD od, LinePool linePool, int changePenalty, int K, boolean
-        iterateWithCg, String eanModelWeightDrive, String eanModelWeightWait, PTNLoadGeneratorMain
-        .PTNLoadGeneratorType loadGeneratorType, double costFactor, double beta, int capacity, int maxIterations,
-                             double lowerFrequencyFactor, boolean useFixUpperFrequency, double upperFrequencyFactor,
-                             int fixUpperFrequency, int minChangeTime, int maxChangeTime, double minChangeTimeFactor) {
-        this.K = K;
+    public PTNLoadGenerator(Graph<Stop, Link> ptn, OD od, LinePool linePool,
+                            Map<Integer, Map<Pair<Integer, Integer>, Double>> additionalLoads, LoadGenerationParameters parameters) {
         this.ptn = ptn;
         this.od = od;
-        this.capacity = capacity;
-        this.maxIterations = maxIterations;
-        this.lowerFrequencyFactor = lowerFrequencyFactor;
-        this.upperFrequencyFactor = upperFrequencyFactor;
-        this.useFixUpperFrequency = useFixUpperFrequency;
-        this.fixUpperFrequency = fixUpperFrequency;
-        this.generatorType = loadGeneratorType;
-        this.loadRoutingNetwork = new LoadRoutingNetwork(ptn, od, linePool, eanModelWeightDrive,
-            eanModelWeightWait, loadGeneratorType,
-            costFactor, iterateWithCg, beta, capacity, changePenalty, minChangeTime, maxChangeTime, minChangeTimeFactor);
+        this.parameters = parameters;
+        this.loadRoutingNetwork = new LoadRoutingNetwork(ptn, od, linePool, additionalLoads, parameters);
     }
 
     /**
@@ -128,7 +42,7 @@ public class PTNLoadGenerator {
         for (Link link : ptn.getEdges()) {
             link.setLoad(0);
         }
-        switch (generatorType) {
+        switch (parameters.getLoadGeneratorType()) {
             case REDUCTION:
                 computeReductionLoad();
                 break;
@@ -148,15 +62,15 @@ public class PTNLoadGenerator {
     private void computeReductionLoad() {
         iterateLoadCalculation();
         long unusedLinks = ptn.getEdges().stream().filter(link -> link.getLoad() == 0).count();
-        logger.log(LogLevel.DEBUG, "Reduced ptn network by " + unusedLinks + " links");
-        logger.log(LogLevel.DEBUG, "Unused edges are:");
-        ptn.getEdges().stream().filter(link -> link.getLoad() == 0).forEach(link -> logger.log(LogLevel.DEBUG, link
+        logger.debug("Reduced ptn network by " + unusedLinks + " links");
+        logger.debug("Unused edges are:");
+        ptn.getEdges().stream().filter(link -> link.getLoad() == 0).forEach(link -> logger.debug(link
             .toString()));
-        loadRoutingNetwork.computeNewShortestPathRerouteReduction(K);
+        loadRoutingNetwork.computeNewShortestPathRerouteReduction();
     }
 
     private void computeShortestPathLoad() {
-        loadRoutingNetwork.computeNewShortestPaths(K);
+        loadRoutingNetwork.computeNewShortestPaths();
     }
 
     private void computeShortestPathRewardLoad() {
@@ -166,13 +80,13 @@ public class PTNLoadGenerator {
 
     private void iterateLoadCalculation() {
         HashMap<Link, Double> lastLoad = getLoadInformation(ptn);
-        for (int iteration = 1; iteration <= maxIterations; iteration++) {
-            logger.log(LogLevel.DEBUG, "Iteration " + iteration);
-            loadRoutingNetwork.computeNewShortestPaths(K);
+        for (int iteration = 1; iteration <= parameters.getMaxIterations(); iteration++) {
+            logger.debug("Iteration " + iteration);
+            loadRoutingNetwork.computeNewShortestPaths();
             HashMap<Link, Double> currentLoad = getLoadInformation(ptn);
             double loadDifference = computeLoadDifference(currentLoad, lastLoad);
-            if (loadDifference < EPSILON) {
-                logger.log(LogLevel.DEBUG, "End in iteration " + iteration);
+            if (loadDifference < LoadGenerationParameters.getEpsilon()) {
+                logger.debug("End in iteration " + iteration);
                 break;
             }
             lastLoad = currentLoad;
@@ -181,8 +95,8 @@ public class PTNLoadGenerator {
 
     private void iterateLoadCalculationPerPassenger() {
         HashMap<Link, Double> lastLoad = getLoadInformation(ptn);
-        for (int iteration = 1; iteration <= maxIterations; iteration++) {
-            logger.log(LogLevel.DEBUG, "Iteration " + iteration);
+        for (int iteration = 1; iteration <= parameters.getMaxIterations(); iteration++) {
+            logger.debug("Iteration " + iteration);
             for(Stop origin: ptn.getNodes()){
                 for(Stop destination: ptn.getNodes()){
                     double odValue = od.getValue(origin.getId(), destination.getId());
@@ -195,8 +109,8 @@ public class PTNLoadGenerator {
             loadRoutingNetwork.distributeLoad();
             HashMap<Link, Double> currentLoad = getLoadInformation(ptn);
             double loadDifference = computeLoadDifference(lastLoad, currentLoad);
-            if(loadDifference < EPSILON){
-                logger.log(LogLevel.DEBUG, "End in iteration " + iteration);
+            if(loadDifference < LoadGenerationParameters.getEpsilon()){
+                logger.debug("End in iteration " + iteration);
                 break;
             }
             lastLoad = currentLoad;
@@ -205,12 +119,14 @@ public class PTNLoadGenerator {
 
     private void computeLowerAndUpperBounds() {
         for (Link link : ptn.getEdges()) {
-            double lowerFrequency = link.getLoad() / capacity;
-            link.setLowerFrequencyBound((int) Math.ceil(lowerFrequencyFactor * lowerFrequency));
-            if (useFixUpperFrequency) {
-                link.setUpperFrequencyBound(fixUpperFrequency);
+            int lowerFrequency = (int) Math.ceil(parameters.getLowerFrequencyFactor() *link.getLoad() / parameters.getCapacity());
+            link.setLowerFrequencyBound(lowerFrequency);
+            if (parameters.useFixUpperFrequency()) {
+                link.setUpperFrequencyBound(parameters.getFixUpperFrequency());
             } else {
-                link.setUpperFrequencyBound((int) (upperFrequencyFactor * lowerFrequency));
+                // When computing the upper frequency based on a factor, never set it lower than the lower frequency
+                int upperFrequency = (int) Math.max(link.getLowerFrequencyBound(), parameters.getUpperFrequencyFactor() * lowerFrequency);
+                link.setUpperFrequencyBound(upperFrequency);
             }
         }
     }

@@ -2,54 +2,46 @@ package net.lintim.model.vehiclescheduling;
 
 import java.util.Objects;
 
-public class CJourney
-{
-	int ID;
-	private int startStation;
-	private int endStation;
+public class CJourney {
+    int ID;
+    private int startStation;
+    private int endStation;
 
-	/*************************************************************************
-  	* constructor                                                            *
- 	**************************************************************************/
+    /*************************************************************************
+     * constructor                                                            *
+     **************************************************************************/
 
-	public CJourney()
-	{
-	}
+    public CJourney() {
+    }
 
-	/************************************************************************
-  	*  getter/setter                                                        *
- 	*************************************************************************/
+    /************************************************************************
+     *  getter/setter                                                        *
+     *************************************************************************/
 
-	public int getID()
-	{
-		return this.ID;
-	}
+    public int getID() {
+        return this.ID;
+    }
 
-	public String getIDString() {
-	    return "" + ID;
-	}
+    public String getIDString() {
+        return "" + ID;
+    }
 
-	public int getStartStation()
-	{
-		return this.startStation;
-	}
+    public int getStartStation() {
+        return this.startStation;
+    }
 
-	public void setStartStation(int startStation)
-	{
-		this.startStation = startStation;
-	}
+    public void setStartStation(int startStation) {
+        this.startStation = startStation;
+    }
 
 
+    public int getEndStation() {
+        return this.endStation;
+    }
 
-	public int getEndStation()
-	{
-		return this.endStation;
-	}
-
-	public void setEndStation(int endStation)
-	{
-		this.endStation = endStation;
-	}
+    public void setEndStation(int endStation) {
+        this.endStation = endStation;
+    }
 
     @Override
     public boolean equals(Object o) {

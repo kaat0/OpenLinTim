@@ -51,4 +51,19 @@ public class CplexConstraint implements Constraint {
             throw new SolverCplexException(e.getMessage());
         }
     }
+
+    @Override
+    public void setRhs(double value) {
+        try {
+            if(getSense() == ConstraintSense.GREATER_EQUAL) {
+                constr.setLB(value);
+            }
+            else {
+                constr.setUB(value);
+            }
+        } catch (IloException e) {
+            throw new SolverCplexException(e.getMessage());
+        }
+
+    }
 }

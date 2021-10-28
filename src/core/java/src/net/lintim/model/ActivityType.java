@@ -9,7 +9,8 @@ public enum ActivityType {
     CHANGE("\"change\""),
     TURNAROUND("\"turnaround\""),
     HEADWAY("\"headway\""),
-    SYNC("\"sync\"");
+    SYNC("\"sync\""),
+    VIRTUAL("\"virtual\"");
 
     private String representation;
 

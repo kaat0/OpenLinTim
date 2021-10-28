@@ -86,7 +86,7 @@ public class LinePoolCostCSV {
                         System.err.println("Warning: line " + line.getIndex() +
                                 " length differs by " + (length - line.getLength())
                                 + " from sum of edge lengths");
-
+                        line.setLength(length);
 //						throw new DataInconsistentException("line length " +
 //								"does not match");
                     }

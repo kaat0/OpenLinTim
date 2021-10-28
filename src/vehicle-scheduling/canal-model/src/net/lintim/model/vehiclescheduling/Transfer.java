@@ -1,46 +1,39 @@
 package net.lintim.model.vehiclescheduling;
 
-public class Transfer
-{
+public class Transfer {
     private final int firstTripID;
-	private final int secondTripID;
-	private final boolean timeCycleJump;
+    private final int secondTripID;
+    private final boolean timeCycleJump;
 
-	/*************************************************************************
-  	* constructor                                                            *
- 	**************************************************************************/
+    /*************************************************************************
+     * constructor                                                            *
+     **************************************************************************/
 
-	public Transfer(int firstTripID, int secondTripID)
-	{
+    public Transfer(int firstTripID, int secondTripID) {
         this(firstTripID, secondTripID, false);
-	}
+    }
 
-	public Transfer(int firstTripID, int secondTripID, boolean timeCycleJump)
-	{
+    public Transfer(int firstTripID, int secondTripID, boolean timeCycleJump) {
         this.firstTripID = firstTripID;
-		this.secondTripID = secondTripID;
-		this.timeCycleJump = timeCycleJump;
-	}
+        this.secondTripID = secondTripID;
+        this.timeCycleJump = timeCycleJump;
+    }
 
 
+    /************************************************************************
+     *  getter/setter                                                        *
+     *************************************************************************/
 
-	/************************************************************************
-  	*  getter/setter                                                        *
- 	*************************************************************************/
+    public int getFirstTripID() {
+        return this.firstTripID;
+    }
 
-	public int getFirstTripID()
-	{
-		return this.firstTripID;
-	}
+    public int getSecondTripID() {
+        return this.secondTripID;
+    }
 
-	public int getSecondTripID()
-	{
-		return this.secondTripID;
-	}
-
-	public boolean getValueTimeCycleJump()
-	{
-		return this.timeCycleJump;
-	}
+    public boolean getValueTimeCycleJump() {
+        return this.timeCycleJump;
+    }
 
 }

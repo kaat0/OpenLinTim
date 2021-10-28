@@ -2,11 +2,12 @@
 
 ## Version
 
-1.1.0
+1.5.0
 
 ## Filename
 
-jgrapht-core-1.1.0.jar
+jgrapht-core-1.5.0.jar
+jheaps-0.13.jar
 
 ## Project Homepage
 
@@ -16,4 +17,3 @@ https://jgrapht.org/
 
 - ptn load generator (/src/tools/ptn-load-generator)
 - shortest path essentials library (/src/essentials/shortest-paths)
-- javatools (/src/essentials/javatools)

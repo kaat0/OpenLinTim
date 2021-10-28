@@ -12,11 +12,21 @@ model "mdm1.mos"
 	! Declare the Variables:
 	declarations
 	NumberOfTrips: integer
+	timelimit: integer
+	threads: integer
+	mipGap: real
+	outputMessages: boolean
+	writeLpFile: boolean
 	end-declarations
 
 	! Import the NumberOfTrips
 	initializations from DATAFILE
 		NumberOfTrips
+		timelimit
+        threads
+        mipGap
+		outputMessages
+		writeLpFile
 	end-initializations
 
 	declarations
@@ -56,6 +66,25 @@ model "mdm1.mos"
 		x(i,j) is_integer;
 		x(i,j) >= 0;
 	end-do
+
+    ! Set solver parameters
+    if timelimit > 0 then
+        setparam("XPRS_MAXTIME", timelimit);
+    end-if
+    if threads > 0 then
+        setparam("XPRS_THREADS", threads);
+    end-if
+    if outputMessages then
+        setparam("XPRS_VERBOSE", true)
+    else
+        setparam("XPRS_VERBOSE", false)
+    end-if
+    if mipGap > 0 then
+        setparam("XPRS_MIPRELSTOP", mipGap)
+    end-if
+    if writeLpFile then
+        exportprob("am.lp")
+    end-if
 
 	! Maximization:
 	maximize(NumberOfUnusedVehicles);

@@ -121,7 +121,11 @@ public interface Model {
         /**
          * The number of binary variables in the model
          */
-        NUM_BIN_VARIABLES
+        NUM_BIN_VARIABLES,
+        /**
+         * The number of feasible solutions
+         */
+        NUM_SOLUTIONS
     }
 
     /**
@@ -212,6 +216,10 @@ public interface Model {
          * The desired output level of the solver. Use the values of {@link LogLevel}.
          */
         OUTPUT_LEVEL,
+        /**
+         * The number of threads the solver is allowed to use. Use -1 for no restriction.
+         */
+        THREAD_LIMIT,
     }
 
     /**

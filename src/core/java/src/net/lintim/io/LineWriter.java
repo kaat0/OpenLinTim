@@ -206,7 +206,7 @@ public class LineWriter {
 
         /**
          * Create a new line writer with the current builder settings
-         * @return the new writer. Use {@link #write()} for the writing process.
+         * @return the new writer. Use {@link LineWriter#write()} for the writing process.
          */
         public LineWriter build() {
             return new LineWriter(this);

@@ -51,12 +51,14 @@ public interface MapData {
      * exception may depend on the implementation
      */
     default boolean getBooleanValue(String key) {
-        String value = getStringValue(key);
-        try {
-            return Boolean.parseBoolean(value);
-        } catch (NumberFormatException e) {
-            throw new MapDataTypeMismatchException(key, "boolean", value);
+        String value = getStringValue(key).toLowerCase();
+        if (value.equals("true")) {
+            return true;
         }
+        if (value.equals("false")) {
+            return false;
+        }
+        throw new MapDataTypeMismatchException(key, "boolean", value);
     }
     /**
      * Get the long value associated with the given key

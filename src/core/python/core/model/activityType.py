@@ -11,3 +11,4 @@ class ActivityType(Enum):
     TURNAROUND = "\"turnaround\""
     HEADWAY = "\"headway\""
     SYNC = "\"sync\""
+    VIRTUAL = "\"virtual\""

@@ -1,14 +1,12 @@
 package net.lintim.util.vehiclescheduling;
 
+import net.lintim.solver.SolverParameters;
 import net.lintim.util.Config;
-import net.lintim.util.SolverType;
-
-import java.util.logging.Level;
 
 import static net.lintim.util.vehiclescheduling.Constants.MINUTES_PER_HOUR;
 import static net.lintim.util.vehiclescheduling.Constants.SECONDS_PER_MINUTE;
 
-public class Parameters {
+public class Parameters extends SolverParameters {
 
     private final int depotIndex;
     private final double factorLength;
@@ -17,15 +15,14 @@ public class Parameters {
     private final int timeUnitsPerMinute;
     private final int turnoverTime;
     private final boolean useDepot;
-    private final int timeLimit;
-    private final Level logLevel;
-    private final SolverType solverType;
 
     /**
      * Create a new parameter class that reads all necessary info from the config
+     *
      * @param config the config to read from
      */
     public Parameters(Config config) {
+        super(config, "vs_");
         factorLength = config.getDoubleValue("vs_eval_cost_factor_empty_trips_length");
         factorTime = config.getDoubleValue("vs_eval_cost_factor_empty_trips_duration") / MINUTES_PER_HOUR / SECONDS_PER_MINUTE;
         vehicleCost = config.getDoubleValue("vs_vehicle_costs");
@@ -34,21 +31,10 @@ public class Parameters {
         // Convert turnoverTime from time units to minutes
         turnoverTime = config.getIntegerValue("vs_turn_over_time") * SECONDS_PER_MINUTE / timeUnitsPerMinute;
         useDepot = depotIndex != -1;
-        timeLimit = config.getIntegerValue("vs_timelimit");
-        logLevel = config.getLogLevel("console_log_level");
-        solverType = Config.getSolverTypeStatic("vs_solver");
     }
 
     public boolean useDepot() {
         return useDepot;
-    }
-
-    public int getTimeLimit() {
-        return timeLimit;
-    }
-
-    public Level getLogLevel() {
-        return logLevel;
     }
 
     public int getDepotIndex() {
@@ -69,10 +55,6 @@ public class Parameters {
 
     public int getTurnoverTime() {
         return turnoverTime;
-    }
-
-    public SolverType getSolverType() {
-        return solverType;
     }
 
     public int getTimeUnitsPerMinute() {

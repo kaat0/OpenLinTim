@@ -1,3 +1,5 @@
+from typing import List
+
 from core.exceptions.data_exceptions import DataIndexNotFoundException
 from core.exceptions.input_exceptions import InputFormatException, InputTypeInconsistencyException
 from core.exceptions.graph_exceptions import GraphEdgeIdMultiplyAssignedException, GraphIncidentNodeNotFoundException, \
@@ -16,7 +18,8 @@ class PTNReader:
     """
 
     def __init__(self, stop_file_name: str, link_file_name: str, ptn: Graph[Stop, Link], directed: bool,
-                 load_file_name: str=None, headway_file_name: str=None, conversion_length_factor: float = 1):
+                 load_file_name: str, headway_file_name: str, conversion_factor_length: float,
+                 conversion_factor_coordinates: float):
         """
         Initialize a new PTN reader with the source files that should be read. The names of the files given here have no
         influence on the read files, but will be used for error handling, so be sure to give the same names as in the
@@ -27,7 +30,7 @@ class PTNReader:
         :param directed: whether the ptn should be directed
         :param load_file_name: the name of the load file
         :param headway_file_name: the name of the headway file
-        :param conversion_length_factor: the factor to convert the input edge length into kilometers
+        :param conversion_factor_length: the factor to convert the input edge length into kilometers
         """
         self.stop_file_name = stop_file_name
         self.link_file_name = link_file_name
@@ -35,9 +38,10 @@ class PTNReader:
         self.directed = directed
         self.load_file_name = load_file_name
         self.headway_file_name = headway_file_name
-        self.conversion_factor_length = conversion_length_factor
+        self.conversion_factor_length = conversion_factor_length
+        self.conversion_factor_coordinates = conversion_factor_coordinates
 
-    def process_stop(self, args: [str], line_number: int):
+    def process_stop(self, args: List[str], line_number: int):
         """
         Process the contents of a stop line.
         :param args: the content of the line
@@ -52,17 +56,17 @@ class PTNReader:
         short_name = args[1]
         long_name = args[2]
         try:
-            x_coordinate = float(args[3])
+            x_coordinate = float(args[3]) * self.conversion_factor_coordinates
         except ValueError:
             raise InputTypeInconsistencyException(self.stop_file_name, 4, line_number, "float", args[3])
         try:
-            y_coordinate = float(args[4])
+            y_coordinate = float(args[4]) * self.conversion_factor_coordinates
         except ValueError:
             raise InputTypeInconsistencyException(self.stop_file_name, 5, line_number, "float", args[4])
         if not self.ptn.addNode(Stop(stop_id, short_name, long_name, x_coordinate, y_coordinate)):
             raise GraphNodeIdMultiplyAssignedException(stop_id)
 
-    def process_link(self, args: [str], line_number: int) -> None:
+    def process_link(self, args: List[str], line_number: int) -> None:
         """
         Process the contents of a link line.
         :param args: the content of the line
@@ -106,7 +110,7 @@ class PTNReader:
         if not self.ptn.addEdge(link):
             raise GraphEdgeIdMultiplyAssignedException(link_id)
 
-    def process_load(self, args: [str], line_number: int) -> None:
+    def process_load(self, args: List[str], line_number: int) -> None:
         """
         Process the contents of a load line.
         :param args: the content of the line
@@ -140,7 +144,7 @@ class PTNReader:
         link.setLowerFrequencyBound(lower_frequency_bound)
         link.setUpperFrequencyBound(upper_frequency_bound)
 
-    def process_headway(self, args: [str], line_number: int) -> None:
+    def process_headway(self, args: List[str], line_number: int) -> None:
         """
         Process the contents of a headway line
         :param args: the content of the line
@@ -189,6 +193,8 @@ class PTNReader:
         """
         if not ptn:
             ptn = SimpleDictGraph()
+        if directed is None:
+            directed = not config.getBooleanValue("ptn_is_undirected")
         if read_stops:
             if not stop_file_name:
                 stop_file_name = config.getStringValue("default_stops_file")
@@ -199,12 +205,14 @@ class PTNReader:
                 link_file_name = config.getStringValue("default_edges_file")
             if not conversion_factor_length:
                 conversion_factor_length = config.getDoubleValue("gen_conversion_length")
+            if directed is None:
+                directed = not config.getBooleanValue("ptn_is_undirected")
         if read_loads and not load_file_name:
             load_file_name = config.getStringValue("default_loads_file")
         if read_headways and not headway_file_name:
             headway_file_name = config.getStringValue("default_headways_file")
         reader = PTNReader(stop_file_name, link_file_name, ptn, directed, load_file_name, headway_file_name,
-                           conversion_factor_length)
+                           conversion_factor_length, conversion_factor_coordinates)
         if read_stops:
             CsvReader.readCsv(stop_file_name, reader.process_stop)
         if read_links:

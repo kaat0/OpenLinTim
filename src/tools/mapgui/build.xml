@@ -1,59 +1,45 @@
 <?xml version="1.0"?>
 <project name="LinTim-mapgui" default="build-mapgui" basedir=".">
-	<property name="enable_debug" value="true"/>
-	<property name="enable_optimize" value="true"/>
-	<target depends="build-config,build-statistic" name="build-all"/>
-	<target name="build-config">
-		<javac srcdir="../../essentials/config"
-		       destdir="../../essentials/config"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-		<target name="build-statistic">
-		<javac srcdir="../../essentials/statistic"
-		       destdir="../../essentials/statistic"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-    <target name="build-shortest-paths">
-        <javac srcdir="../../essentials/shortest-paths/src"
-               destdir="../../essentials/shortest-paths/src"
-               classpath="../../../libs/jgrapht/jgrapht-core-1.1.0.jar"
-               debug="${enable_debug}"
-               optimize="${enable_optimize}"
-               includeAntRuntime="true" />
+    <include file="../../base.xml"/>
+    <property name="sl-helper-path" value="../../essentials/sl-helper/PTNTools"/>
+    <property name="dm-tools-path" value="../../essentials/dm-helper/Tools"/>
+    <property name="dm-ean-path" value="../../essentials/dm-helper/EAN"/>
+    <property name="essentials-config-path" value="../../essentials/config"/>
+    <path id="mapgui.classpath">
+        <pathelement location="${core-jar}"/>
+        <pathelement location="${sl-helper-path}"/>
+        <pathelement location="${dm-ean-path}"/>
+        <pathelement location="${dm-tools-path}"/>
+        <pathelement location="${processing-jar}"/>
+        <pathelement location="${processing-jogl-jar}"/>
+        <pathelement location="${processing-jogl-natives-jar}"/>
+        <pathelement location="${processing-gluegen-jar}"/>
+        <pathelement location="${processing-gluegen-natives-jar}"/>
+        <pathelement location="${log4j-jar}"/>
+        <pathelement location="${g4p-jar}"/>
+        <pathelement location="${unfolding-jar}"/>
+        <pathelement location="${unfolding-json-jar}"/>
+    </path>
+    <target name="build-sl-helper">
+        <ant target="build-sl-helper" dir="../../essentials/sl-helper/PTNTools" inheritAll="false"/>
     </target>
-			<target name="build-ptn-tools" depends="build-shortest-paths">
-		<javac srcdir="../../essentials/sl-helper/PTNTools"
-		       destdir="../../essentials/sl-helper/PTNTools"
-		       classpath="../../essentials/shortest-paths/src"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-	<target name="build-ean-tools" depends="build-dm-tools,build-config">
-		<javac srcdir="../../essentials/dm-helper/EAN"
-		       destdir="../../essentials/dm-helper/EAN"
-		       classpath="../../essentials/config:../../essentials/dm-helper/Tools"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-	<target name="build-dm-tools">
-		<javac srcdir="../../essentials/dm-helper/Tools"
-		       destdir="../../essentials/dm-helper/Tools"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true" />
-	</target>
-	<target name="build-mapgui" depends="build-config,build-statistic,build-ptn-tools,build-ean-tools,build-dm-tools">
-		<javac srcdir="."
-		       destdir="."
-		       classpath="../../essentials/config:../../essentials/statistic:../../essentials/sl-helper/PTNTools:../../essentials/dm-helper/EAN:../../essentials/dm-helper/Tools:../../../libs/Unfolding/Unfolding.jar:../../../libs/Processing/core.jar:../../../libs/log4j/log4j-1.2.17.jar:../../../libs/G4P/G4P.jar:../../../libs/Unfolding/json4processing.jar:../../../libs/Processing/jogl-all.jar:../../../libs/Processing/gluegen-rt.jar:../../../libs/Processing/gluegen-rt-natives-linux-amd64.jar:../../../libs/Processing/jogl-all-natives-linux-amd64.jar"
-		       debug="${enable_debug}"
-		       optimize="${enable_optimize}"
-		       includeAntRuntime="true"/>
-	</target>
+    <target name="build-config">
+        <ant target="build" dir="${essentials-config-path}" inheritAll="false"/>
+    </target>
+
+    <target name="build-ean-tools" depends="build-config,build-dm-tools">
+        <javac srcdir="${dm-ean-path}"
+               destdir="${dm-ean-path}"
+               classpath="${essentials-config-path}:${dm-tools-path}"/>
+    </target>
+    <target name="build-dm-tools">
+        <javac srcdir="${dm-tools-path}"
+               destdir="${dm-tools-path}" />
+    </target>
+    <target name="build-mapgui" depends="base-lintim.build-core,build-sl-helper,build-ean-tools,build-dm-tools">
+        <javac srcdir="."
+               destdir="." >
+        <classpath refid="mapgui.classpath"/>
+        </javac>
+    </target>
 </project>

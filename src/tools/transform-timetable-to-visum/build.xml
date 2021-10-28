@@ -30,7 +30,7 @@
     <target name="build-dependencies">
         <ant target="build" dir="${core-folder}"/>
     </target>
-    <target name="build-project" >
+    <target name="build-project" depends="init">
         <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
             <src path="${src-dir}"/>
             <classpath refid="lintim-transform-timetable-to-visum.classpath"/>

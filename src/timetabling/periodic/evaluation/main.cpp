@@ -27,7 +27,8 @@ int main (void)
         config.getStringValue("default_od_file"),
         config.getIntegerValue("period_length"),
         config.getBooleanValue("tim_eval_extended"),
-        config.getIntegerValue("ean_change_penalty")
+        config.getIntegerValue("ean_change_penalty"),
+        config.getIntegerValue("gen_passengers_per_vehicle")
     );
 	eval.evaluate();
 	//eval.eval_robustness(config.getStringValue("default_activity_buffer_file"));

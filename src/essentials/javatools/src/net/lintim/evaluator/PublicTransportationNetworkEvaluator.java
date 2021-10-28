@@ -10,7 +10,7 @@ import net.lintim.model.PublicTransportationNetwork;
 import net.lintim.model.Station;
 import net.lintim.util.BiLinkedHashMap;
 import net.lintim.util.MathHelper;
-import net.lintim.util.Pair;
+import net.lintim.util.SinglePair;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -21,7 +21,7 @@ import java.util.Map.Entry;
  * Evaluates different properties of a {@link PublicTransportationNetwork}.
  */
 public class PublicTransportationNetworkEvaluator {
-	
+
 	private static boolean feasible = true;
 	private static boolean feasibility_yet_checked = false;
 
@@ -38,7 +38,7 @@ public class PublicTransportationNetworkEvaluator {
 	/**
 	 * Computes the sum of loads over all directed {@link Link}s of a given
 	 * {@link PublicTransportationNetwork}.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @return the sum of loads over all directed {@link Link}s.
@@ -54,7 +54,7 @@ public class PublicTransportationNetworkEvaluator {
 	/**
 	 * Computes the sum of loads over all undirected {@link Link}s of a given
 	 * {@link PublicTransportationNetwork}.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @return the sum of loads over all undirected {@link Link}s.
@@ -75,7 +75,7 @@ public class PublicTransportationNetworkEvaluator {
 	 * Computed the number of passthrough {@link Station}s, i.e. {@link Station}
 	 * s with exactly two adjacent {@link Station}s for a given
 	 * {@link PublicTransportationNetwork}.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @return the number of passthrough {@link Station}s.
@@ -96,7 +96,7 @@ public class PublicTransportationNetworkEvaluator {
 	 * Computed the number of dead end {@link Station}s, i.e. {@link Station}s
 	 * with exactly one adjacent {@link Station} for a given
 	 * {@link PublicTransportationNetwork}.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @return the number of dead end {@link Station}s.
@@ -121,7 +121,7 @@ public class PublicTransportationNetworkEvaluator {
 	 * activities to the wait activities lower bounds, distributing the
 	 * passengers along the shortest paths in time and calculating sum of
 	 * duration*passengers for these assumptions.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @param od
@@ -161,14 +161,14 @@ public class PublicTransportationNetworkEvaluator {
 
 		ShortestPathsGraph<DirectedStation, Link> sp = new ShortestPathsGraph<DirectedStation, Link>();
 
-		LinkedHashMap<Station, Pair<DirectedStation>> directedStationMap = new LinkedHashMap<Station, Pair<DirectedStation>>();
+		LinkedHashMap<Station, SinglePair<DirectedStation>> directedStationMap = new LinkedHashMap<Station, SinglePair<DirectedStation>>();
 
 		LinkedHashSet<Station> stations = ptn.getStations();
 
 		for (Station station : stations) {
 			DirectedStation incomingLinks = new DirectedStation(station);
 			DirectedStation outgoingLinks = new DirectedStation(station);
-			directedStationMap.put(station, new Pair<DirectedStation>(
+			directedStationMap.put(station, new SinglePair<DirectedStation>(
 					incomingLinks, outgoingLinks));
 
 			sp.addVertex(incomingLinks);
@@ -223,7 +223,7 @@ public class PublicTransportationNetworkEvaluator {
 	}
 
 	/**
-	 * Computes the average traveling time in the PTN 
+	 * Computes the average traveling time in the PTN
 	 * @param ptn the PublicTransportationNetwork used.
 	 * @param od the OD-Matrix used.
 	 * @param minimalWaitingTime the Time approximatly spend at any station
@@ -236,13 +236,13 @@ public class PublicTransportationNetworkEvaluator {
 		Double retval = 0.0;
 		Double passengers = 0.0;
 		Double passengers_od = 0.0;
-		
-		BiLinkedHashMap<Station, Station, Double> ptnTime = 
+
+		BiLinkedHashMap<Station, Station, Double> ptnTime =
 				computeShortestPathLowerBoundLengths(ptn, od, minimalWaitingTime);
 
 		BiLinkedHashMap<Station, Station, Double> odData = od.getMatrix();
 
-		for (Entry<Station, LinkedHashMap<Station, Double>> e1 : 
+		for (Entry<Station, LinkedHashMap<Station, Double>> e1 :
 				ptnTime.entrySet()) {
 
 			for (Entry<Station, Double> e2 : e1.getValue().entrySet()) {
@@ -255,19 +255,19 @@ public class PublicTransportationNetworkEvaluator {
 		return retval/passengers;
 
 	}
-	
-	
-/*	private static BiLinkedHashMap<Station, Station, Double> 
+
+
+/*	private static BiLinkedHashMap<Station, Station, Double>
 		computePtnTime(PublicTransportationNetwork ptn, OriginDestinationMatrix od)
 		throws DataInconsistentException {
-		
+
 		BiLinkedHashMap<Station, Station, Double> retval = new BiLinkedHashMap<Station, Station, Double>();
 
 		ShortestPathsGraph<Station, Link> sp = new ShortestPathsGraph<Station, Link>();
 
 		LinkedHashSet<Station> stations = ptn.getStations();
 
-		for (Station station : stations) {			
+		for (Station station : stations) {
 			sp.addVertex(station);
 		}
 
@@ -310,20 +310,20 @@ public class PublicTransportationNetworkEvaluator {
 			}
 
 		}
-		
+
 		feasibility_yet_checked=true;
 		return retval;
-		
+
 	}*/
-	
-	
+
+
 	/**
 	 * Returns wheter there is a way for each OD-pair through the PTN.
 	 * @param ptn the given {@link PublicTransportationNetwork}.
 	 * @param od the given {@link OriginDestinationMatrix}.
 	 * @return Whether all OD-pair can travel.
 	 */
-	public static Boolean ptnFeasibleOd(PublicTransportationNetwork ptn, 
+	public static Boolean ptnFeasibleOd(PublicTransportationNetwork ptn,
 			OriginDestinationMatrix od, Double minimalWaitingTime)
 			throws DataInconsistentException {
 		if(!feasibility_yet_checked)
@@ -336,7 +336,7 @@ public class PublicTransportationNetworkEvaluator {
 	 * {@link Station}s maps to degree, i.e. the number of adjacent stations.
 	 * Nice as histrogram data, as in
 	 * {@link PublicTransportationNetworkEvaluation}.
-	 * 
+	 *
 	 * @param ptn
 	 *            the given {@link PublicTransportationNetwork}.
 	 * @return a map: number of {@link Station}s maps to degree.

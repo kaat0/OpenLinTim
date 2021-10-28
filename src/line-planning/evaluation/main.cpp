@@ -12,8 +12,8 @@ int main (void)
 	evaluation eval;
 	
 	eval.init(config::get_string_value("default_lines_file"), config::get_string_value("default_loads_file"), config::get_string_value("default_od_file"), config::get_string_value("default_edges_file"), config::get_string_value("default_pool_cost_file"));
-
 	eval.evaluate();
+
 	
 	eval.print_results(config::get_string_value("default_evaluation_lines_file"));
 

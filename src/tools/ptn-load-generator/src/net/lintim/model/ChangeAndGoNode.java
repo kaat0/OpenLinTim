@@ -7,8 +7,8 @@ public class ChangeAndGoNode implements Node {
     public static final int START = -1;
 
     private int id;
-    private int stopId;
-    private int lineId;
+    private final int stopId;
+    private final int lineId;
 
     /**
      * Create a new change and go node with the given stop and line id.

@@ -274,10 +274,13 @@ public class Rollout
 		// read PTN edges from edgeFile
 		if (DEBUG)
 			System.out.println("Rollout: reading PTN edges from file " + new File(edgeFile).getAbsolutePath());
-		if (CHECK_CONSISTENCY && ! Tools.checkIDs(edgeFile))
-			throw new IOException("Rollout: invalid numbering of IDs or empty input file: " + edgeFile);
+		if (CHECK_CONSISTENCY && ! Tools.checkIDs(edgeFile)) {
+			//throw new IOException("Rollout: invalid numbering of IDs or empty input file: " + edgeFile);
+		}
 		int count = Tools.countRelevantLines(edgeFile);
-		int[][] stops = new int[2][count];
+		Map<Integer, Map<Integer, Integer>> stops = new HashMap<>();
+		stops.put(0, new HashMap<>());
+		stops.put(1, new HashMap<>());
 		BufferedReader in = new BufferedReader(new FileReader(edgeFile));
 		while ((line = in.readLine()) != null)
 		{
@@ -290,37 +293,37 @@ public class Rollout
 
 			String[] tokens = line.split(";");
 			int ID = Integer.parseInt(tokens[0].trim());
-			stops[0][ID-1] = Integer.parseInt(tokens[1].trim());
-			stops[1][ID-1] = Integer.parseInt(tokens[2].trim());
+			stops.get(0).put(ID-1, Integer.parseInt(tokens[1].trim()));
+			stops.get(1).put(ID-1, Integer.parseInt(tokens[2].trim()));
 		}
 		in.close();
 
+        if (headways) {
+            // read edge headways from edgeHeadwayFile
+            if (DEBUG)
+                System.out.println("Rollout: reading edge headways from file " + new File(edgeHeadwayFile).getAbsolutePath());
+            if (CHECK_CONSISTENCY && !Tools.checkIDs(edgeHeadwayFile))
+                throw new IOException("Rollout: invalid numbering of IDs or empty input file: " + edgeHeadwayFile);
 
-		// read edge headways from edgeHeadwayFile
-		if (DEBUG)
-			System.out.println("Rollout: reading edge headways from file " + new File(edgeHeadwayFile).getAbsolutePath());
-		if (CHECK_CONSISTENCY && ! Tools.checkIDs(edgeHeadwayFile))
-			throw new IOException("Rollout: invalid numbering of IDs or empty input file: " + edgeHeadwayFile);
+            count = 2 * Tools.countRelevantLines(edgeHeadwayFile);
+            edgeHeadways = new HashMap<String, Integer>(count);
+            in = new BufferedReader(new FileReader(edgeHeadwayFile));
+            while ((line = in.readLine()) != null) {
+                int position = line.indexOf('#');
+                if (position != -1)
+                    line = line.substring(0, position);
+                line = line.trim();
+                if (line.isEmpty())
+                    continue;
 
-		count = 2 * Tools.countRelevantLines(edgeHeadwayFile);
-		edgeHeadways = new HashMap<String, Integer>(count);
-		in = new BufferedReader(new FileReader(edgeHeadwayFile));
-		while ((line = in.readLine()) != null)
-		{
-			int position = line.indexOf('#');
-			if (position != -1)
-				line = line.substring(0, position);
-			line = line.trim();
-			if (line.isEmpty())
-				continue;
-
-			String[] tokens = line.split(";");
-			int ID = Integer.parseInt(tokens[0].trim());
-			int headway = 60/timeUnitsPerMinute * Integer.parseInt(tokens[1].trim());
-			edgeHeadways.put(stops[0][ID-1]+";"+stops[1][ID-1], headway);
-			edgeHeadways.put(stops[1][ID-1]+";"+stops[0][ID-1], headway);
-		}
-		in.close();
+                String[] tokens = line.split(";");
+                int ID = Integer.parseInt(tokens[0].trim());
+                int headway = 60 / timeUnitsPerMinute * Integer.parseInt(tokens[1].trim());
+                edgeHeadways.put(stops.get(0).get(ID - 1) + ";" + stops.get(1).get(ID - 1), headway);
+                edgeHeadways.put(stops.get(1).get(ID - 1) + ";" + stops.get(0).get(ID - 1), headway);
+            }
+            in.close();
+        }
 
 		// read frequencies from linePlanFile
 		if (DEBUG)
@@ -467,7 +470,7 @@ public class Rollout
 				pTarget.setStartofTrip(false);
 				pSource.setEndOfTrip(false);
 			}
-			if (type.equals("drive")) {
+			if (type.equals("drive") && headways) {
 			    Integer headway = edgeHeadways.get(pSource.getStation() + ";" + pTarget.getStation());
 			    if (headway == null) {
 			        throw new IllegalStateException("Cannot find headway from station " + pSource.getStation() + " to "
@@ -926,14 +929,16 @@ public class Rollout
 			arrivalsAtDestination.put(destination, arrivals);
 		}
 		else arrivals = arrivalsAtDestination.get(destination);
-		for (NonPeriodicEvent departure : departures)
-			if (!connectionsFromDeparture.containsKey(departure.getID()))
-				connectionsFromDeparture.put(departure.getID(),
-						cean.getConnectionsFromDeparture(departure));
-		for (NonPeriodicEvent arrival : arrivals)
-			if (!connectionsToArrival.containsKey(arrival.getID()))
-				connectionsToArrival.put(arrival.getID(),
-						cean.getConnectionsToArrival(arrival));
+		for (NonPeriodicEvent departure : departures) {
+            if (!connectionsFromDeparture.containsKey(departure.getID()))
+                connectionsFromDeparture.put(departure.getID(),
+                    cean.getConnectionsFromDeparture(departure));
+        }
+		for (NonPeriodicEvent arrival : arrivals) {
+            if (!connectionsToArrival.containsKey(arrival.getID()))
+                connectionsToArrival.put(arrival.getID(),
+                    cean.getConnectionsToArrival(arrival));
+        }
 		// find all shortest paths
 		// traversing departures in descending order allows to judge
 		// immediately whether the earliest arrival time for the current
@@ -1001,6 +1006,7 @@ public class Rollout
 										departureConnection.getID(),
 										arrivalConnection.getID()))
 								{
+
 									reachable = true;
 									LinkedList<LinkedList<NonPeriodicActivity>>
 											newPaths =

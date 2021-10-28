@@ -1,8 +1,9 @@
 from collections import defaultdict
 
 import ean_data
+from core.exceptions.algorithm_dijkstra import AlgorithmStoppingCriterionException
 from core.exceptions.exceptions import LinTimException
-from core.solver.generic_solver_interface import Variable, VariableType, ConstraintSense, Status
+from core.solver.generic_solver_interface import Variable, VariableType, ConstraintSense, Status, IntAttribute
 from cycle_base import *
 import math
 
@@ -108,11 +109,14 @@ class CycleTimPassGenericModel(TimPassGenericModel):
         logger.debug("Start optimization")
         self._m.solve()
         logger.debug("End optimization")
-        self.is_feasible = self._m.getStatus() == Status.FEASIBLE or self._m.getStatus() == Status.OPTIMAL
+        self.is_feasible = self._m.getIntAttribute(IntAttribute.NUM_SOLUTIONS) > 0
         if not self.is_feasible:
             logger.debug("No feasible solution found")
-            if self._parameters.show_solver_output:
+            if self._m.getStatus() == Status.INFEASIBLE:
                 self._m.computeIIS("TimPassCycle.ilp")
+            raise AlgorithmStoppingCriterionException("Tim Pass")
+        if self._m.getStatus() == Status.OPTIMAL:
+            logger.debug("Optimal solution found")
         else:
             logger.debug("Feasible solution found")
         logger.debug("End optimization")

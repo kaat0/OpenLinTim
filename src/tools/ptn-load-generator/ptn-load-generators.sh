@@ -8,10 +8,10 @@ load_model=`"${CONFIGCMD[@]}" -s load_generator_model -u`
 
 if [[ ${load_model} == LOAD_FROM_PTN ]]; then
     ant -q -f ${PROGRAMPATH}/build.xml build
-    java -Djava.util.logging.config.file=${PROGRAMPATH}/../../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/build${PATHSEP}${PROGRAMPATH}/../../../libs/jgrapht/jgrapht-core-1.1.0.jar${PATHSEP}${PROGRAMPATH}/../../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../../line-planning/cost-model/cost-model.jar net.lintim.main.tools.PTNLoadGeneratorMain basis/Config.cnf
+    java -Djava.util.logging.config.file=${PROGRAMPATH}/../../core/java/logging.properties -cp ${CLASSPATH}${PATHSEP}${PROGRAMPATH}/build${PATHSEP}${PROGRAMPATH}/../../../libs/jgrapht/jgrapht-core-1.5.0.jar${PATHSEP}${PROGRAMPATH}/../../../libs/jgrapht/jheaps-0.13.jar${PATHSEP}${PROGRAMPATH}/../../core/java/lintim-core.jar${PATHSEP}${PROGRAMPATH}/../../line-planning/cost-model/cost-model.jar net.lintim.main.tools.PTNLoadGeneratorMain basis/Config.cnf
 
 elif [[ ${load_model} == LOAD_FROM_EAN ]]; then
-    sh ${PROGRAMPATH}/../../essentials/javatools/runner.sh RegenerateLoad basis/Config.cnf
+    sh ${PROGRAMPATH}/../../essentials/javatools/runner.sh RegenerateLoad $1
 
 else
 	echo "Error: Invalid load_generator_model argument: ${load_model}"

@@ -1,5 +1,6 @@
 package net.lintim.algorithm.lineplanning;
 
+import net.lintim.exception.LinTimException;
 import net.lintim.exception.SolverNotSupportedException;
 import net.lintim.model.Graph;
 import net.lintim.model.LinePool;
@@ -7,6 +8,7 @@ import net.lintim.model.Link;
 import net.lintim.model.Stop;
 import net.lintim.util.LogLevel;
 import net.lintim.util.SolverType;
+import net.lintim.util.lineplanning.Parameters;
 
 import java.util.logging.Logger;
 
@@ -20,20 +22,17 @@ public abstract class CostRestrictingFrequenciesSolver {
 
     /**
      * Solve the line planning problem for the given data. This is just an abstract method, use
-     * {@link CostRestrictingFrequenciesGurobi#solveLinePlanningCost(Graph, LinePool, int, int, int)} or
-     * {@link CostRestrictingFrequenciesXpress#solveLinePlanningCost(Graph, LinePool, int, int, int)} for the actual implementation.
-     * @param ptn the underlying ptn to compute the line concept for
-     * @param linePool the linepool to choose the lines from
-     * @param timelimit the timelimit for the solver
-     * @param numberOfPossibleFrequencies the number of possible frequencies
-     * @param maximalFrequency the maximal allowed frequency
+     * {@link CostRestrictingFrequenciesGurobi#solveLinePlanningCost(Graph, LinePool, Parameters)} or
+     * {@link CostRestrictingFrequenciesXpress#solveLinePlanningCost(Graph, LinePool, Parameters)} for the actual implementation.
+     *
+     * @param ptn        the underlying ptn to compute the line concept for
+     * @param linePool   the linepool to choose the lines from
+     * @param parameters the parameters for the model
      * @return whether an optimal/feasible solution could be found.
      */
-    public abstract boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, int timelimit, int
-        numberOfPossibleFrequencies, int maximalFrequency);
+    public abstract boolean solveLinePlanningCost(Graph<Stop, Link> ptn, LinePool linePool, Parameters parameters);
 
-    public static CostRestrictingFrequenciesSolver getSolver(SolverType solverType) throws ClassNotFoundException,
-        IllegalAccessException, InstantiationException {
+    public static CostRestrictingFrequenciesSolver getSolver(SolverType solverType) {
         String solverClassName = "";
         switch (solverType) {
             case GUROBI:
@@ -47,7 +46,11 @@ public abstract class CostRestrictingFrequenciesSolver {
             default:
                 throw new SolverNotSupportedException(solverType.toString(), "line planning cost model restricting frequencies");
         }
-        Class<?> solverClass = Class.forName(solverClassName);
-        return (CostRestrictingFrequenciesSolver) solverClass.newInstance();
+        try {
+            Class<?> solverClass = Class.forName(solverClassName);
+            return (CostRestrictingFrequenciesSolver) solverClass.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new LinTimException(e.getMessage());
+        }
     }
 }

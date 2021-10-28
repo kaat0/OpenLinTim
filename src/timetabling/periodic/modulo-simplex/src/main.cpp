@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 	}	
 	
 	//initialise with EAN and period
-	if (config::get_string_value("tim_model") == "con_ns" || config::get_string_value("tim_model") == "ns_improve" || config::get_string_value("tim_model") == "csp_ns")
+	if (config::get_string_value("tim_model") == "con_ns" || config::get_string_value("tim_model") == "ns_improve" || config::get_string_value("tim_model") == "csp_ns"  || config::get_string_value("tim_model") == "ns_cb")
 	solver.init(config::get_string_value("default_activities_periodic_file"), config::get_string_value("default_events_periodic_file"), config::get_integer_value("period_length"), config::get_string_value("default_timetable_periodic_file"));
 	else{
         std::cout << "Called network_simplex with invalid tim_model " << config::get_string_value("tim_model") << "\n" << std::flush;

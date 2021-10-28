@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Map;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -97,7 +98,7 @@ public class IOTest {
         Path configPath = basePath.resolve("Config.cnf");
         Config config = new Config();
         new ConfigReader.Builder(configPath.toString()).setConfig(config).build().read();
-        assertEquals(353, config.getData().size());
+        assertEquals(448, config.getData().size());
     }
 
     @Test
@@ -125,6 +126,27 @@ public class IOTest {
         assertTrue(compareFiles(linkPath, outputLinkPath));
         assertTrue(compareFiles(loadPath, outputLoadPath));
         assertTrue(compareFiles(headwayPath, outputHeadwayPath));
+    }
+
+    @Test
+    public void canReadAdditionalLoad() {
+        Path loadPath = inputPath.resolve(config.getStringValue("filename_additional_load_file"));
+        Map<Integer, Map<Pair<Integer, Integer>, Double>> loads = new AdditionalLoadReader.Builder()
+            .setFileName(loadPath.toString())
+            .build().read();
+        assertEquals(2, loads.size());
+        assertEquals(3, loads.get(5).get(new Pair<>(5, 6)), DELTA);
+    }
+
+    @Test
+    public void canReadStationLimits() {
+        Path limitsPath = inputPath.resolve(config.getStringValue("filename_station_limit_file"));
+        Map<Integer, StationLimit> limits = new StationLimitReader.Builder()
+            .setFileName(limitsPath.toString())
+            .build().read();
+        assertEquals(2, limits.size());
+        assertEquals(4, limits.get(1).getMinWaitTime());
+        assertEquals(1, limits.get(6).getMinChangeTime());
     }
 
     @Test

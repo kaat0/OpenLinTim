@@ -4,6 +4,7 @@
     <property name="target" value="1.8"/>
     <property name="source" value="1.8"/>
     <property name="build-dir" value="build" />
+    <property name="src-dir" value="src" />
     <property name="doc-dir" value="docs" />
     <property name="core-folder" value="../../../core/java" />
     <path id="lintim-timetabling-periodic-ip.classpath">
@@ -44,7 +45,7 @@
     <!-- Build tasks -->
     <target depends="build-dependencies,build-project" name="build"/>
     <target name="build-dependencies">
-        <ant target="build" dir="${core-folder}"/>
+        <ant target="build" dir="${core-folder}" inheritAll="false"/>
     </target>
     <target name="build-project" depends="build-with-xpress, build-with-gurobi, build-without-xpress-and-gurobi" />
     <target name="build-documentation" depends="init-docs">
@@ -54,16 +55,14 @@
     <!-- Solver specific build targets, will only be used if the respective solvers are installed -->
     <target name="build-with-xpress" depends="init" if="${xpress.installed}">
         <echo>Xpress installed</echo>
-        <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
-            <src path="."/>
+        <javac includeantruntime="true" debug="false" srcdir="${src-dir}" destdir="${build-dir}" source="${source}" target="${target}">
             <classpath refid="lintim-timetabling-periodic-ip.classpath"/>
             <exclude name="net/lintim/algorithm/timetabling/periodic/PespIpGurobi.java" />
         </javac>
     </target>
     <target name="build-with-gurobi" depends="init" if="${gurobi.installed}">
         <echo>Gurobi installed</echo>
-        <javac includeantruntime="true" debug="false" destdir="${build-dir}" source="${source}" target="${target}">
-            <src path="."/>
+        <javac includeantruntime="true" debug="false" srcdir="${src-dir}" destdir="${build-dir}" source="${source}" target="${target}">
             <classpath refid="lintim-timetabling-periodic-ip.classpath"/>
             <exclude name="net/lintim/algorithm/timetabling/periodic/PespIpXpress.java" />
         </javac>

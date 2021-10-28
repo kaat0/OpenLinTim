@@ -8,7 +8,8 @@ package net.lintim.model;
 public enum EventType {
     ARRIVAL("\"arrival\""),
     DEPARTURE("\"departure\""),
-    FIX("\"fix\"");
+    FIX("\"fix\""),
+    VIRTUAL("\"virtual\"");
 
     private String representation;
 

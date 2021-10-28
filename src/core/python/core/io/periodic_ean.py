@@ -63,6 +63,8 @@ class PeriodicEANReader:
             result = EventType.DEPARTURE
         elif input_type.lower() == "fix" or input_type.lower() == "\"fix\"":
             result = EventType.FIX
+        elif input_type.lower() == "virtual" or input_type.lower() == "\"virtual\"":
+            result = EventType.VIRTUAL
         else:
             raise DataIllegalEventTypeException(eventId, input_type)
         return result
@@ -103,6 +105,8 @@ class PeriodicEANReader:
             result = ActivityType.TURNAROUND
         elif input_type.lower() == "sync" or input_type.lower() == "\"sync\"":
             result = ActivityType.SYNC
+        elif input_type.lower() == "virtual" or input_type.lower() == "\"virtual\"":
+            result = ActivityType.VIRTUAL
         else:
             raise DataIllegalActivityTypeException(activity_id, input_type)
         return result

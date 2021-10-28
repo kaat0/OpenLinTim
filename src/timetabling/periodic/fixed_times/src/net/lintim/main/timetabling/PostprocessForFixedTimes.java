@@ -36,7 +36,7 @@ public class PostprocessForFixedTimes {
 		logger.info("Finished reading input files");
 		logger.info("Begin postprocessing ean for fixed times");
 		EanPostprocessor.postprocessEan(ean, periodLength);
-		boolean feasible = EanPostprocessor.checkTimeBounds(eventTimeBounds);
+		boolean feasible = EanPostprocessor.checkTimeBounds(eventTimeBounds, periodLength);
 		logger.info("Finished postprocessing ean for fixed times");
 		logger.info("Begin writing output files");
 		if (!feasible) {

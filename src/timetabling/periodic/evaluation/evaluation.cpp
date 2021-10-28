@@ -10,7 +10,7 @@ evaluation::evaluation(){}
 
 void evaluation::init(std::string activityfile, std::string eventfile,
      std::string timetablefile, std::string odfile, int periodvalue,
-     bool _eval_extended, int ch_penalty) {
+     bool _eval_extended, int ch_penalty, int capacity) {
 
 	//Set period
 	period = periodvalue;
@@ -19,6 +19,9 @@ void evaluation::init(std::string activityfile, std::string eventfile,
 
     // set the penalty for taking a change
     change_penalty = ch_penalty;
+
+    this->capacity = capacity;
+
     // read in EAN
     AdjacencyListGraph<PeriodicEvent, PeriodicActivity> tempEAN;
     PeriodicEANReader pEANr = PeriodicEANReader(&tempEAN, activityfile, eventfile,
@@ -77,6 +80,8 @@ void evaluation::evaluate(){
 	average_weighted_slack_result = average_weighted_slack();
     average_slack_result = average_slack();
 	weighted_times_result = weighted_times();
+    sum_od_pairs_result = sum_od_pairs();
+    perceived_traveling_time_result = perceived_traveling_time();
 	if(eval_extended){
 		max_changetime_result = max_changetime();
 		min_changetime_result = min_changetime();
@@ -85,9 +90,8 @@ void evaluation::evaluate(){
 		average_drive_slack_result = average_type_slack(DRIVE);
 		average_wait_slack_result = average_type_slack(WAIT);
 		number_of_transfers_result = number_of_transfers();
+        overcrowded_time_result = overcrowded_time();
 	}
-    sum_od_pairs_result = sum_od_pairs();
-    perceived_traveling_time_result = perceived_traveling_time();
 
 	//variance_headway_slack_result = variance_headway_slack();
 	//average_travel_time_result = average_travel_time();
@@ -216,6 +220,20 @@ double evaluation::sum_od_pairs(){
 	if(passengers == 0) return result;
 	else return result/passengers;
 }
+
+double evaluation::overcrowded_time() {
+    long double result = 0;
+    long double passengers = od.computeNumberOfPassengers();
+    for (EvalActivity& a: routingEAN.getEdges()) {
+        if (a.getType() == DRIVE) {
+            if (a.getNumberOfPassengers() > capacity) {
+                result += a.getDoubleDuration() * a.getNumberOfPassengers();
+            }
+        }
+    }
+    return result / passengers;
+}
+
 /**
 *   The perceived traveling time differs from the actual travel times by adding
 *   a penalty for each change a customer has to take. Therefore the change
@@ -256,6 +274,7 @@ void evaluation::results_to_statistic(Statistic &stat)
 		stat.setIntegerValue("tim_prop_changes_od_max", max_changetime_result); // former tim_max_changetime
 		stat.setIntegerValue("tim_prop_changes_od_min", min_changetime_result); // former tim_max_changetime
 		stat.setIntegerValue("tim_number_of_transfers", number_of_transfers_result);
+		stat.setDoubleValue("tim_overcrowded_time_average", overcrowded_time_result);
 	}
 
     //statistic::set_double_value("tim_average_travel_time", average_travel_time_result);
